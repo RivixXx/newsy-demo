@@ -1,0 +1,438 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  DELETED
+}
+
+enum OrganizerType {
+  BRAND
+  INFLUENCER
+  NGO
+  GOVERNMENT
+  OTHER
+}
+
+enum OrganizerStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  DELETED
+}
+
+enum ChallengeStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  ARCHIVED
+}
+
+enum OwnershipType {
+  USER
+  ORGANIZER
+  SYSTEM
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum NotificationType {
+  CHALLENGE_CREATED
+  CHALLENGE_UPDATED
+  STEP_COMPLETED
+  REWARD_EARNED
+  SYSTEM
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String?         @unique
+  phone          String?         @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  status         UserStatus      @default(PENDING)
+  points         Int             @default(0)
+  rating         Float           @default(0)
+  lastLoginAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+
+  roles                 UserRole[]
+  organizerMembership   OrganizerMember[]
+  searchSessions        SearchSession[]
+  savedSearches         SavedSearch[]
+  favorites             Favorite[]
+  participations        UserProgress[]
+  achievements          UserAchievement[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Role {
+  id          String         @id @default(uuid())
+  key         String         @unique
+  name        String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  permissions PermissionRole[]
+  users       UserRole[]
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  name        String
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  roles       PermissionRole[]
+}
+
+model PermissionRole {
+  id            String      @id @default(uuid())
+  roleId        String
+  permissionId  String
+  createdAt     DateTime    @default(now())
+
+  role          Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model Organizer {
+  id          String               @id @default(uuid())
+  type        OrganizerType
+  name        String
+  legalName   String?
+  taxId       String?              @unique
+  description String?
+  status      OrganizerStatus      @default(PENDING)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?
+
+  members     OrganizerMember[]
+  challenges  Challenge[]
+  payments    PaymentTransaction[]
+
+  @@index([type])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model OrganizerMember {
+  id                 String        @id @default(uuid())
+  organizerId        String
+  userId             String
+  roleInOrganizer    String
+  status             String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  deletedAt          DateTime?
+
+  organizer          Organizer     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizerId, userId])
+  @@index([organizerId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Challenge {
+  id              String                 @id @default(uuid())
+  organizerId     String
+  status          ChallengeStatus        @default(DRAFT)
+  title           String
+  description     String?
+  category        String?
+  isCooperative   Boolean                @default(false)
+  startDate       DateTime?
+  endDate         DateTime?
+  publishPrice    Decimal?               @default(1000.00) // Default price for publishing
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  deletedAt       DateTime?
+
+  organizer       Organizer              @relation(fields: [organizerId], references: [id], onDelete: Restrict)
+  steps           Step[]
+  media           ChallengeMedia[]
+  participations  UserProgress[]
+  favorites       Favorite[]
+  partners        ChallengePartner[]
+  payments        PaymentTransaction[]
+
+  @@index([organizerId])
+  @@index([status])
+  @@index([category])
+  @@index([deletedAt])
+}
+
+model Step {
+  id              String           @id @default(uuid())
+  challengeId     String
+  title           String
+  description     String?
+  order           Int              @default(0)
+  type            String           // E.g., "QUESTION", "PHOTO", "LOCATION", "ACTION"
+  config          Json?            // Validation rules, correct answers, etc.
+  rewardPoints    Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  challenge       Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userProgress    StepProgress[]
+
+  @@index([challengeId])
+  @@index([order])
+}
+
+model ChallengeMedia {
+  id           String    @id @default(uuid())
+  challengeId  String
+  type         MediaType
+  url          String
+  sortOrder    Int       @default(0)
+  altText      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  challenge    Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+  @@index([type])
+}
+
+model ChallengePartner {
+  id              String    @id @default(uuid())
+  challengeId     String
+  partnerName     String
+  partnerLogoUrl  String?
+  createdAt       DateTime  @default(now())
+
+  challenge       Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+}
+
+model UserProgress {
+  id              String           @id @default(uuid())
+  userId          String
+  challengeId     String
+  status          String           // E.g., "JOINED", "IN_PROGRESS", "COMPLETED", "FAILED"
+  startedAt       DateTime         @default(now())
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge       Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  stepProgress    StepProgress[]
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@index([challengeId])
+  @@index([status])
+}
+
+model StepProgress {
+  id              String           @id @default(uuid())
+  userProgressId  String
+  stepId          String
+  status          String           // E.g., "PENDING", "COMPLETED", "FAILED"
+  submission      Json?            // The user's answer, photo link, etc.
+  pointsEarned    Int              @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  userProgress    UserProgress     @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
+  step            Step             @relation(fields: [stepId], references: [id], onDelete: Restrict)
+
+  @@unique([userProgressId, stepId])
+  @@index([userProgressId])
+  @@index([stepId])
+}
+
+model Achievement {
+  id              String           @id @default(uuid())
+  key             String           @unique
+  name            String
+  description     String?
+  badgeUrl        String?
+  pointsRequired  Int?             @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  users           UserAchievement[]
+}
+
+model UserAchievement {
+  id              String           @id @default(uuid())
+  userId          String
+  achievementId   String
+  earnedAt        DateTime         @default(now())
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement     Achievement      @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+}
+
+model SearchSession {
+  id              String    @id @default(uuid())
+  userId          String?
+  sessionKey      String    @unique
+  query           String?
+  filters         Json
+  sort            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model SavedSearch {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String
+  query     String?
+  filters   Json
+  sort      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model Favorite {
+  id          String    @id @default(uuid())
+  userId      String
+  challengeId String
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@index([challengeId])
+}
+
+model Notification {
+  id        String            @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  payload   Json?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([readAt])
+  @@index([deletedAt])
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorUserId   String?
+  action        String
+  entityType    String
+  entityId      String?
+  beforeState   Json?
+  afterState    Json?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  actor         User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+model PaymentTransaction {
+  id              String            @id @default(uuid())
+  organizerId     String
+  challengeId     String
+  amount          Decimal
+  currency        String            @default("RUB")
+  provider        String            @default("YOOKASSA")
+  providerId      String?           @unique
+  status          TransactionStatus @default(PENDING)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  organizer       Organizer         @relation(fields: [organizerId], references: [id], onDelete: Restrict)
+  challenge       Challenge         @relation(fields: [challengeId], references: [id], onDelete: Restrict)
+
+  @@index([organizerId])
+  @@index([challengeId])
+  @@index([status])
+  @@index([providerId])
+}
