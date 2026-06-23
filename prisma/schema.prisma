@@ -3,9 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
 
 enum UserStatus {
   ACTIVE
@@ -195,7 +196,7 @@ model Challenge {
   isCooperative   Boolean                @default(false)
   startDate       DateTime?
   endDate         DateTime?
-  publishPrice    Decimal?               @default(1000.00) // Default price for publishing
+  publishPrice    Float?               @default(1000.00)
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   deletedAt       DateTime?
@@ -420,7 +421,7 @@ model PaymentTransaction {
   id              String            @id @default(uuid())
   organizerId     String
   challengeId     String
-  amount          Decimal
+  amount          Float
   currency        String            @default("RUB")
   provider        String            @default("YOOKASSA")
   providerId      String?           @unique

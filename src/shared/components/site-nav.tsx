@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Globe, Menu, User, Search } from 'lucide-react';
+import { Menu, User, Search, UserCircle, LayoutDashboard, Plus, Shield, LogOut, HelpCircle } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 
 type SiteNavProps = {
@@ -15,19 +15,14 @@ export function SiteNav({ variant = 'public', session }: SiteNavProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [lang, setLang] = useState<'ru' | 'en'>('ru');
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Обработка тени при скролле
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Закрытие дропдауна
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -38,351 +33,208 @@ export function SiteNav({ variant = 'public', session }: SiteNavProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const t = (ruText: string, enText: string) => lang === 'ru' ? ruText : enText;
+  const close = () => setIsMenuOpen(false);
 
   return (
-    <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="nav-wrapper">
-        {/* Левая часть: Логотип + Название */}
-        <div className="nav-left">
-          <Link href="/" >
-            <span className="brand">  
-              <img src="/icon.png" alt="NEWSY Logo" className="brand-logo-img" />
-              <span className="brand-name">NEWSY</span>
-            </span>
-          </Link>
-        </div>
-
-        {/* Центр: Поиск в стиле Figma */}
-        <div className="nav-center">
-          <div className="figma-search-bar">
-            <div className="search-section flex-2">
-              <input type="text" placeholder={t('Найти активность...', 'Find activity...')} className="search-input" />
-            </div>
-            <div className="search-divider" />
-            <div className="search-section flex-1 hide-mobile">
-              <input type="text" placeholder={t('Когда', 'When')} className="search-input" />
-            </div>
-            <div className="search-divider hide-mobile" />
-            <div className="search-section flex-1 hide-mobile">
-              <input type="text" placeholder={t('Где', 'Where')} className="search-input" />
-            </div>
-            <button className="search-btn">
-              <Search size={16} color="white" strokeWidth={3} />
-            </button>
+    <>
+      <header style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        background: 'white',
+        width: '100%',
+        transition: 'box-shadow 0.2s ease',
+        borderBottom: '1px solid #ebebeb',
+        boxShadow: isScrolled ? '0 1px 12px rgba(0,0,0,0.08)' : 'none',
+      }}>
+        <div style={{
+          maxWidth: 1440,
+          margin: '0 auto',
+          padding: '0 40px',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          height: 80,
+        }}>
+          {/* Brand */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
+              <img src="/icon.png" alt="NEWSY Logo" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              <span style={{ color: '#FF385C', fontSize: 26, fontWeight: 900, letterSpacing: -1, lineHeight: 1, marginBottom: 4 }}>NEWSY</span>
+            </Link>
           </div>
-        </div>
 
-        {/* Правая часть: Действия и Капсула Airbnb */}
-        <div className="nav-right">
-          <Link href="/dashboard/challenges/new" className="host-link">
-            {t('Создать челендж', 'Create challenge')}
-          </Link>
-          
-          <button 
-            className="globe-btn" 
-            onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
-            title={lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}
-          >
-            <Globe size={18} strokeWidth={2} />
-          </button>
+          {/* Search Bar */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{
+              background: 'white',
+              borderRadius: 999,
+              display: 'flex',
+              alignItems: 'center',
+              padding: 6,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #ebebeb',
+            }}>
+              <div style={{ padding: '0 16px', height: 36, display: 'flex', alignItems: 'center', width: 220 }}>
+                <input type="text" placeholder="Найти активность..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: '#222', background: 'transparent', fontWeight: 500 }} />
+              </div>
+              <div style={{ width: 1, height: 24, background: '#ebebeb' }} />
+              <div style={{ padding: '0 16px', height: 36, display: 'flex', alignItems: 'center', width: 100 }} className="hide-mobile">
+                <input type="text" placeholder="Когда" style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: '#222', background: 'transparent' }} />
+              </div>
+              <div style={{ width: 1, height: 24, background: '#ebebeb' }} className="hide-mobile" />
+              <div style={{ padding: '0 16px', height: 36, display: 'flex', alignItems: 'center', width: 100 }} className="hide-mobile">
+                <input type="text" placeholder="Где" style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: '#222', background: 'transparent' }} />
+              </div>
+              <button style={{
+                width: 36, height: 36, borderRadius: '50%', background: '#FF385C', border: 'none',
+                display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0, marginLeft: 8,
+              }}>
+                <Search size={16} color="white" strokeWidth={3} />
+              </button>
+            </div>
+          </div>
 
-          <div className="user-menu-container" ref={menuRef}>
-            <button 
-              className="user-dropdown-pill" 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <Menu size={18} strokeWidth={2} color="#595959" />
-              {session ? (
-                <div className="avatar-circle">
-                  {session.user.email?.[0].toUpperCase()}
-                </div>
-              ) : (
-                <div className="avatar-circle default">
-                  <User size={18} color="white" />
+          {/* Right: Capsule */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
+            <Link href="/dashboard/challenges/new" style={{
+              padding: '12px 14px', borderRadius: 24, textDecoration: 'none', color: '#222',
+              fontSize: 14, fontWeight: 600, transition: 'background 0.2s',
+            }}>
+              Создать челендж
+            </Link>
+
+            <div ref={menuRef} style={{ position: 'relative', marginLeft: 8 }}>
+              {/* Capsule Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '5px 5px 5px 12px',
+                  border: '1px solid #DDDDDD', borderRadius: 21, background: 'white',
+                  cursor: 'pointer', transition: 'box-shadow 0.2s',
+                  boxShadow: isMenuOpen ? '0 4px 12px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.08)',
+                }}
+              >
+                <Menu size={18} strokeWidth={2} color="#595959" />
+                {session ? (
+                  <div style={{
+                    width: 30, height: 30, background: '#FF385C', color: 'white',
+                    borderRadius: '50%', display: 'grid', placeItems: 'center',
+                    fontSize: 12, fontWeight: 700,
+                  }}>
+                    {session.user.email?.[0].toUpperCase()}
+                  </div>
+                ) : (
+                  <div style={{
+                    width: 30, height: 30, background: '#717171', color: 'white',
+                    borderRadius: '50%', display: 'grid', placeItems: 'center',
+                  }}>
+                    <User size={18} color="white" />
+                  </div>
+                )}
+              </button>
+
+              {/* Dropdown Menu */}
+              {isMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 10px)',
+                  right: 0,
+                  background: 'white',
+                  borderRadius: 16,
+                  boxShadow: '0 8px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  width: 260,
+                  padding: '8px 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  zIndex: 100,
+                  animation: 'menuSlideDown 0.22s cubic-bezier(0.16,1,0.3,1)',
+                  overflow: 'hidden',
+                }}>
+                  {session ? (
+                    <>
+                      <MenuItem href="/dashboard/profile" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
+                      <MenuItem href="/dashboard" icon={<LayoutDashboard size={18} />} label="Кабинет" bold onClick={close} />
+                      <MenuDivider />
+                      <MenuItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
+                      {session.user?.role === 'admin' && (
+                        <MenuItem href="/admin" icon={<Shield size={18} />} label="Админ-панель" onClick={close} />
+                      )}
+                      <MenuDivider />
+                      <form action={logoutAction}>
+                        <button type="submit" style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '11px 16px', fontSize: 14, color: '#e03e5c',
+                          background: 'transparent', border: 'none', cursor: 'pointer',
+                          width: '100%', textAlign: 'left', fontWeight: 500,
+                          transition: 'background 0.15s',
+                        }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#fff0f3')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <LogOut size={18} />
+                          Выйти
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <MenuItem href="/login" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
+                      <MenuDivider />
+                      <MenuItem href="/login" icon={<LogOut size={18} />} label="Войти" bold onClick={close} />
+                      <MenuItem href="/register" icon={<Plus size={18} />} label="Зарегистрироваться" onClick={close} />
+                      <MenuDivider />
+                      <MenuItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
+                      <MenuItem href="#" icon={<HelpCircle size={18} />} label="Помощь" onClick={close} />
+                    </>
+                  )}
                 </div>
               )}
-            </button>
-
-            {isMenuOpen && (
-              <div className="dropdown-menu">
-                {session ? (
-                  <>
-                    <Link href="/dashboard/profile" className="menu-item font-bold" onClick={() => setIsMenuOpen(false)}>
-                      {t('Профиль', 'Profile')}
-                    </Link>
-                    <Link href="/dashboard" className="menu-item font-bold" onClick={() => setIsMenuOpen(false)}>
-                      {t('Кабинет', 'Dashboard')}
-                    </Link>
-                    <hr className="menu-divider" />
-                    <Link href="/dashboard/challenges/new" className="menu-item" onClick={() => setIsMenuOpen(false)}>
-                      {t('Создать челендж', 'Create challenge')}
-                    </Link>
-                    {session.user?.role === 'admin' && (
-                       <Link href="/admin" className="menu-item" onClick={() => setIsMenuOpen(false)}>
-                         {t('Админ-панель', 'Admin Panel')}
-                       </Link>
-                    )}
-                    <hr className="menu-divider" />
-                    <form action={logoutAction}>
-                      <button type="submit" className="menu-item">{t('Выйти', 'Log out')}</button>
-                    </form>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" className="menu-item font-bold" onClick={() => setIsMenuOpen(false)}>
-                      {t('Войти', 'Log in')}
-                    </Link>
-                    <Link href="/login" className="menu-item" onClick={() => setIsMenuOpen(false)}>
-                      {t('Зарегистрироваться', 'Sign up')}
-                    </Link>
-                    <hr className="menu-divider" />
-                    <Link href="/dashboard/challenges/new" className="menu-item" onClick={() => setIsMenuOpen(false)}>
-                      {t('Создать челендж', 'Create challenge')}
-                    </Link>
-                    <Link href="#" className="menu-item" onClick={() => setIsMenuOpen(false)}>
-                      {t('Помощь', 'Help')}
-                    </Link>
-                  </>
-                )}
-              </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <style jsx>{`
-        .site-header {
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-          background: white;
-          width: 100%;
-          transition: box-shadow 0.2s ease;
-          border-bottom: 1px solid #ebebeb;
+      <style>{`
+        @keyframes menuSlideDown {
+          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
-
-        .site-header.scrolled {
-          box-shadow: 0 1px 12px rgba(0,0,0,0.08);
-        }
-
-        .nav-wrapper {
-          max-width: 1440px;
-          margin: 0 auto;
-          padding: 0 40px;
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          align-items: center;
-          height: 80px;
-        }
-
-        /* Left: Brand */
-        .nav-left {
-          display: flex;
-          align-items: center;
-        }
-
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          text-decoration: none;
-        }
-
-        .brand-logo-img {
-          width: 36px;
-          height: 36px;
-          object-fit: contain;
-        }
-
-        .brand-name {
-          color: #FF385C;
-          font-size: 26px;
-          font-weight: 900;
-          letter-spacing: -1px;
-          line-height: 1;
-          margin-bottom: 4px; /* Поднимаем текст с помощью margin, не ломая flexbox */
-        }
-
-        /* Center: Figma Search */
-        .nav-center {
-          display: flex;
-          justify-content: center;
-        }
-
-        .figma-search-bar {
-          background: white;
-          border-radius: 999px;
-          display: flex;
-          align-items: center;
-          padding: 6px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          border: 1px solid #ebebeb;
-          transition: box-shadow 0.2s;
-        }
-
-        .figma-search-bar:hover {
-          box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-        }
-
-        .search-section {
-          padding: 0 16px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-        }
-
-        .flex-2 { width: 220px; }
-        .flex-1 { width: 100px; }
-
-        .search-input {
-          width: 100%;
-          border: none;
-          outline: none;
-          font-size: 14px;
-          color: #222;
-          background: transparent;
-          font-weight: 500;
-        }
-        
-        .search-input::placeholder { color: #888; font-weight: 400; }
-
-        .search-divider {
-          width: 1px;
-          height: 24px;
-          background: #ebebeb;
-        }
-
-        .search-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: #FF385C; /* Акцентный цвет Airbnb/Newsy */
-          border: none;
-          display: grid;
-          place-items: center;
-          cursor: pointer;
-          flex-shrink: 0;
-          transition: background 0.2s;
-          margin-left: 8px;
-        }
-        
-        .search-btn:hover { background: #E31C5F; }
-
-        /* Right: Actions */
-        .nav-right {
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .host-link {
-          padding: 12px 14px;
-          border-radius: 24px;
-          text-decoration: none;
-          color: #222222;
-          font-size: 14px;
-          font-weight: 600;
-          transition: background 0.2s ease;
-        }
-
-        .host-link:hover { background: #f7f7f7; }
-
-        .globe-btn {
-          width: 46px;
-          height: 46px;
-          border-radius: 50%;
-          background: transparent;
-          border: none;
-          display: grid;
-          place-items: center;
-          color: #222222;
-          cursor: pointer;
-          transition: background 0.2s ease;
-        }
-
-        .globe-btn:hover { background: #f7f7f7; }
-
-        /* Profile Capsule Airbnb Style */
-        .user-menu-container {
-          position: relative;
-          margin-left: 8px;
-        }
-
-        .user-dropdown-pill {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 5px 5px 5px 12px;
-          border: 1px solid #DDDDDD;
-          border-radius: 21px;
-          background: white;
-          cursor: pointer;
-          transition: box-shadow 0.2s ease;
-        }
-
-        .user-dropdown-pill:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.18); }
-
-        .avatar-circle {
-          width: 30px;
-          height: 30px;
-          background: #222222;
-          color: white;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          font-size: 12px;
-          font-weight: 700;
-        }
-
-        .avatar-circle.default { background: #717171; }
-
-        /* Dropdown */
-        .dropdown-menu {
-          position: absolute;
-          top: calc(100% + 12px);
-          right: 0;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 2px 16px rgba(0,0,0,0.12);
-          border: 1px solid #DDDDDD;
-          width: 240px;
-          padding: 8px 0;
-          display: flex;
-          flex-direction: column;
-          z-index: 100;
-          animation: slideDown 0.2s ease forwards;
-        }
-
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .menu-item {
-          padding: 12px 16px;
-          font-size: 14px;
-          color: #222222;
-          text-decoration: none;
-          text-align: left;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          width: 100%;
-          transition: background 0.2s ease;
-        }
-
-        .menu-item:hover { background: #f7f7f7; }
-        .font-bold { font-weight: 600; }
-        .menu-divider { height: 1px; background: #dddddd; margin: 8px 0; border: none; }
-
-        /* Responsive */
         @media (max-width: 1000px) {
-          .hide-mobile { display: none; }
-          .nav-wrapper { padding: 0 20px; }
+          .hide-mobile { display: none !important; }
         }
       `}</style>
-    </header>
+    </>
   );
+}
+
+function MenuItem({ href, icon, label, bold, onClick }: {
+  href: string; icon: React.ReactNode; label: string; bold?: boolean; onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '11px 16px', fontSize: 14,
+        color: '#222', textDecoration: 'none',
+        background: hovered ? '#f7f7f7' : 'transparent',
+        fontWeight: bold ? 600 : 500,
+        transition: 'background 0.15s',
+      }}
+    >
+      <span style={{ color: '#666', display: 'flex', alignItems: 'center' }}>{icon}</span>
+      {label}
+    </Link>
+  );
+}
+
+function MenuDivider() {
+  return <div style={{ height: 1, background: '#f0f0f0', margin: '4px 0' }} />;
 }

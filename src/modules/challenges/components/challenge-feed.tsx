@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Filter, Sparkles, MapPin, Grid, List } from 'lucide-react';
+import { Search, Filter, Sparkles } from 'lucide-react';
 import { Challenge, ChallengeCategory } from '../types';
 import { ChallengeCard } from './challenge-card';
 
@@ -77,7 +77,6 @@ const MOCK_CHALLENGES: Challenge[] = [
 export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters = false }) => {
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
 
   const filteredChallenges = MOCK_CHALLENGES.filter((c) => {
     const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
@@ -94,11 +93,6 @@ export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters
               Каталог <span className="highlight">Активностей</span>
               <Sparkles className="sparkle-icon" size={24} />
             </h1>
-            <div className="view-toggle">
-              <button className={viewType === 'grid' ? 'active' : ''} onClick={() => setViewType('grid')}><Grid size={18}/></button>
-              <button className={viewType === 'list' ? 'active' : ''} onClick={() => setViewType('list')}><List size={18}/></button>
-              <button className="map-btn"><MapPin size={18}/> Карта</button>
-            </div>
           </div>
 
           <div className="search-bar">
@@ -135,7 +129,7 @@ export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters
         </header>
       )}
 
-      <div className={`challenges-grid ${viewType}`}>
+      <div className="challenges-grid">
         {filteredChallenges.map((challenge) => (
           <ChallengeCard key={challenge.id} challenge={challenge} />
         ))}
@@ -177,39 +171,6 @@ export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters
 
         .highlight { color: #ff385c; }
         .sparkle-icon { color: #ff8c00; }
-
-        .view-toggle {
-          display: flex;
-          background: var(--bg-accent);
-          padding: 4px;
-          border-radius: 12px;
-          gap: 4px;
-        }
-
-        .view-toggle button {
-          background: transparent;
-          border: none;
-          padding: 8px;
-          border-radius: 8px;
-          cursor: pointer;
-          color: var(--text-muted);
-        }
-
-        .view-toggle button.active {
-          background: white;
-          color: var(--text);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .map-btn {
-          border-left: 1px solid var(--line) !important;
-          border-radius: 0 !important;
-          margin-left: 4px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-weight: 700;
-        }
 
         .search-bar {
           position: relative;
@@ -283,10 +244,6 @@ export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters
           grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
           gap: 24px;
           padding: 0 16px;
-        }
-
-        .challenges-grid.list {
-          grid-template-columns: 1fr;
         }
 
         .empty-state {

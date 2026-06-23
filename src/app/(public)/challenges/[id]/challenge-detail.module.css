@@ -142,8 +142,12 @@
   flex-shrink: 0;
 }
 
+.statAchievement {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
 .statReward {
-  background: linear-gradient(135deg, #ff385c, #ff8c00);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 
 .statUsers {

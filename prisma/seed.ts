@@ -16,31 +16,38 @@ const prisma = new PrismaClient();
 async function main() {
   const now = new Date();
 
-  // Seed permissions
-  await prisma.permission.createMany({
-    data: [
-      { key: 'challenge.create', name: 'Создание челленджей', createdAt: now, updatedAt: now },
-      { key: 'challenge.update', name: 'Редактирование челленджей', createdAt: now, updatedAt: now },
-      { key: 'challenge.publish', name: 'Публикация челленджей', createdAt: now, updatedAt: now },
-      { key: 'challenge.delete', name: 'Удаление челленджей', createdAt: now, updatedAt: now },
-      { key: 'user.read', name: 'Просмотр пользователей', createdAt: now, updatedAt: now },
-      { key: 'user.write', name: 'Изменение пользователей', createdAt: now, updatedAt: now },
-      { key: 'admin.access', name: 'Доступ в админку', createdAt: now, updatedAt: now },
-    ],
-    skipDuplicates: true,
-  });
+  const permissionData = [
+    { key: 'challenge.create', name: 'Создание челленджей' },
+    { key: 'challenge.update', name: 'Редактирование челленджей' },
+    { key: 'challenge.publish', name: 'Публикация челленджей' },
+    { key: 'challenge.delete', name: 'Удаление челленджей' },
+    { key: 'user.read', name: 'Просмотр пользователей' },
+    { key: 'user.write', name: 'Изменение пользователей' },
+    { key: 'admin.access', name: 'Доступ в админку' },
+  ];
 
-  // Seed roles
-  await prisma.role.createMany({
-    data: [
-      { key: 'admin', name: 'Администратор', description: 'Полный доступ к системе', createdAt: now, updatedAt: now },
-      { key: 'user', name: 'Пользователь', description: 'Базовый доступ', createdAt: now, updatedAt: now },
-      { key: 'organizer', name: 'Организатор', description: 'Создание и управление челленджами', createdAt: now, updatedAt: now },
-    ],
-    skipDuplicates: true,
-  });
+  for (const p of permissionData) {
+    await prisma.permission.upsert({
+      where: { key: p.key },
+      update: { name: p.name },
+      create: { key: p.key, name: p.name, createdAt: now, updatedAt: now },
+    });
+  }
 
-  // Link admin role to all permissions
+  const roleData = [
+    { key: 'admin', name: 'Администратор', description: 'Полный доступ к системе' },
+    { key: 'user', name: 'Пользователь', description: 'Базовый доступ' },
+    { key: 'organizer', name: 'Организатор', description: 'Создание и управление челленджами' },
+  ];
+
+  for (const r of roleData) {
+    await prisma.role.upsert({
+      where: { key: r.key },
+      update: { name: r.name, description: r.description },
+      create: { key: r.key, name: r.name, description: r.description, createdAt: now, updatedAt: now },
+    });
+  }
+
   const allPermissions = await prisma.permission.findMany();
   const adminRole = await prisma.role.findUnique({ where: { key: 'admin' } });
 
@@ -54,7 +61,6 @@ async function main() {
     }
   }
 
-  // Seed default organizer
   const existingOrganizers = await prisma.organizer.count();
   if (existingOrganizers === 0) {
     await prisma.organizer.create({
@@ -68,7 +74,6 @@ async function main() {
     });
   }
 
-  // Seed default admin user
   const admin = await prisma.user.findFirst({ where: { email: 'admin@newsy.ru' } });
   if (!admin) {
     await prisma.user.create({
@@ -88,7 +93,6 @@ async function main() {
     console.log('Admin created: admin@newsy.ru / Newsy123!');
   }
 
-  // Seed default user
   const user = await prisma.user.findFirst({ where: { email: 'user@newsy.ru' } });
   if (!user) {
     await prisma.user.create({

@@ -6,7 +6,9 @@ import { prisma } from '@/lib/db';
 import { clearAuthSession, setAuthSession } from '@/lib/session';
 
 import { createAuthService } from './services';
+import { hashPassword } from './services/password-hash';
 import { loginCredentialsSchema } from './validators';
+
 
 export interface AuthActionState {
   error?: string | null;
@@ -45,4 +47,49 @@ export async function loginAction(
 export async function logoutAction(): Promise<void> {
   await clearAuthSession();
   redirect('/');
+}
+
+export async function registerAction(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const firstName = (formData.get('firstName') as string)?.trim();
+  const lastName  = (formData.get('lastName')  as string)?.trim();
+  const email     = (formData.get('email')     as string)?.trim().toLowerCase();
+  const password  = (formData.get('password')  as string);
+  const confirm   = (formData.get('confirm')   as string);
+
+  if (!firstName || !lastName || !email || !password) {
+    return { error: 'Заполните все поля.' };
+  }
+  if (password.length < 6) {
+    return { error: 'Пароль должен быть не менее 6 символов.' };
+  }
+  if (password !== confirm) {
+    return { error: 'Пароли не совпадают.' };
+  }
+
+  try {
+    const existing = await prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      return { error: 'Этот email уже зарегистрирован.' };
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        passwordHash: hashPassword(password),
+        status: 'ACTIVE',
+      }
+    });
+
+    const authService = createAuthService(prisma);
+    const session = await authService.login({ identifier: email, password, provider: 'email' });
+    await setAuthSession(session);
+    redirect('/');
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Ошибка регистрации.' };
+  }
 }

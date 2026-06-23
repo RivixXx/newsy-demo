@@ -20,7 +20,7 @@ export function createPaymentService(
       if (!challenge) throw new Error('Challenge not found');
       if (challenge.status !== 'DRAFT') throw new Error('Only draft challenges can be published');
 
-      const amount = challenge.publishPrice || '1000.00';
+      const amount = challenge.publishPrice ?? 1000;
 
       const payment = await yookassa.createPayment({
         amount: {
@@ -44,7 +44,7 @@ export function createPaymentService(
         data: {
           organizerId: challenge.organizerId,
           challengeId: challengeId,
-          amount: amount,
+          amount: Number(amount),
           currency: 'RUB',
           provider: 'YOOKASSA',
           providerId: payment.id,

@@ -36,8 +36,7 @@ const styles: Record<string, CSSProperties> = {
     padding: '0 0 48px'
   },
   publicContent: {
-    width: 'min(1200px, calc(100% - 32px))',
-    margin: '0 auto'
+    width: '100%',
   },
   content: {
     width: '100%'

@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, Zap, ArrowLeft, Trophy, Clock } from 'lucide-react';
+import { Users, ArrowLeft, Trophy, Clock, Gift } from 'lucide-react';
 import styles from './challenge-detail.module.css';
+
 
 export default function ChallengeDetailContent({ challengeId }: { challengeId: string }) {
   const steps = [
@@ -10,27 +11,27 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
       title: 'Регистрация',
       description: 'Зарегистрируйтесь на забег в приложении Nike.',
       type: 'ДЕЙСТВИЕ',
-      points: 50,
     },
     {
       title: 'Прибытие на точку',
       description: 'Придите к главному входу в парк Горького.',
       type: 'ГЕО',
-      points: 50,
     },
     {
       title: 'Фото с разминки',
       description: 'Сделайте селфи на месте старта с хэштегом #NikeRun',
       type: 'ФОТО',
-      points: 100,
     },
     {
       title: 'Финиш',
       description: 'Зафиксируйте время прохождения дистанции в трекере.',
       type: 'ДЕЙСТВИЕ',
-      points: 100,
     },
   ];
+
+  const participantsCount = 120;
+  const maxParticipants = 200;
+  const availableSlots = maxParticipants - participantsCount;
 
   return (
     <div className={styles.pageWrapper}>
@@ -71,12 +72,21 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
       <main className={styles.mainContent}>
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.statReward}`}>
-              <Zap size={24} color="white" />
+            <div className={`${styles.statIcon} ${styles.statAchievement}`}>
+              <Trophy size={24} color="white" />
             </div>
             <div className={styles.statText}>
-              <span className={styles.statVal}>300 БАЛЛОВ</span>
-              <span className={styles.statLbl}>Общая награда</span>
+              <span className={styles.statVal}>Утренний бегун</span>
+              <span className={styles.statLbl}>Достижение</span>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={`${styles.statIcon} ${styles.statReward}`}>
+              <Gift size={24} color="white" />
+            </div>
+            <div className={styles.statText}>
+              <span className={styles.statVal}>Кроссовки Nike Air Max</span>
+              <span className={styles.statLbl}>Награда</span>
             </div>
           </div>
           <div className={styles.statCard}>
@@ -84,8 +94,12 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
               <Users size={24} color="white" />
             </div>
             <div className={styles.statText}>
-              <span className={styles.statVal}>1 240</span>
-              <span className={styles.statLbl}>Участников</span>
+              <span className={styles.statVal}>
+                {participantsCount} / {maxParticipants}
+              </span>
+              <span className={styles.statLbl}>
+                Занято · <span style={{color: availableSlots <= 10 ? '#ef4444' : 'inherit'}}>{availableSlots} свободно</span>
+              </span>
             </div>
           </div>
           <div className={styles.statCard}>
@@ -113,8 +127,10 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
                 <Trophy size={18} /> Что вы получите
               </h3>
               <p>
-                Баллы можно обменять на мерч от Nike, скидку 30% в магазинах-партнерах или
-                перевести на благотворительность.
+                <strong>Достижение «Утренний бегун»</strong> — подтверждение вашего спортивного духа.
+                <br /><br />
+                <strong>Награда: кроссовки Nike Air Max</strong> (модель на выбор победителя) или
+                скидка 30% в магазинах-партнёрах.
               </p>
             </div>
           </div>
@@ -133,7 +149,6 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
                   <div className={`${styles.timelineContent} ${styles.glassCard}`}>
                     <div className={styles.stepHeader}>
                       <span className={styles.stepTypeBadge}>{step.type}</span>
-                      <span className={styles.stepPoints}>+{step.points} баллов</span>
                     </div>
                     <h3 className={styles.stepTitle}>{step.title}</h3>
                     <p className={styles.stepDesc}>{step.description}</p>
@@ -148,11 +163,11 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
       <div className={styles.stickyActionBar}>
         <div className={styles.actionBarContent}>
           <div className={styles.actionPrice}>
-            <span>Призовой фонд:</span>
-            <strong>300 баллов</strong>
+            <span>🏆 Достижение: Утренний бегун</span>
+            <strong>🎁 Кроссовки Nike Air Max</strong>
           </div>
           <button className={styles.joinBtn}>
-            Начать челлендж <Zap size={20} fill="currentColor" />
+            Участвовать <Trophy size={20} fill="currentColor" />
           </button>
         </div>
       </div>

@@ -5,53 +5,89 @@ import Link from 'next/link';
 
 import type { AuthActionState } from '@/modules/identity/actions';
 
-type LoginFormProps = {
+type RegisterFormProps = {
   action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState>;
 };
 
-export function LoginForm({ action }: LoginFormProps) {
+export function RegisterForm({ action }: RegisterFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.title}>С возвращением!</h1>
-          <p style={styles.subtitle}>Войдите в NEWSY, чтобы продолжить свои челенджи</p>
+          <h1 style={styles.title}>Создать аккаунт</h1>
+          <p style={styles.subtitle}>Зарегистрируйтесь в NEWSY, чтобы участвовать в челленджи</p>
         </div>
 
         <form action={formAction} style={styles.form}>
+          <div style={styles.row}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Имя</label>
+              <input
+                name="firstName"
+                type="text"
+                placeholder="Алексей"
+                style={styles.input}
+                required
+              />
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Фамилия</label>
+              <input
+                name="lastName"
+                type="text"
+                placeholder="Иванов"
+                style={styles.input}
+                required
+              />
+            </div>
+          </div>
+
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Email или Телефон</label>
-            <input 
-              name="identifier" 
-              type="text" 
-              placeholder="demo@newsy.ru" 
-              style={styles.input} 
-              required 
+            <label style={styles.label}>Email</label>
+            <input
+              name="email"
+              type="email"
+              placeholder="demo@newsy.ru"
+              style={styles.input}
+              required
             />
           </div>
+
           <div style={styles.inputGroup}>
             <label style={styles.label}>Пароль</label>
-            <input 
-              name="password" 
-              type="password" 
-              placeholder="••••••••" 
-              style={styles.input} 
-              required 
+            <input
+              name="password"
+              type="password"
+              placeholder="Минимум 6 символов"
+              style={styles.input}
+              required
+              minLength={6}
             />
           </div>
-          <input type="hidden" name="provider" value="email" />
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Повторите пароль</label>
+            <input
+              name="confirm"
+              type="password"
+              placeholder="Повторите пароль"
+              style={styles.input}
+              required
+              minLength={6}
+            />
+          </div>
 
           {state.error && <p style={styles.error}>{state.error}</p>}
 
           <button type="submit" disabled={isPending} style={styles.submit}>
-            {isPending ? 'Входим...' : 'Войти в аккаунт'}
+            {isPending ? 'Регистрируемся...' : 'Зарегистрироваться'}
           </button>
         </form>
 
         <div style={styles.footer}>
-          <p>Нет аккаунта? <Link href="/register" style={{ color: '#ff385c', fontWeight: 700 }}>Зарегистрироваться</Link></p>
+          <p>Уже есть аккаунт? <Link href="/login" style={{ color: '#ff385c', fontWeight: 700 }}>Войти</Link></p>
         </div>
       </div>
     </div>
@@ -66,7 +102,7 @@ const styles = {
     padding: '20px'
   },
   card: {
-    width: 'min(420px, 100%)',
+    width: 'min(480px, 100%)',
     padding: '40px',
     borderRadius: '32px',
     background: '#fff',
@@ -89,7 +125,12 @@ const styles = {
   },
   form: {
     display: 'grid',
-    gap: '20px'
+    gap: '18px'
+  },
+  row: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '14px'
   },
   inputGroup: {
     display: 'grid',
@@ -127,7 +168,7 @@ const styles = {
     fontSize: '14px'
   },
   footer: {
-    marginTop: '32px',
+    marginTop: '28px',
     textAlign: 'center' as const,
     fontSize: '14px',
     color: 'var(--text-muted)'
