@@ -9,6 +9,7 @@ import {
   Sparkles, ArrowRight, Star, Target, X, Upload, Eye
 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { createChallengeAction } from '@/modules/challenges/actions/create';
 
 type StepType = 'action' | 'photo' | 'geo' | 'question';
 
@@ -67,6 +68,8 @@ export default function NewChallengePage() {
   });
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [preview, setPreview] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const update = (patch: Partial<FormData>) => setData(d => ({ ...d, ...patch }));
 
@@ -87,6 +90,44 @@ export default function NewChallengePage() {
     const [item] = arr.splice(from, 1);
     arr.splice(to, 0, item);
     update({ steps: arr });
+  };
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    setError(null);
+    try {
+      const result = await createChallengeAction({
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        coverImage: data.coverImage,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        maxParticipants: data.maxParticipants,
+        entryFee: data.entryFee,
+        isCooperative: data.isCooperative,
+        rewardTitle: data.rewardTitle,
+        rewardDescription: data.rewardDescription,
+        steps: data.steps.map(s => ({
+          type: s.type,
+          title: s.title,
+          description: s.description,
+          points: s.points,
+          options: s.options,
+          correctIndex: s.correctIndex,
+          location: s.location,
+        })),
+      });
+      if (result?.error) {
+        setError(result.error);
+      } else if (result?.success) {
+        window.location.href = '/';
+      }
+    } catch (e) {
+      setError('Ошибка сети');
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const totalPoints = data.steps.reduce((s, st) => s + st.points, 0);
@@ -400,13 +441,14 @@ export default function NewChallengePage() {
             <div className="cstr-nav">
               {step > 0 && <button className="cstr-nav-btn cstr-nav-btn--back" onClick={() => setStep(s => s - 1)}><ChevronLeft size={16} /> Назад</button>}
               <div style={{ flex: 1 }} />
+              {error && <p style={{ color: '#ef4444', fontSize: 13, fontWeight: 700, marginRight: 12 }}>{error}</p>}
               {step < 4 ? (
                 <button className="cstr-nav-btn cstr-nav-btn--next" disabled={!canNext} onClick={() => setStep(s => s + 1)}>
                   Далее <ChevronRight size={16} />
                 </button>
               ) : (
-                <button className="cstr-nav-btn cstr-nav-btn--publish">
-                  <Zap size={16} /> Опубликовать челендж
+                <button className="cstr-nav-btn cstr-nav-btn--publish" onClick={handlePublish} disabled={publishing}>
+                  {publishing ? 'Публикуем...' : <><Zap size={16} /> Опубликовать челендж</>}
                 </button>
               )}
             </div>
