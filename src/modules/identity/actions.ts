@@ -10,13 +10,17 @@ import { hashPassword } from './services/password-hash';
 import { loginCredentialsSchema } from './validators';
 
 
+function isRedirect(err: unknown): boolean {
+  return err instanceof Error && typeof (err as any).digest === 'string' && (err as any).digest.startsWith('NEXT_REDIRECT');
+}
+
 export interface AuthActionState {
   error?: string | null;
+  success?: string | null;
 }
 
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
-
   return typeof value === 'string' ? value : '';
 }
 
@@ -40,6 +44,7 @@ export async function loginAction(
     await setAuthSession(session);
     redirect('/');
   } catch (error) {
+    if (isRedirect(error)) throw error;
     return { error: error instanceof Error ? error.message : 'Не удалось выполнить вход.' };
   }
 }
@@ -75,13 +80,18 @@ export async function registerAction(
       return { error: 'Этот email уже зарегистрирован.' };
     }
 
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email,
         firstName,
         lastName,
         passwordHash: hashPassword(password),
         status: 'ACTIVE',
+        roles: {
+          create: {
+            role: { connect: { key: 'user' } },
+          },
+        },
       }
     });
 
@@ -90,6 +100,7 @@ export async function registerAction(
     await setAuthSession(session);
     redirect('/');
   } catch (error) {
+    if (isRedirect(error)) throw error;
     return { error: error instanceof Error ? error.message : 'Ошибка регистрации.' };
   }
 }
