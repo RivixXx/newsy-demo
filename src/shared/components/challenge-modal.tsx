@@ -875,11 +875,37 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         }
 
         @media (max-width: 768px) {
+          .modal-shell { padding: 10px; }
           .modal-inner {
             grid-template-columns: 1fr;
             max-height: 95vh;
+            border-radius: 20px;
           }
-          .modal-left { max-height: 40vh; }
+          .modal-left { max-height: 35vh; }
+          .modal-img-wrap { height: 160px; }
+          .modal-title { font-size: 18px; padding-right: 40px; }
+          .modal-title-block { padding: 16px 16px 0; }
+          .modal-tabs { padding: 12px 16px 0; }
+          .stages-list { padding: 12px 16px; }
+          .chat-history { padding: 12px 16px; }
+          .chat-input-row { padding: 10px 16px; }
+          .modal-action-bar { padding: 12px 16px; flex-direction: column; gap: 10px; }
+          .join-btn { width: 100%; text-align: center; }
+        }
+
+        @media (max-width: 480px) {
+          .modal-shell { padding: 0; }
+          .modal-inner { border-radius: 16px; max-height: 100vh; }
+          .modal-left { max-height: 30vh; }
+          .modal-img-wrap { height: 130px; }
+          .modal-meta { padding: 12px 14px; }
+          .modal-rewards-block { padding: 12px 14px; }
+          .modal-desc { padding: 12px 14px; }
+          .modal-refund { padding: 10px 14px; }
+          .stage-header { padding: 10px 12px; }
+          .stage-body { padding: 10px 12px 12px; }
+          .stage-actions { flex-direction: column; }
+          .stage-btn { width: 100%; justify-content: center; }
         }
       `}</style>
     </>

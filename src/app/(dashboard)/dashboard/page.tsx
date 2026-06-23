@@ -35,14 +35,14 @@ export default async function DashboardPage() {
   return (
     <PageShell>
       <main style={styles.page}>
-        <section style={styles.card}>
+        <section className="dash-card" style={styles.card}>
           <p style={styles.kicker}>Личный кабинет</p>
           <h1 style={styles.title}>Рабочее пространство NEWSY</h1>
           <p style={styles.lead}>
             Отслеживайте свой прогресс, управляйте челенджами и просматривайте достижения в реальном времени.
           </p>
 
-          <div style={styles.grid}>
+          <div className="dash-grid" style={styles.grid}>
             <div style={styles.panel}>
               <strong>Пользователь</strong>
               <span>{stats.email}</span>
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div style={styles.actions}>
+          <div className="dash-actions" style={styles.actions}>
             <Link href="/" style={styles.primaryAction}>
               Исследовать челенджи
             </Link>
@@ -74,6 +74,19 @@ export default async function DashboardPage() {
           </div>
         </section>
       </main>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .dash-card { padding: 20px !important; border-radius: 20px !important; }
+          .dash-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .dash-card { padding: 16px !important; border-radius: 16px !important; }
+          .dash-grid { grid-template-columns: 1fr !important; }
+          .dash-actions { flex-direction: column; }
+          .dash-actions a { width: 100%; text-align: center; }
+        }
+      `}</style>
     </PageShell>
   );
 }
@@ -82,7 +95,8 @@ const styles: Record<string, CSSProperties> = {
   page: {
     display: 'grid',
     placeItems: 'center',
-    minHeight: '60vh'
+    minHeight: '60vh',
+    padding: '20px clamp(12px, 3vw, 24px)',
   },
   card: {
     width: 'min(920px, 100%)',

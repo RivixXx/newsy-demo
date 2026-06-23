@@ -1028,9 +1028,32 @@ export default function PublicHomePage() {
         @media (max-width: 900px) {
           .catalog-main { padding: 20px 16px 60px; }
           .header-top { flex-direction: column; align-items: flex-start; }
-          .page-tabs { align-self: stretch; }
+          .page-title { font-size: 26px; }
           .search-zone { flex-direction: column; align-items: stretch; }
           .search-right { justify-content: space-between; }
+          .card-image-box { height: 150px; }
+        }
+
+        @media (max-width: 640px) {
+          .catalog-main { padding: 16px 12px 60px; gap: 28px; }
+          .page-title { font-size: 22px; letter-spacing: -0.5px; }
+          .search-box { min-width: 0; }
+          .search-input { font-size: 14px; }
+          .filter-panel { padding: 16px; gap: 12px; }
+          .filter-row { flex-direction: column; align-items: stretch; }
+          .filter-label { min-width: 0; }
+          .filter-input { width: 100%; }
+          .filter-actions { flex-direction: column; }
+          .filter-reset, .filter-apply { width: 100%; text-align: center; }
+          .grid-layout { gap: 14px; }
+          .cat-pill { padding: 8px 14px; font-size: 13px; }
+          .carousel-title { font-size: 18px; }
+        }
+
+        @media (max-width: 480px) {
+          .page-title { font-size: 20px; }
+          .categories-scroll { gap: 8px; }
+          .cat-pill { padding: 7px 12px; font-size: 12px; }
         }
       `}</style>
     </PageShell>

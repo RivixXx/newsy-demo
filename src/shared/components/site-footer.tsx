@@ -56,14 +56,14 @@ export function SiteFooter() {
 
       <style jsx>{`
         .site-footer {
-          background-color: #222222; /* Темно-серый почти черный цвет из макета */
+          background-color: #222222;
           color: #ffffff;
-          padding: 80px 40px 40px;
+          padding: 60px clamp(16px, 3vw, 40px) 32px;
           font-family: system-ui, -apple-system, sans-serif;
         }
 
         .footer-content {
-          max-width: 1440px;
+          max-width: 1200px;
           margin: 0 auto;
           display: grid;
           grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -137,7 +137,7 @@ export function SiteFooter() {
 
         /* Bottom Row */
         .footer-bottom {
-          max-width: 1440px;
+          max-width: 1200px;
           margin: 0 auto;
           display: flex;
           align-items: center;

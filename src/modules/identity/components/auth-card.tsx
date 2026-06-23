@@ -11,17 +11,17 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
   const [showPass, setShowPass] = useState(false);
 
   return (
-    <div style={s.wrapper}>
+    <div className="auth-wrapper" style={s.wrapper}>
       {/* Left panel — brand */}
-      <div style={s.leftPanel}>
+      <div className="auth-left" style={s.leftPanel}>
         <div style={s.brandBlock}>
-          <img src="/icon.png" alt="" style={{ width: 56, height: 56 }} />
-          <h1 style={s.brandTitle}>NEWSY</h1>
-          <p style={s.brandSubtitle}>
+          <img src="/icon.png" alt="" style={{ width: 56, height: 56 }} className="brand-logo" />
+          <h1 className="brand-title" style={s.brandTitle}>NEWSY</h1>
+          <p className="brand-subtitle" style={s.brandSubtitle}>
             Платформа интерактивных челенджей.
             <br />Растей над собой, соревнуйся с друзьями и получай реальные награды.
           </p>
-          <div style={s.statsRow}>
+          <div className="stats-row" style={s.statsRow}>
             <Stat num="50k+" label="участников" />
             <Stat num="1.2k" label="челенджей" />
             <Stat num="4.9" label="рейтинг" />
@@ -30,8 +30,8 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
       </div>
 
       {/* Right panel — form */}
-      <div style={s.rightPanel}>
-        <div style={s.formContainer}>
+      <div className="auth-right" style={s.rightPanel}>
+        <div className="auth-form-container" style={s.formContainer}>
           {/* Tabs */}
           <div style={s.tabs}>
             <button
@@ -87,6 +87,23 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        .reg-name-row {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        @media (max-width: 860px) {
+          .auth-wrapper { flex-direction: column !important; }
+          .auth-left { flex: 0 0 auto !important; min-height: 180px !important; padding: 36px 24px !important; }
+          .auth-left .brand-subtitle, .auth-left .stats-row { display: none !important; }
+          .auth-left .brand-title { font-size: 36px !important; margin: 8px 0 0 !important; }
+          .auth-right { padding: 24px 16px !important; }
+        }
+        @media (max-width: 480px) {
+          .auth-left { min-height: 120px !important; padding: 24px 16px !important; }
+          .auth-left .brand-title { font-size: 28px !important; }
+          .auth-left .brand-logo { width: 40px !important; height: 40px !important; }
+          .reg-name-row { grid-template-columns: 1fr !important; }
+          .auth-form-title { font-size: 22px !important; }
+        }
       `}</style>
     </div>
   );
@@ -100,7 +117,7 @@ function LoginForm({ action }: { action: (state: AuthActionState, formData: Form
 
   return (
     <div>
-      <h2 style={s.formTitle}>С возвращением!</h2>
+      <h2 className="auth-form-title" style={s.formTitle}>С возвращением!</h2>
       <p style={s.formSubtitle}>Войдите в NEWSY, чтобы продолжить свои челенджи</p>
 
       <form action={formAction} style={s.form}>
@@ -131,11 +148,11 @@ function RegisterForm({ action }: { action: (state: AuthActionState, formData: F
 
   return (
     <div>
-      <h2 style={s.formTitle}>Создать аккаунт</h2>
+      <h2 className="auth-form-title" style={s.formTitle}>Создать аккаунт</h2>
       <p style={s.formSubtitle}>Зарегистрируйтесь, чтобы участвовать в челленджи</p>
 
       <form action={formAction} style={s.form}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="reg-name-row">
           <InputField icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
           <InputField icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
         </div>

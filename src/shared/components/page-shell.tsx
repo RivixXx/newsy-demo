@@ -26,14 +26,14 @@ export function PageShell({ children, variant = 'compact' }: PageShellProps) {
 
 const styles: Record<string, CSSProperties> = {
   shell: {
-    width: 'min(1200px, calc(100% - 32px))',
+    width: '100%',
     margin: '0 auto',
-    padding: '20px 0 48px'
+    padding: '0'
   },
   publicShell: {
     width: '100%',
     margin: '0',
-    padding: '0 0 48px'
+    padding: '0'
   },
   publicContent: {
     width: '100%',
