@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { getCurrentAuthSession } from '@/lib/session';
+import { SessionProvider } from '@/shared/components/session-provider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -20,14 +22,20 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const session = await getCurrentAuthSession();
+
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <body>
+        <SessionProvider session={session}>
+          {children}
+        </SessionProvider>
+      </body>
     </html>
   );
 }

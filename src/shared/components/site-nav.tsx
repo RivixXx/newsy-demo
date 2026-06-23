@@ -5,14 +5,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, User, Search, UserCircle, LayoutDashboard, Plus, Shield, LogOut, HelpCircle } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
+import { useSession } from '@/shared/components/session-provider';
 
 type SiteNavProps = {
   variant?: 'compact' | 'public';
-  session?: any;
 };
 
-export function SiteNav({ variant = 'public', session }: SiteNavProps) {
+export function SiteNav({ variant = 'public' }: SiteNavProps) {
   const pathname = usePathname();
+  const session = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -159,7 +160,7 @@ export function SiteNav({ variant = 'public', session }: SiteNavProps) {
                       <MenuItem href="/dashboard" icon={<LayoutDashboard size={18} />} label="Кабинет" bold onClick={close} />
                       <MenuDivider />
                       <MenuItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
-                      {session.user?.role === 'admin' && (
+                      {session.user?.roles?.includes('admin') && (
                         <MenuItem href="/admin" icon={<Shield size={18} />} label="Админ-панель" onClick={close} />
                       )}
                       <MenuDivider />
