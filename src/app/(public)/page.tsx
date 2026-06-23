@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal, MapPin } from 'lucide-react';
+import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
@@ -241,13 +242,13 @@ const MOCK_CHALLENGES: CatalogChallenge[] = [
 ];
 
 const CATEGORIES = ['Все подряд', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];
-const CATEGORY_ICONS: Record<string, string> = {
-  'Все подряд': '⚡',
-  'Спорт': '🏅',
-  'Обучение': '📚',
-  'Квесты': '🗺️',
-  'Искусство': '🎨',
-  'Технологии': '💡',
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'Все подряд': <IconBolt size={16} />,
+  'Спорт': <IconRun size={16} />,
+  'Обучение': <IconSchool size={16} />,
+  'Квесты': <IconRoute size={16} />,
+  'Искусство': <IconPalette size={16} />,
+  'Технологии': <IconCpu size={16} />,
 };
 
 function toModalChallenge(c: CatalogChallenge): ModalChallenge {
@@ -565,12 +566,12 @@ export default function PublicHomePage() {
     const art = MOCK_CHALLENGES.filter(c => c.category === 'Искусство');
     const tech = MOCK_CHALLENGES.filter(c => c.category === 'Технологии');
 
-    if (recommended.length) sections.push({ title: '⭐ Рекомендовано', challenges: recommended, direction: 'right' });
-    if (sport.length) sections.push({ title: '🏅 Спорт', challenges: sport, direction: 'left' });
-    if (quests.length) sections.push({ title: '🗺️ Квесты', challenges: quests, direction: 'right' });
-    if (education.length) sections.push({ title: '📚 Обучение', challenges: education, direction: 'left' });
-    if (art.length) sections.push({ title: '🎨 Искусство', challenges: art, direction: 'right' });
-    if (tech.length) sections.push({ title: '💡 Технологии', challenges: tech, direction: 'left' });
+    if (recommended.length) sections.push({ title: 'Рекомендовано', challenges: recommended, direction: 'right' });
+    if (sport.length) sections.push({ title: 'Спорт', challenges: sport, direction: 'left' });
+    if (quests.length) sections.push({ title: 'Квесты', challenges: quests, direction: 'right' });
+    if (education.length) sections.push({ title: 'Обучение', challenges: education, direction: 'left' });
+    if (art.length) sections.push({ title: 'Искусство', challenges: art, direction: 'right' });
+    if (tech.length) sections.push({ title: 'Технологии', challenges: tech, direction: 'left' });
   }
 
   return (

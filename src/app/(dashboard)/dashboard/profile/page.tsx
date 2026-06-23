@@ -11,6 +11,10 @@ import {
   ArrowUpRight, Eye, Heart, BarChart3, Sparkles,
   Camera, Edit3, Copy, ExternalLink, ChevronDown
 } from 'lucide-react';
+import {
+  IconRocket, IconButterfly, IconMoon, IconTrophy,
+  IconRun, IconWorld, IconHeartHandshake, IconSun, IconSchool
+} from '@tabler/icons-react';
 import Link from 'next/link';
 import { logoutAction } from '@/modules/identity/actions';
 
@@ -33,20 +37,20 @@ const ACTIVE_CHALLENGES = [
 ];
 
 const ACHIEVEMENTS = [
-  { id: '1', icon: '🚀', title: 'Первый старт', desc: 'Завершил первый челендж', earned: true, points: 50 },
-  { id: '2', icon: '🦋', title: 'Социальная бабочка', desc: 'Поделился 5 челенджами', earned: true, points: 100 },
-  { id: '3', icon: '🦉', title: 'Полуночник', desc: 'Выполнил задание после полуночи', earned: true, points: 75 },
-  { id: '4', icon: '🏆', title: 'Топ-100', desc: 'Вошёл в топ участников', earned: true, points: 200 },
-  { id: '5', icon: '🏃', title: 'Марафонец', desc: 'Завершить 50 этапов', earned: false, progress: 32, total: 50, points: 500 },
-  { id: '6', icon: '🗺️', title: 'Исследователь', desc: 'Посетить 10 локаций', earned: false, progress: 4, total: 10, points: 300 },
-  { id: '7', icon: '🤝', title: 'Командный игрок', desc: 'Вступить в кооперативный ЧЕ', earned: false, progress: 0, total: 1, points: 150 },
-  { id: '8', icon: '☀️', title: 'Ранняя пташка', desc: 'Завершить ЧЕ до 8 утра', earned: false, progress: 0, total: 1, points: 100 },
+  { id: '1', icon: <IconRocket size={24} />, title: 'Первый старт', desc: 'Завершил первый челендж', earned: true, points: 50 },
+  { id: '2', icon: <IconButterfly size={24} />, title: 'Социальная бабочка', desc: 'Поделился 5 челенджами', earned: true, points: 100 },
+  { id: '3', icon: <IconMoon size={24} />, title: 'Полуночник', desc: 'Выполнил задание после полуночи', earned: true, points: 75 },
+  { id: '4', icon: <IconTrophy size={24} />, title: 'Топ-100', desc: 'Вошёл в топ участников', earned: true, points: 200 },
+  { id: '5', icon: <IconRun size={24} />, title: 'Марафонец', desc: 'Завершить 50 этапов', earned: false, progress: 32, total: 50, points: 500 },
+  { id: '6', icon: <IconWorld size={24} />, title: 'Исследователь', desc: 'Посетить 10 локаций', earned: false, progress: 4, total: 10, points: 300 },
+  { id: '7', icon: <IconHeartHandshake size={24} />, title: 'Командный игрок', desc: 'Вступить в кооперативный ЧЕ', earned: false, progress: 0, total: 1, points: 150 },
+  { id: '8', icon: <IconSun size={24} />, title: 'Ранняя пташка', desc: 'Завершить ЧЕ до 8 утра', earned: false, progress: 0, total: 1, points: 100 },
 ];
 
 const REWARDS = [
-  { id: 'r1', icon: '👟', title: 'Кроссовки Nike Air Max', from: 'Nike Run Club', expiry: '31 авг. 2026', used: false, code: 'NIKE-MAX-2026' },
-  { id: 'r2', icon: '📚', title: 'Подписка Литрес 3 мес.', from: 'Литрес', expiry: '30 сент. 2026', used: false, code: 'LITRES-3M' },
-  { id: 'r3', icon: '☕', title: 'Кофе в подарок', from: 'Coffee Like', expiry: '15 июл. 2026', used: true, code: 'COFFEE-GIFT' },
+  { id: 'r1', icon: <IconRun size={28} />, title: 'Кроссовки Nike Air Max', from: 'Nike Run Club', expiry: '31 авг. 2026', used: false, code: 'NIKE-MAX-2026' },
+  { id: 'r2', icon: <IconSchool size={28} />, title: 'Подписка Литрес 3 мес.', from: 'Литрес', expiry: '30 сент. 2026', used: false, code: 'LITRES-3M' },
+  { id: 'r3', icon: <IconSun size={28} />, title: 'Кофе в подарок', from: 'Coffee Like', expiry: '15 июл. 2026', used: true, code: 'COFFEE-GIFT' },
 ];
 
 const HISTORY = [
@@ -56,11 +60,11 @@ const HISTORY = [
 ];
 
 const ACTIVITY_LOG = [
-  { id: 'a1', text: 'Завершил этап "Пробежка 5км"', time: '2 часа назад', icon: '🏃', color: '#22c55e' },
-  { id: 'a2', text: 'Получил достижение "Полуночник"', time: 'Вчера', icon: '🦉', color: '#f59e0b' },
-  { id: 'a3', text: 'Использовал награду "Кофе в подарок"', time: '3 дня назад', icon: '☕', color: '#8b5cf6' },
-  { id: 'a4', text: 'Вступил в челендж "Йога на закате"', time: '5 дней назад', icon: '🧘', color: '#FF385C' },
-  { id: 'a5', text: 'Поделился челенджем с друзьями', time: '1 неделю назад', icon: '📤', color: '#3b82f6' },
+  { id: 'a1', text: 'Завершил этап "Пробежка 5км"', time: '2 часа назад', icon: <IconRun size={16} />, color: '#22c55e' },
+  { id: 'a2', text: 'Получил достижение "Полуночник"', time: 'Вчера', icon: <IconMoon size={16} />, color: '#f59e0b' },
+  { id: 'a3', text: 'Использовал награду "Кофе в подарок"', time: '3 дня назад', icon: <IconSun size={16} />, color: '#8b5cf6' },
+  { id: 'a4', text: 'Вступил в челендж "Йога на закате"', time: '5 дней назад', icon: <IconRun size={16} />, color: '#FF385C' },
+  { id: 'a5', text: 'Поделился челенджем с друзьями', time: '1 неделю назад', icon: <IconWorld size={16} />, color: '#3b82f6' },
 ];
 
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {

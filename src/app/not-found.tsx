@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Home, ArrowLeft, Search, Zap } from 'lucide-react';
+import { IconRocket, IconTarget, IconRoute, IconBulb, IconStar, IconFlame, IconDeviceGamepad, IconTrophy } from '@tabler/icons-react';
 
-function FloatingEmoji({ emoji, delay, x }: { emoji: string; delay: number; x: number }) {
+function FloatingIcon({ icon, delay, x }: { icon: React.ReactNode; delay: number; x: number }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ function FloatingEmoji({ emoji, delay, x }: { emoji: string; delay: number; x: n
         opacity: visible ? 1 : 0,
       }}
     >
-      {emoji}
+      {icon}
     </div>
   );
 }
@@ -37,15 +38,19 @@ export default function NotFound() {
     return () => clearInterval(interval);
   }, []);
 
-  const emojis = ['🚀', '🎯', '🗺️', '💡', '⭐', '🔥', '🎮', '🏆'];
+  const icons = [
+    <IconRocket size={24} />, <IconTarget size={24} />, <IconRoute size={24} />,
+    <IconBulb size={24} />, <IconStar size={24} />, <IconFlame size={24} />,
+    <IconDeviceGamepad size={24} />, <IconTrophy size={24} />,
+  ];
 
   return (
     <div className="nf-page">
       {/* Animated background */}
       <div className="nf-bg">
         <div className="nf-grid" />
-        {emojis.map((e, i) => (
-          <FloatingEmoji key={i} emoji={e} delay={i * 200} x={10 + (i * 11)} />
+        {icons.map((icon, i) => (
+          <FloatingIcon key={i} icon={icon} delay={i * 200} x={10 + (i * 11)} />
         ))}
       </div>
 
@@ -127,6 +132,7 @@ export default function NotFound() {
           position: absolute;
           top: -40px;
           font-size: 28px;
+          color: rgba(255,56,92,0.3);
           animation: floatDown 6s ease-in-out infinite;
           transition: opacity 0.5s;
         }
