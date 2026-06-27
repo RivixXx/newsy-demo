@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, User, Search, UserCircle, LayoutDashboard, Plus, Shield, LogOut, HelpCircle } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
+import { SearchPanel } from '@/shared/components/search-panel';
 
 type SiteNavProps = {
   variant?: 'compact' | 'public';
@@ -50,22 +51,9 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
           {/* Search Bar */}
           <div className="nav-center">
-            <div className="search-pill">
-              <div className="search-section search-main">
-                <input type="text" placeholder="Найти активность..." className="search-input" />
-              </div>
-              <div className="search-divider" />
-              <div className="search-section search-when hide-mobile">
-                <input type="text" placeholder="Когда" className="search-input" />
-              </div>
-              <div className="search-divider hide-mobile" />
-              <div className="search-section search-where hide-mobile">
-                <input type="text" placeholder="Где" className="search-input" />
-              </div>
-              <button className="search-go">
-                <Search size={16} color="white" strokeWidth={3} />
-              </button>
-            </div>
+            <SearchPanel onSearch={(f) => {
+              window.location.href = '/';
+            }} compact />
           </div>
 
           {/* Right: Capsule */}

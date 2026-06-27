@@ -303,56 +303,17 @@ function CarouselSection({
 // ─── Главный компонент ─────────────────────────────────────────────────────
 export default function PublicHomePage() {
   const [activeCategory, setActiveCategory] = useState('Все подряд');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
-  const [location, setLocation] = useState('Определяем...');
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [filters, setFilters] = useState({
-    priceRange: [0, 100000] as [number, number],
-    dateFrom: '',
-    dateTo: '',
-    onlyOnline: false,
-    onlyFree: false,
-  });
-
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=ru`
-            );
-            const data = await res.json();
-            const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state || 'Неизвестно';
-            setLocation(city);
-          } catch {
-            setLocation('Москва');
-          }
-        },
-        () => {
-          setLocation('Москва');
-        },
-        { timeout: 5000 }
-      );
-    } else {
-      setLocation('Москва');
-    }
-  }, []);
 
   const filtered = MOCK_CHALLENGES.filter(c => {
     const matchCat = activeCategory === 'Все подряд' || c.category === activeCategory;
-    const matchSearch = !searchQuery ||
-      c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.organizer.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCat && matchSearch;
+    return matchCat;
   });
 
   // Сгруппировать по секциям для "Все подряд"
   const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
 
-  if (activeCategory === 'Все подряд' && !searchQuery) {
+  if (activeCategory === 'Все подряд') {
     const recommended = MOCK_CHALLENGES.filter(c => c.isRecommended);
     const sport = MOCK_CHALLENGES.filter(c => c.category === 'Спорт');
     const quests = MOCK_CHALLENGES.filter(c => c.category === 'Квесты');
@@ -383,45 +344,8 @@ export default function PublicHomePage() {
 
       <main className="catalog-main">
 
-        {/* Демо-баннер */}
-        <div style={{
-          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-          border: '1.5px solid #f59e0b',
-          borderRadius: 14,
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          fontSize: 14,
-          fontWeight: 600,
-          color: '#92400e',
-        }}>
-          <span style={{ fontSize: 20 }}>⚠️</span>
-          <div>
-            <strong>Демо-режим</strong> — это демонстрационные данные. Реальные челленджи появятся после запуска платформы.
-          </div>
-        </div>
-
-        {/* Заголовок + переключатель */}
-        <div className="page-header">
-          <div className="header-top">
-            <h1 className="page-title">
-              Каталог <span className="title-accent">Активностей</span> ⚡
-            </h1>
-          </div>
-
-          {/* Airbnb-стиль панель поиска */}
-          <SearchPanel onSearch={(f) => {
-            if (f.category !== 'all') {
-              const catMap: Record<string, string> = { sport: 'Спорт', education: 'Обучение', quests: 'Квесты', art: 'Искусство', tech: 'Технологии' };
-              setActiveCategory(catMap[f.category] || 'Все подряд');
-            } else {
-              setActiveCategory('Все подряд');
-            }
-          }} />
-
-          {/* Категории */}
-          <div className="categories-scroll">
+        {/* Категории */}
+        <div className="categories-scroll">
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
@@ -433,80 +357,9 @@ export default function PublicHomePage() {
             ))}
           </div>
 
-          {/* Панель фильтров */}
-          {showFilterPanel && (
-            <div className="filter-panel">
-              <div className="filter-row">
-                <label className="filter-label">Цена</label>
-                <div className="filter-range">
-                  <input
-                    type="number"
-                    placeholder="От"
-                    className="filter-input"
-                    value={filters.priceRange[0] || ''}
-                    onChange={e => setFilters(f => ({ ...f, priceRange: [Number(e.target.value) || 0, f.priceRange[1]] }))}
-                  />
-                  <span className="filter-dash">—</span>
-                  <input
-                    type="number"
-                    placeholder="До"
-                    className="filter-input"
-                    value={filters.priceRange[1] || ''}
-                    onChange={e => setFilters(f => ({ ...f, priceRange: [f.priceRange[0], Number(e.target.value) || 100000] }))}
-                  />
-                </div>
-              </div>
-              <div className="filter-row">
-                <label className="filter-label">Дата проведения</label>
-                <div className="filter-range">
-                  <input
-                    type="date"
-                    className="filter-input"
-                    value={filters.dateFrom}
-                    onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
-                  />
-                  <span className="filter-dash">—</span>
-                  <input
-                    type="date"
-                    className="filter-input"
-                    value={filters.dateTo}
-                    onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="filter-row">
-                <label className="filter-check">
-                  <input
-                    type="checkbox"
-                    checked={filters.onlyOnline}
-                    onChange={e => setFilters(f => ({ ...f, onlyOnline: e.target.checked }))}
-                  />
-                  Только онлайн
-                </label>
-                <label className="filter-check">
-                  <input
-                    type="checkbox"
-                    checked={filters.onlyFree}
-                    onChange={e => setFilters(f => ({ ...f, onlyFree: e.target.checked }))}
-                  />
-                  Только бесплатные
-                </label>
-              </div>
-              <div className="filter-actions">
-                <button className="filter-reset" onClick={() => setFilters({ priceRange: [0, 100000], dateFrom: '', dateTo: '', onlyOnline: false, onlyFree: false })}>
-                  Сбросить
-                </button>
-                <button className="filter-apply" onClick={() => setShowFilterPanel(false)}>
-                  Применить
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Контент */}
         <div className="catalog-content">
-          {activeCategory === 'Все подряд' && !searchQuery ? (
+          {activeCategory === 'Все подряд' ? (
             // Несколько секций с чередованием направления
             <div className="sections-list">
               {sections.map((sec, idx) => (
