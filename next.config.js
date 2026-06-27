@@ -3,6 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   serverExternalPackages: ['node:crypto'],
+  experimental: {
+    cpus: 1,
+    workerThreads: false,
+  },
   async redirects() {
     return [
       // Policies & legal

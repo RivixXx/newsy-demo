@@ -65,7 +65,7 @@ npx tsx prisma/seed.ts
 
 # 8. Собираем приложение
 echo "Building Next.js..."
-UV_THREADPOOL_SIZE=2 NODE_OPTIONS="--max-old-space-size=512" npm run build
+UV_THREADPOOL_SIZE=1 NODE_OPTIONS="--max-old-space-size=512" NEXT_WORKER_COUNT=1 npm run build
 
 # 9. Настраиваем .htaccess
 echo "Configuring Passenger..."
