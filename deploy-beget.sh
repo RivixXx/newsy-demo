@@ -34,27 +34,39 @@ cd "$APP_DIR"
 echo "Pulling latest changes..."
 git pull origin main
 
-# 3. Устанавливаем зависимости
+# 3. Создаём .env если нет
+if [ ! -f ".env" ]; then
+    echo "Creating .env..."
+    cat > .env << 'ENVEOF'
+DATABASE_URL="mysql://mikhaiaw:C1J*WtBvMhKx@localhost/mikhaiaw_newsy"
+NEXTAUTH_URL="https://chillenge-russia.ru"
+NEXTAUTH_SECRET="cagFaXDG8uExX51cTgpAZudEwPKL0NkBdnznhNc6XLg="
+NODE_ENV="production"
+ENVEOF
+    echo ".env created"
+fi
+
+# 4. Устанавливаем зависимости
 echo "Installing dependencies..."
 npm install
 
-# 4. Генерируем Prisma client
+# 5. Генерируем Prisma client
 echo "Generating Prisma client..."
 npx prisma generate
 
-# 5. Применяем миграции БД
+# 6. Применяем миграции БД
 echo "Running database migrations..."
 npx prisma migrate deploy
 
-# 6. Seed БД
+# 7. Seed БД
 echo "Running seed..."
 npx tsx prisma/seed.ts
 
-# 7. Собираем приложение
+# 8. Собираем приложение
 echo "Building Next.js..."
 npm run build
 
-# 8. Настраиваем .htaccess
+# 9. Настраиваем .htaccess
 echo "Configuring Passenger..."
 HTACCESS_PATH="$HOME/public_html/../.htaccess"
 cat > "$HTACCESS_PATH" << EOF
@@ -67,12 +79,12 @@ EOF
 echo "Created .htaccess:"
 cat "$HTACCESS_PATH"
 
-# 9. Статика через Nginx
+# 10. Статика через Nginx
 echo "Setting up static files..."
 rm -rf ~/public_html
 ln -s "$(realpath public)" ~/public_html
 
-# 10. Restart
+# 11. Restart
 echo "Creating tmp/restart.txt..."
 mkdir -p tmp
 touch tmp/restart.txt
