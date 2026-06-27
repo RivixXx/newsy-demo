@@ -289,11 +289,11 @@ export function SearchPanel() {
         .sb-divider { width: 1px; height: 24px; background: #e5e7eb; flex-shrink: 0; }
         .sb-search {
           width: 42px; height: 42px; border-radius: 50%;
-          background: #111; border: none; display: grid; place-items: center;
+          background: #FF385C; border: none; display: grid; place-items: center;
           flex-shrink: 0; margin-left: 4px; cursor: pointer;
           transition: background 0.15s, transform 0.15s;
         }
-        .sb-search:hover { background: #333; transform: scale(1.05); }
+        .sb-search:hover { background: #E31C5F; transform: scale(1.05); }
         .sb-search:active { transform: scale(0.95); }
 
         /* Dropdowns */
