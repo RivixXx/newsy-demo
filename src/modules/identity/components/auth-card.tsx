@@ -14,9 +14,19 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
     <div className="auth-wrapper" style={s.wrapper}>
       {/* Left panel — brand */}
       <div className="auth-left" style={s.leftPanel}>
+        {/* Animated background shapes */}
+        <div className="anim-shapes">
+          <div className="shape shape-1" />
+          <div className="shape shape-2" />
+          <div className="shape shape-3" />
+          <div className="shape shape-4" />
+        </div>
+
         <div style={s.brandBlock}>
-          <img src="/icon.png" alt="" style={{ width: 56, height: 56 }} className="brand-logo" />
-          <h1 className="brand-title" style={s.brandTitle}>NEWSY</h1>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', marginBottom: 8 }}>
+            <img src="/icon.png" alt="" style={{ width: 48, height: 48 }} className="brand-logo" />
+            <h1 className="brand-title" style={s.brandTitle}>NEWSY</h1>
+          </Link>
           <p className="brand-subtitle" style={s.brandSubtitle}>
             Платформа интерактивных челенджей.
             <br />Растей над собой, соревнуйся с друзьями и получай реальные награды.
@@ -87,6 +97,58 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes float1 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          50% { transform: translate(20px, -30px) rotate(10deg); }
+        }
+        @keyframes float2 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          50% { transform: translate(-25px, 20px) rotate(-8deg); }
+        }
+        @keyframes float3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(15px, 25px) scale(1.1); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.2); }
+        }
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+
+        .anim-shapes {
+          position: absolute; inset: 0; overflow: hidden; z-index: 0;
+        }
+        .shape {
+          position: absolute; border-radius: 50%;
+          background: rgba(255, 56, 92, 0.08);
+        }
+        .shape-1 {
+          width: 200px; height: 200px; top: -50px; right: -50px;
+          animation: float1 8s ease-in-out infinite;
+        }
+        .shape-2 {
+          width: 150px; height: 150px; bottom: 20%; left: -30px;
+          animation: float2 10s ease-in-out infinite;
+          background: rgba(255, 140, 0, 0.06);
+        }
+        .shape-3 {
+          width: 100px; height: 100px; top: 40%; right: 20%;
+          animation: float3 7s ease-in-out infinite;
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .shape-4 {
+          width: 80px; height: 80px; bottom: 10%; right: 10%;
+          animation: pulse 5s ease-in-out infinite;
+          background: rgba(255, 56, 92, 0.1);
+        }
+
+        .brand-logo { transition: transform 0.3s ease; }
+        .brand-logo:hover { transform: scale(1.1) rotate(-5deg); }
+
         .reg-name-row {
           display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
         }
@@ -239,10 +301,10 @@ const s: Record<string, React.CSSProperties> = {
     animation: 'fadeSlideIn 0.6s ease',
   },
   brandTitle: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: 900,
     color: '#FF385C',
-    margin: '16px 0 12px',
+    margin: 0,
     letterSpacing: -2,
   },
   brandSubtitle: {
