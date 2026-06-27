@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  serverExternalPackages: ['node:crypto'],
   async redirects() {
     return [
       // Policies & legal
