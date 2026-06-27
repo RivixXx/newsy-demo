@@ -38,7 +38,7 @@ git pull origin main
 if [ ! -f ".env" ]; then
     echo "Creating .env..."
     cat > .env << 'ENVEOF'
-DATABASE_URL="mysql://mikhaiaw:C1J*WtBvMhKx@localhost/mikhaiaw_newsy"
+DATABASE_URL="mysql://mikhaiaw_newsy:C1J%2AWtBvMhKx@localhost/mikhaiaw_newsy"
 NEXTAUTH_URL="https://chillenge-russia.ru"
 NEXTAUTH_SECRET="cagFaXDG8uExX51cTgpAZudEwPKL0NkBdnznhNc6XLg="
 NODE_ENV="production"
