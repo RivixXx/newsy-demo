@@ -8,13 +8,6 @@ set -e
 
 echo "=== Deploying chillenge-russia on Beget ==="
 
-# Проверяем Docker окружение
-if [ -z "$DOCKER_ENV" ] && ! grep -q docker /proc/1/cgroup 2>/dev/null; then
-    echo "ВНИМАНИЕ: Вы не в Docker окружении!"
-    echo "Сначала выполните: ssh localhost -p 222"
-    exit 1
-fi
-
 # 1. Устанавливаем Node.js если ещё нет
 if ! command -v node &> /dev/null; then
     echo "Installing Node.js 20..."
