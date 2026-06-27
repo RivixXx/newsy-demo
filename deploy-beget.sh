@@ -42,6 +42,7 @@ DATABASE_URL="mysql://mikhaiaw_newsy:C1J%2AWtBvMhKx@localhost/mikhaiaw_newsy"
 NEXTAUTH_URL="https://chillenge-russia.ru"
 NEXTAUTH_SECRET="cagFaXDG8uExX51cTgpAZudEwPKL0NkBdnznhNc6XLg="
 NODE_ENV="production"
+UV_THREADPOOL_SIZE=2
 ENVEOF
     echo ".env created"
 fi
@@ -64,7 +65,7 @@ npx tsx prisma/seed.ts
 
 # 8. Собираем приложение
 echo "Building Next.js..."
-npm run build
+UV_THREADPOOL_SIZE=2 NODE_OPTIONS="--max-old-space-size=512" npm run build
 
 # 9. Настраиваем .htaccess
 echo "Configuring Passenger..."
