@@ -283,12 +283,13 @@ export function SearchPanel() {
           border-radius: 99px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
           border: 1px solid #ebebeb; height: 48px; padding: 4px;
           cursor: pointer; transition: box-shadow 0.2s;
+          min-width: 520px;
         }
         .bar:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-        .bar-seg { padding: 0 16px; height: 100%; display: flex; align-items: center; border-radius: 99px; }
+        .bar-seg { flex: 1; padding: 0 20px; height: 100%; display: flex; align-items: center; border-radius: 99px; }
         .bar-seg:hover { background: #f5f5f5; }
         .bar-lbl { font-size: 14px; font-weight: 600; color: #222; }
-        .bar-div { width: 1px; height: 20px; background: #e5e7eb; }
+        .bar-div { width: 1px; height: 20px; background: #e5e7eb; flex-shrink: 0; }
         .bar-go {
           width: 36px; height: 36px; border-radius: 50%;
           background: #FF385C; display: grid; place-items: center;
