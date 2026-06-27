@@ -36,7 +36,7 @@ git pull origin main
 
 # 3. Устанавливаем зависимости
 echo "Installing dependencies..."
-npm ci
+npm install
 
 # 4. Генерируем Prisma client
 echo "Generating Prisma client..."
