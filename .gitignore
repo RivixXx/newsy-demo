@@ -34,3 +34,6 @@ Thumbs.db
 
 # Uploaded listing media
 public/uploads/
+
+# Deployment secrets
+DEPLOY.md
