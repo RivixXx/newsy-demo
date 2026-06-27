@@ -16,6 +16,7 @@ export interface CatalogChallenge {
   description: string;
   requirements: string;
   refundPolicy: string;
+  isDemo?: boolean;
 }
 
 export const MOCK_CHALLENGES: CatalogChallenge[] = [
@@ -29,6 +30,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     description: 'Создай рабочий прототип продукта за 48 часов в команде. Менторы Сколково помогут на всех этапах.',
     requirements: 'Участники от 18 лет. Команда 2-5 человек. Наличие ноутбука.',
     refundPolicy: 'Возврат взноса при отмене за 72 часа до старта. После — средства не возвращаются.',
+    isDemo: true,
   },
   {
     id: '2', title: 'Привлечь 1000 подписчиков в ТГ без бюджета', organizer: 'Marketing Pro',
@@ -40,6 +42,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     description: 'За 30 дней вырасти с нуля до 1000 подписчиков используя только органику.',
     requirements: 'Собственный Telegram-канал. Базовые знания контент-маркетинга.',
     refundPolicy: 'Возврат возможен в течение первых 3 дней после регистрации.',
+    isDemo: true,
   },
   {
     id: '3', title: 'Пройти 5 IT-собеседований за неделю', organizer: 'HR Academy',

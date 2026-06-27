@@ -54,6 +54,13 @@ function CatalogCard({ challenge, onOpen }: { challenge: CatalogChallenge; onOpe
       <div className="card-image-box">
         <img src={challenge.imageUrl} alt={challenge.title} className="card-bg-img" />
         <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {challenge.category}</span>
+        <span style={{
+          position: 'absolute', top: 12, left: 12,
+          background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+          color: 'white', padding: '4px 10px', borderRadius: 99,
+          fontSize: 10, fontWeight: 800, letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+        }}>ДЕМО</span>
         <button
           className={`card-heart ${liked ? 'liked' : ''}`}
           onClick={e => { e.stopPropagation(); setLiked(v => !v); }}
@@ -356,6 +363,25 @@ export default function PublicHomePage() {
       )}
 
       <main className="catalog-main">
+
+        {/* Демо-баннер */}
+        <div style={{
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+          border: '1.5px solid #f59e0b',
+          borderRadius: 14,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          fontSize: 14,
+          fontWeight: 600,
+          color: '#92400e',
+        }}>
+          <span style={{ fontSize: 20 }}>⚠️</span>
+          <div>
+            <strong>Демо-режим</strong> — это демонстрационные данные. Реальные челленджи появятся после запуска платформы.
+          </div>
+        </div>
 
         {/* Заголовок + переключатель */}
         <div className="page-header">
