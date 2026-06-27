@@ -69,17 +69,21 @@ function CatalogCard({ challenge, onOpen }: { challenge: CatalogChallenge; onOpe
         </button>
       </div>
       <div className="card-body">
-        <h3 className="card-title">{challenge.title}</h3>
-        <p className="card-organizer">{challenge.organizer}</p>
-        <div className="card-tags">
-          <span className="card-tag achievement" title="Достижение за выполнение">🏆 {challenge.achievement}</span>
-          <span className="card-tag reward" title="Награда за выполнение">🎁 {challenge.reward}</span>
+        <div className="card-top">
+          <h3 className="card-title">{challenge.title}</h3>
+          <p className="card-organizer">{challenge.organizer}</p>
         </div>
-        <div className="card-footer">
-          <span className="card-slots">
-            <span className={availableSlots <= 5 ? 'few' : ''}>{availableSlots}</span> мест из {challenge.maxParticipants}
-          </span>
-          <span className="card-date">до {challenge.endDate}</span>
+        <div className="card-bottom">
+          <div className="card-tags">
+            <span className="card-tag achievement" title="Достижение за выполнение">🏆 {challenge.achievement}</span>
+            <span className="card-tag reward" title="Награда за выполнение">🎁 {challenge.reward}</span>
+          </div>
+          <div className="card-footer">
+            <span className="card-slots">
+              <span className={availableSlots <= 5 ? 'few' : ''}>{availableSlots}</span> мест из {challenge.maxParticipants}
+            </span>
+            <span className="card-date">до {challenge.endDate}</span>
+          </div>
         </div>
       </div>
 
@@ -132,6 +136,20 @@ function CatalogCard({ challenge, onOpen }: { challenge: CatalogChallenge; onOpe
         .card-body {
           padding: 16px; display: flex;
           flex-direction: column; gap: 10px;
+          height: 180px;
+        }
+        .card-top {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-height: 0;
+        }
+        .card-bottom {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex-shrink: 0;
         }
         .card-title {
           font-size: 15px; font-weight: 800;
