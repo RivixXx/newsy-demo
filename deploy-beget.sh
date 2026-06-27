@@ -1,66 +1,89 @@
 #!/bin/bash
 # ============================================================
-# Beget Deployment Script for chillenge-russia.ru
-# Запускать на сервере Beget через SSH
+# Beget Deployment Script (Docker + Passenger)
+# Запускать внутри Docker контейнера
 # ============================================================
 
 set -e
 
-APP_DIR="/var/www/mikhaiaw"
-APP_NAME="chillenge-russia"
+echo "=== Deploying chillenge-russia on Beget ==="
 
-echo "=== Deploying $APP_NAME ==="
+# Проверяем Docker окружение
+if [ -z "$DOCKER_ENV" ] && ! grep -q docker /proc/1/cgroup 2>/dev/null; then
+    echo "ВНИМАНИЕ: Вы не в Docker окружении!"
+    echo "Сначала выполните: ssh localhost -p 222"
+    exit 1
+fi
 
-# 1. Клонируем/обновляем репозиторий
+# 1. Устанавливаем Node.js если ещё нет
+if ! command -v node &> /dev/null; then
+    echo "Installing Node.js 20..."
+    mkdir -p ~/.local
+    cd ~/.local
+    wget -q https://cp.beget.com/shared/bmcys1znnpqt7-csnFitRYB00n0Lnhrm/node-v20.20.2-bionic.tar.xz
+    tar xfv node-v20.20.2-bionic.tar.xz --strip 1
+    rm node-v20.20.2-bionic.tar.xz
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+    export PATH="$HOME/.local/bin:$PATH"
+    echo "Node.js installed: $(node -v)"
+fi
+
+cd ~
+
+# 2. Клонируем/обновляем репозиторий
+APP_DIR="chillenge-russia"
 if [ ! -d "$APP_DIR" ]; then
     echo "Cloning repository..."
     git clone https://github.com/RivixXx/newsy-demo.git "$APP_DIR"
 fi
 
 cd "$APP_DIR"
-
 echo "Pulling latest changes..."
 git pull origin main
 
-# 2. Устанавливаем зависимости
+# 3. Устанавливаем зависимости
 echo "Installing dependencies..."
-npm ci --production=false
+npm ci
 
-# 3. Генерируем Prisma client
+# 4. Генерируем Prisma client
 echo "Generating Prisma client..."
 npx prisma generate
 
-# 4. Применяем миграции БД
+# 5. Применяем миграции БД
 echo "Running database migrations..."
 npx prisma migrate deploy
 
-# 5. Заполняем БД начальными данными (только при первом запуске)
+# 6. Seed БД
 echo "Running seed..."
 npx tsx prisma/seed.ts
 
-# 6. Собираем приложение
-echo "Building Next.js application..."
+# 7. Собираем приложение
+echo "Building Next.js..."
 npm run build
 
-# 7. Останавливаем старый процесс
-echo "Stopping existing process..."
-pm2 stop "$APP_NAME" 2>/dev/null || true
-pm2 delete "$APP_NAME" 2>/dev/null || true
+# 8. Настраиваем .htaccess
+echo "Configuring Passenger..."
+HTACCESS_PATH="$HOME/public_html/../.htaccess"
+cat > "$HTACCESS_PATH" << EOF
+PassengerNodejs $(which node)
+PassengerAppRoot $(realpath .)
+PassengerAppType node
+PassengerStartupFile server.js
+EOF
 
-# 8. Запускаем через PM2
-echo "Starting application with PM2..."
-pm2 start ecosystem.config.js
-pm2 save
+echo "Created .htaccess:"
+cat "$HTACCESS_PATH"
+
+# 9. Статика через Nginx
+echo "Setting up static files..."
+rm -rf ~/public_html
+ln -s "$(realpath public)" ~/public_html
+
+# 10. Restart
+echo "Creating tmp/restart.txt..."
+mkdir -p tmp
+touch tmp/restart.txt
 
 echo ""
 echo "=== Deployment complete ==="
-echo ""
-echo "Next steps in Beget panel:"
-echo "1. Go to Node.js section"
-echo "2. Set application root to: $APP_DIR"
-echo "3. Set port to: 3000"
-echo "4. Enable Node.js application"
-echo "5. Configure domain chillenge-russia.ru"
-echo "6. Enable SSL certificate"
-echo ""
-echo "Test: curl http://localhost:3000"
+echo "Check: https://chillenge-russia.ru"

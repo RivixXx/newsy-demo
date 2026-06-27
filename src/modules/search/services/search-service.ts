@@ -16,8 +16,8 @@ export function createSearchService(prisma: PrismaClient): SearchService {
     if (query?.trim()) {
       conditions.push({
         OR: [
-          { title: { contains: query.trim(), mode: 'insensitive' } },
-          { description: { contains: query.trim(), mode: 'insensitive' } }
+          { title: { contains: query.trim() } },
+          { description: { contains: query.trim() } }
         ]
       });
     }
