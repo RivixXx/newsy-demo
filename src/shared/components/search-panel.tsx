@@ -5,7 +5,23 @@ import { Search, X, MapPin, Users } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
-import Link from 'next/link';
+import { ChallengeModal, type ModalChallenge } from '@/shared/components/challenge-modal';
+
+function toModalChallenge(c: CatalogChallenge): ModalChallenge {
+  return {
+    id: c.id, title: c.title, organizer: c.organizer, category: c.category,
+    imageUrl: c.imageUrl, participantsCount: c.participantsCount,
+    maxParticipants: c.maxParticipants, endDate: c.endDate, location: c.location,
+    achievement: c.achievement, reward: c.reward, description: c.description,
+    requirements: c.requirements, refundPolicy: c.refundPolicy,
+    stages: [
+      { id: 's1', title: 'Регистрация', description: 'Подтвердите участие и ознакомьтесь с правилами.', type: 'ДЕЙСТВИЕ', status: 'pending' },
+      { id: 's2', title: 'Выполнение задания', description: 'Выполните основное задание челенджа и загрузите подтверждение.', type: 'ФОТО', status: 'pending' },
+      { id: 's3', title: 'Геолокация', description: 'Подтвердите своё местоположение на точке проведения.', type: 'ГЕО', status: 'pending' },
+      { id: 's4', title: 'Финальный отчёт', description: 'Загрузите итоговый файл с результатами.', type: 'ФАЙЛ', status: 'pending' },
+    ],
+  };
+}
 
 const CATEGORIES = [
   { id: 'all', label: 'Все категории' },
@@ -44,6 +60,7 @@ export function SearchPanel() {
   const [showLocationDrop, setShowLocationDrop] = useState(false);
   const [showWhoDrop, setShowWhoDrop] = useState(false);
   const [participants, setParticipants] = useState(0);
+  const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const catRef = useRef<HTMLDivElement>(null);
@@ -233,7 +250,7 @@ export function SearchPanel() {
               {results.length > 0 ? (
                 <div className="results-grid">
                   {results.map(c => (
-                    <Link key={c.id} href={`/challenges/${c.id}`} className="result-card" onClick={() => setShowResults(false)}>
+                    <button key={c.id} className="result-card" onClick={() => { setSelectedChallenge(c); setShowResults(false); }}>
                       <div className="rc-img">
                         <img src={c.imageUrl} alt={c.title} />
                       </div>
@@ -253,7 +270,7 @@ export function SearchPanel() {
                           </div>
                         </div>
                       </div>
-                    </Link>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -266,6 +283,13 @@ export function SearchPanel() {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedChallenge && (
+        <ChallengeModal
+          challenge={toModalChallenge(selectedChallenge)}
+          onClose={() => setSelectedChallenge(null)}
+        />
       )}
 
       <style jsx>{`
