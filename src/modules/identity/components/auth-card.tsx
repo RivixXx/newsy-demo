@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useActionState } from 'react';
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Tag } from 'lucide-react';
 import { loginAction, registerAction, type AuthActionState } from '@/modules/identity/actions';
 
 export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'register' }) {
@@ -159,6 +159,7 @@ function RegisterForm({ action }: { action: (state: AuthActionState, formData: F
         <InputField icon={<Mail size={18} />} name="email" placeholder="demo@newsy.ru" label="Email" type="email" />
         <InputField icon={<Lock size={18} />} name="password" placeholder="Минимум 6 символов" label="Пароль" type={showPass ? 'text' : 'password'} trailing={<button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>} />
         <InputField icon={<Lock size={18} />} name="confirm" placeholder="Повторите пароль" label="Повторите пароль" type="password" />
+        <InputField icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
 
         {state.error && <p style={s.error}>{state.error}</p>}
 

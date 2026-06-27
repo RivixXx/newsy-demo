@@ -77,6 +77,7 @@ model User {
   points         Int             @default(0)
   rating         Float           @default(0)
   lastLoginAt    DateTime?
+  referredBy     String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   deletedAt      DateTime?

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Users, ArrowLeft, Trophy, Clock, Gift } from 'lucide-react';
+import { ShareButtons } from '@/shared/components/share-buttons';
 import styles from './challenge-detail.module.css';
 
 
@@ -133,6 +134,8 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
                 скидка 30% в магазинах-партнёрах.
               </p>
             </div>
+
+            <ShareButtons challengeId={challengeId} title="Утренний забег на 5км — NEWSY" compact />
           </div>
 
           <div className={styles.stepsColumn}>

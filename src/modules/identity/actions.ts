@@ -63,6 +63,7 @@ export async function registerAction(
   const email     = (formData.get('email')     as string)?.trim().toLowerCase();
   const password  = (formData.get('password')  as string);
   const confirm   = (formData.get('confirm')   as string);
+  const referralCode = (formData.get('referralCode') as string)?.trim() || null;
 
   if (!firstName || !lastName || !email || !password) {
     return { error: 'Заполните все поля.' };
@@ -87,6 +88,7 @@ export async function registerAction(
         lastName,
         passwordHash: hashPassword(password),
         status: 'ACTIVE',
+        referredBy: referralCode,
         roles: {
           create: {
             role: { connect: { key: 'user' } },

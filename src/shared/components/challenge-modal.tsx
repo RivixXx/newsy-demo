@@ -6,6 +6,7 @@ import {
   Navigation, MessageSquare, Send, Trophy, Gift, ChevronDown,
   AlertTriangle, CheckCircle2, Loader2
 } from 'lucide-react';
+import { ShareButtons } from '@/shared/components/share-buttons';
 
 export type ParticipationStatus = 'none' | 'active' | 'completed' | 'failed';
 export type StageStatus = 'pending' | 'active' | 'completed';
@@ -192,6 +193,10 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
             <div className="modal-refund">
               <AlertTriangle size={15} />
               <p>{challenge.refundPolicy}</p>
+            </div>
+
+            <div style={{ padding: '0 20px' }}>
+              <ShareButtons challengeId={challenge.id} title={challenge.title} />
             </div>
           </div>
 

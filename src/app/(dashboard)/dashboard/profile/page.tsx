@@ -9,7 +9,7 @@ import {
   Settings, Bell, Shield, CreditCard, LogOut,
   TrendingUp, Zap, MapPin, Calendar, Users,
   ArrowUpRight, Eye, Heart, BarChart3, Sparkles,
-  Camera, Edit3, Copy, ExternalLink, ChevronDown
+  Camera, Edit3, Copy, ExternalLink, ChevronDown, Tag
 } from 'lucide-react';
 import {
   IconRocket, IconButterfly, IconMoon, IconTrophy,
@@ -503,6 +503,55 @@ export default function ProfilePage() {
                 <ChevronRight size={18} color="#ccc" />
               </div>
             </div>
+
+            {/* Referral Code Section */}
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="card-header">
+                <h3 className="card-title"><Tag size={18} /> Реферальный код</h3>
+              </div>
+              <p style={{ fontSize: 13, color: '#888', margin: '0 0 16px', lineHeight: 1.6 }}>
+                Поделитесь своим кодом с друзьями. Когда они зарегистрируются с вашим кодом, вы будете видеть статистику приглашений.
+              </p>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{
+                  flex: 1, padding: '14px 18px', borderRadius: 12,
+                  background: '#f8f9fa', border: '1.5px dashed #e5e7eb',
+                  fontFamily: 'monospace', fontSize: 18, fontWeight: 800,
+                  color: '#FF385C', letterSpacing: 2, textAlign: 'center',
+                }}>
+                  NEWSY-{Math.random().toString(36).substring(2, 8).toUpperCase()}
+                </div>
+                <button
+                  style={{
+                    padding: '14px 20px', borderRadius: 12, border: 'none',
+                    background: '#FF385C', color: 'white', fontWeight: 700,
+                    fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                  onClick={() => {
+                    const code = document.querySelector('[style*="monospace"]')?.textContent;
+                    if (code) navigator.clipboard.writeText(code);
+                  }}
+                >
+                  <Copy size={14} /> Копировать
+                </button>
+              </div>
+              <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                <div style={{ textAlign: 'center', padding: 12, background: '#f8f9fa', borderRadius: 10 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#111' }}>0</div>
+                  <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>Приглашено</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: 12, background: '#f8f9fa', borderRadius: 10 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#111' }}>0</div>
+                  <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>Активных</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: 12, background: '#f8f9fa', borderRadius: 10 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#FF385C' }}>0 ₽</div>
+                  <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>Бонусов</div>
+                </div>
+              </div>
+            </div>
+
             <div className="settings-danger">
               <form action={logoutAction}>
                 <button type="submit" className="danger-btn">
