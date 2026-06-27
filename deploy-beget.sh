@@ -14,7 +14,7 @@ echo "=== Deploying $APP_NAME ==="
 # 1. Клонируем/обновляем репозиторий
 if [ ! -d "$APP_DIR" ]; then
     echo "Cloning repository..."
-    git clone <YOUR_GIT_REPO_URL> "$APP_DIR"
+    git clone https://github.com/RivixXx/newsy-demo.git "$APP_DIR"
 fi
 
 cd "$APP_DIR"
