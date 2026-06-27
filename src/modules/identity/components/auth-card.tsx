@@ -14,13 +14,10 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
     <div className="auth-wrapper" style={s.wrapper}>
       {/* Left panel — brand */}
       <div className="auth-left" style={s.leftPanel}>
-        {/* Animated background shapes */}
-        <div className="anim-shapes">
-          <div className="shape shape-1" />
-          <div className="shape shape-2" />
-          <div className="shape shape-3" />
-          <div className="shape shape-4" />
-        </div>
+        {/* Starfield background */}
+        <div className="stars stars-sm" />
+        <div className="stars stars-md" />
+        <div className="stars stars-lg" />
 
         <div style={s.brandBlock}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', marginBottom: 8 }}>
@@ -97,57 +94,53 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes float1 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(20px, -30px) rotate(10deg); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(-25px, 20px) rotate(-8deg); }
-        }
-        @keyframes float3 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(15px, 25px) scale(1.1); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.2); }
-        }
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes animStar {
+          from { transform: translateY(0px); }
+          to { transform: translateY(-2000px); }
         }
 
-        .anim-shapes {
-          position: absolute; inset: 0; overflow: hidden; z-index: 0;
+        .stars {
+          position: absolute; top: 0; left: 0; right: 0;
+          width: 1px; height: 1px; background: transparent;
+          border-radius: 50%;
         }
-        .shape {
-          position: absolute; border-radius: 50%;
-          background: rgba(255, 56, 92, 0.08);
+        .stars-sm {
+          box-shadow: 412px 1634px #FFF, 1247px 412px #FFF, 1893px 967px #FFF, 723px 1891px #FFF, 1534px 312px #FFF, 982px 1456px #FFF, 1823px 743px #FFF, 432px 1234px #FFF, 1654px 1678px #FFF, 891px 567px #FFF, 1234px 1823px #FFF, 567px 891px #FFF, 1789px 1234px #FFF, 345px 1567px #FFF, 1456px 678px #FFF, 678px 1123px #FFF, 1891px 456px #FFF, 234px 1789px #FFF, 1345px 234px #FFF, 876px 1678px #FFF, 1567px 891px #FFF, 445px 1345px #FFF, 1678px 567px #FFF, 789px 1234px #FFF, 1234px 1789px #FFF, 345px 678px #FFF, 1891px 1123px #FFF, 567px 1567px #FFF, 1456px 234px #FFF, 891px 1891px #FFF, 1234px 456px #FFF, 678px 1345px #FFF, 1789px 891px #FFF, 345px 1234px #FFF, 1567px 1789px #FFF, 891px 345px #FFF, 1345px 1678px #FFF, 567px 567px #FFF, 1678px 1123px #FFF, 789px 1891px #FFF, 1234px 678px #FFF, 456px 1456px #FFF, 1891px 234px #FFF, 678px 891px #FFF, 1345px 1567px #FFF, 891px 1123px #FFF, 1567px 456px #FFF, 234px 1789px #FFF, 1123px 1345px #FFF, 678px 1678px #FFF;
+          animation: animStar 50s linear infinite;
         }
-        .shape-1 {
-          width: 200px; height: 200px; top: -50px; right: -50px;
-          animation: float1 8s ease-in-out infinite;
-        }
-        .shape-2 {
-          width: 150px; height: 150px; bottom: 20%; left: -30px;
-          animation: float2 10s ease-in-out infinite;
-          background: rgba(255, 140, 0, 0.06);
-        }
-        .shape-3 {
-          width: 100px; height: 100px; top: 40%; right: 20%;
-          animation: float3 7s ease-in-out infinite;
-          background: rgba(255, 255, 255, 0.05);
-        }
-        .shape-4 {
-          width: 80px; height: 80px; bottom: 10%; right: 10%;
-          animation: pulse 5s ease-in-out infinite;
-          background: rgba(255, 56, 92, 0.1);
+        .stars-sm:after {
+          content: " "; position: absolute; top: 2000px;
+          width: 1px; height: 1px; background: transparent;
+          box-shadow: 412px 1634px #FFF, 1247px 412px #FFF, 1893px 967px #FFF, 723px 1891px #FFF, 1534px 312px #FFF, 982px 1456px #FFF, 1823px 743px #FFF, 432px 1234px #FFF, 1654px 1678px #FFF, 891px 567px #FFF, 1234px 1823px #FFF, 567px 891px #FFF, 1789px 1234px #FFF, 345px 1567px #FFF, 1456px 678px #FFF, 678px 1123px #FFF, 1891px 456px #FFF, 234px 1789px #FFF, 1345px 234px #FFF, 876px 1678px #FFF, 1567px 891px #FFF, 445px 1345px #FFF, 1678px 567px #FFF, 789px 1234px #FFF, 1234px 1789px #FFF, 345px 678px #FFF, 1891px 1123px #FFF, 567px 1567px #FFF, 1456px 234px #FFF, 891px 1891px #FFF, 1234px 456px #FFF, 678px 1345px #FFF, 1789px 891px #FFF, 345px 1234px #FFF, 1567px 1789px #FFF, 891px 345px #FFF, 1345px 1678px #FFF, 567px 567px #FFF, 1678px 1123px #FFF, 789px 1891px #FFF, 1234px 678px #FFF, 456px 1456px #FFF, 1891px 234px #FFF, 678px 891px #FFF, 1345px 1567px #FFF, 891px 1123px #FFF, 1567px 456px #FFF, 234px 1789px #FFF, 1123px 1345px #FFF, 678px 1678px #FFF;
         }
 
-        .brand-logo { transition: transform 0.3s ease; }
+        .stars-md {
+          width: 2px; height: 2px;
+          box-shadow: 345px 1234px 2px 1px rgba(255,255,255,0.5), 1567px 678px 2px 1px rgba(255,255,255,0.5), 891px 1891px 2px 1px rgba(255,255,255,0.5), 1234px 456px 2px 1px rgba(255,255,255,0.5), 678px 1345px 2px 1px rgba(255,255,255,0.5), 1789px 891px 2px 1px rgba(255,255,255,0.5), 456px 1678px 2px 1px rgba(255,255,255,0.5), 1123px 234px 2px 1px rgba(255,255,255,0.5), 567px 1123px 2px 1px rgba(255,255,255,0.5), 1891px 1345px 2px 1px rgba(255,255,255,0.5), 234px 567px 2px 1px rgba(255,255,255,0.5), 1345px 1891px 2px 1px rgba(255,255,255,0.5), 789px 345px 2px 1px rgba(255,255,255,0.5), 1678px 1567px 2px 1px rgba(255,255,255,0.5), 456px 891px 2px 1px rgba(255,255,255,0.5), 1234px 1234px 2px 1px rgba(255,255,255,0.5), 567px 1789px 2px 1px rgba(255,255,255,0.5), 1891px 567px 2px 1px rgba(255,255,255,0.5), 891px 1456px 2px 1px rgba(255,255,255,0.5), 1567px 234px 2px 1px rgba(255,255,255,0.5);
+          animation: animStar 100s linear infinite;
+        }
+        .stars-md:after {
+          content: " "; position: absolute; top: 2000px;
+          width: 2px; height: 2px; background: transparent;
+          box-shadow: 345px 1234px 2px 1px rgba(255,255,255,0.5), 1567px 678px 2px 1px rgba(255,255,255,0.5), 891px 1891px 2px 1px rgba(255,255,255,0.5), 1234px 456px 2px 1px rgba(255,255,255,0.5), 678px 1345px 2px 1px rgba(255,255,255,0.5), 1789px 891px 2px 1px rgba(255,255,255,0.5), 456px 1678px 2px 1px rgba(255,255,255,0.5), 1123px 234px 2px 1px rgba(255,255,255,0.5), 567px 1123px 2px 1px rgba(255,255,255,0.5), 1891px 1345px 2px 1px rgba(255,255,255,0.5);
+        }
+
+        .stars-lg {
+          width: 3px; height: 3px;
+          box-shadow: 1234px 891px 3px 1px rgba(255,255,255,0.3), 567px 1567px 3px 1px rgba(255,255,255,0.3), 1891px 456px 3px 1px rgba(255,255,255,0.3), 345px 1234px 3px 1px rgba(255,255,255,0.3), 1567px 1891px 3px 1px rgba(255,255,255,0.3), 891px 678px 3px 1px rgba(255,255,255,0.3), 1345px 234px 3px 1px rgba(255,255,255,0.3), 678px 1123px 3px 1px rgba(255,255,255,0.3), 1789px 1678px 3px 1px rgba(255,255,255,0.3), 456px 567px 3px 1px rgba(255,255,255,0.3);
+          animation: animStar 150s linear infinite;
+        }
+        .stars-lg:after {
+          content: " "; position: absolute; top: 2000px;
+          width: 3px; height: 3px; background: transparent;
+          box-shadow: 1234px 891px 3px 1px rgba(255,255,255,0.3), 567px 1567px 3px 1px rgba(255,255,255,0.3), 1891px 456px 3px 1px rgba(255,255,255,0.3), 345px 1234px 3px 1px rgba(255,255,255,0.3), 1567px 1891px 3px 1px rgba(255,255,255,0.3);
+        }
+
+        .brand-logo { transition: transform 0.3s ease; position: relative; z-index: 1; }
         .brand-logo:hover { transform: scale(1.1) rotate(-5deg); }
+        .brand-title { position: relative; z-index: 1; }
+        .brand-subtitle { position: relative; z-index: 1; }
+        .stats-row { position: relative; z-index: 1; }
 
         .reg-name-row {
           display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
@@ -287,7 +280,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   leftPanel: {
     flex: '0 0 42%',
-    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+    background: 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
