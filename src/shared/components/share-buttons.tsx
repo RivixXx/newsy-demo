@@ -1,6 +1,7 @@
 'use client';
 
-import { Share2, Send, MessageCircle, Image as ImageIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Share2, Send, MessageCircle, Link2, Check } from 'lucide-react';
 
 interface ShareButtonsProps {
   challengeId: string;
@@ -15,31 +16,28 @@ function getShareUrl(challengeId: string) {
   return `https://chillenge-russia.ru/challenges/${challengeId}`;
 }
 
-function shareToTelegram(url: string, title: string) {
-  window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
-}
-
-function shareToVK(url: string, title: string) {
-  window.open(`https://vk.com/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank');
-}
-
-function shareToWhatsApp(url: string, title: string) {
-  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + url)}`, '_blank');
-}
-
-function shareToInstagram() {
-  window.open('https://www.instagram.com/', '_blank');
-}
-
 export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps) {
+  const [copied, setCopied] = useState(false);
+
   const share = (platform: string) => {
     const url = getShareUrl(challengeId);
     const text = `${title} — участвуй на NEWSY!`;
     switch (platform) {
-      case 'telegram': shareToTelegram(url, text); break;
-      case 'vk': shareToVK(url, text); break;
-      case 'whatsapp': shareToWhatsApp(url, text); break;
-      case 'instagram': shareToInstagram(); break;
+      case 'telegram':
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+        break;
+      case 'vk':
+        window.open(`https://vk.com/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`, '_blank');
+        break;
+      case 'max':
+        window.open(`https://max.ru/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(url).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+        break;
     }
   };
 
@@ -54,13 +52,13 @@ export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps)
               <Send size={14} />
             </button>
             <button className="share-btn vk" onClick={() => share('vk')} title="ВКонтакте">
-              <span style={{ fontWeight: 900, fontSize: 13 }}>VK</span>
+              <span style={{ fontWeight: 900, fontSize: 12 }}>VK</span>
             </button>
-            <button className="share-btn wa" onClick={() => share('whatsapp')} title="WhatsApp">
-              <MessageCircle size={14} />
+            <button className="share-btn max" onClick={() => share('max')} title="MAX">
+              <span style={{ fontWeight: 900, fontSize: 11 }}>MAX</span>
             </button>
-            <button className="share-btn ig" onClick={() => share('instagram')} title="Instagram">
-              <ImageIcon size={14} />
+            <button className="share-btn copy" onClick={() => share('copy')} title="Копировать ссылку">
+              {copied ? <Check size={14} /> : <Link2 size={14} />}
             </button>
           </div>
         </div>
@@ -68,20 +66,22 @@ export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps)
           .share-row {
             display: flex; align-items: center; gap: 10px;
             padding: 12px 0; border-top: 1px solid #f0f0f0; margin-top: 8px;
+            flex-wrap: wrap;
           }
           .share-label { font-size: 13px; color: #888; font-weight: 600; }
-          .share-btns { display: flex; gap: 8px; margin-left: auto; }
+          .share-btns { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
           .share-btn {
-            width: 34px; height: 34px; border-radius: 50%;
+            min-width: 32px; height: 32px; border-radius: 8px;
             border: 1px solid #e5e7eb; background: white;
-            display: grid; place-items: center; cursor: pointer;
-            transition: all 0.15s; color: #555;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s; color: #555;
+            padding: 0 8px;
           }
-          .share-btn:hover { transform: scale(1.1); }
+          .share-btn:hover { transform: scale(1.05); }
           .share-btn.tg:hover { background: #0088cc; color: white; border-color: #0088cc; }
           .share-btn.vk:hover { background: #4a76a8; color: white; border-color: #4a76a8; }
-          .share-btn.wa:hover { background: #25d366; color: white; border-color: #25d366; }
-          .share-btn.ig:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; border-color: transparent; }
+          .share-btn.max:hover { background: #ff6600; color: white; border-color: #ff6600; }
+          .share-btn.copy:hover { background: #22c55e; color: white; border-color: #22c55e; }
         `}</style>
       </>
     );
@@ -97,16 +97,16 @@ export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps)
             <span>Telegram</span>
           </button>
           <button className="share-card vk" onClick={() => share('vk')}>
-            <span style={{ fontWeight: 900, fontSize: 18 }}>VK</span>
+            <span style={{ fontWeight: 900, fontSize: 16 }}>VK</span>
             <span>ВКонтакте</span>
           </button>
-          <button className="share-card wa" onClick={() => share('whatsapp')}>
-            <MessageCircle size={20} />
-            <span>WhatsApp</span>
+          <button className="share-card max" onClick={() => share('max')}>
+            <span style={{ fontWeight: 900, fontSize: 14 }}>MAX</span>
+            <span>MAX</span>
           </button>
-          <button className="share-card ig" onClick={() => share('instagram')}>
-            <ImageIcon size={20} />
-            <span>Instagram</span>
+          <button className="share-card copy" onClick={() => share('copy')}>
+            {copied ? <Check size={20} /> : <Link2 size={20} />}
+            <span>{copied ? 'Скопировано' : 'Копировать'}</span>
           </button>
         </div>
       </div>
@@ -123,8 +123,8 @@ export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps)
         .share-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
         .share-card.tg:hover { background: #0088cc; color: white; border-color: #0088cc; }
         .share-card.vk:hover { background: #4a76a8; color: white; border-color: #4a76a8; }
-        .share-card.wa:hover { background: #25d366; color: white; border-color: #25d366; }
-        .share-card.ig:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; border-color: transparent; }
+        .share-card.max:hover { background: #ff6600; color: white; border-color: #ff6600; }
+        .share-card.copy:hover { background: #22c55e; color: white; border-color: #22c55e; }
         @media (max-width: 480px) {
           .share-grid { grid-template-columns: repeat(2, 1fr); }
         }
