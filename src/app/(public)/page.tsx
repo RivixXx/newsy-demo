@@ -7,6 +7,7 @@ import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '
 import { PageShell } from '@/shared/components/page-shell';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
+import { SearchPanel } from '@/shared/components/search-panel';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 
 const CATEGORIES = ['Все подряд', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];
@@ -409,32 +410,15 @@ export default function PublicHomePage() {
             </h1>
           </div>
 
-          {/* Единая зона поиска и фильтров */}
-          <div className="search-zone">
-            <div className="search-box">
-              <Search size={18} color="#aaa" />
-              <input
-                type="text"
-                placeholder="Название, бренд или тема..."
-                className="search-input"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button className="search-clear" onClick={() => setSearchQuery('')}>✕</button>
-              )}
-            </div>
-            <div className="search-right">
-              <div className="location-hint">
-                <MapPin size={15} color="#888" />
-                <span>{location}</span>
-              </div>
-              <button className="filter-btn" onClick={() => setShowFilterPanel(!showFilterPanel)}>
-                <SlidersHorizontal size={15} />
-                Фильтры
-              </button>
-            </div>
-          </div>
+          {/* Airbnb-стиль панель поиска */}
+          <SearchPanel onSearch={(f) => {
+            if (f.category !== 'all') {
+              const catMap: Record<string, string> = { sport: 'Спорт', education: 'Обучение', quests: 'Квесты', art: 'Искусство', tech: 'Технологии' };
+              setActiveCategory(catMap[f.category] || 'Все подряд');
+            } else {
+              setActiveCategory('Все подряд');
+            }
+          }} />
 
           {/* Категории */}
           <div className="categories-scroll">
