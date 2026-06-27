@@ -1,263 +1,261 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Filter, Sparkles } from 'lucide-react';
-import { Challenge, ChallengeCategory } from '../types';
-import { ChallengeCard } from './challenge-card';
+import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
+import Link from 'next/link';
+import { Users, Trophy, ChevronRight, Gift } from 'lucide-react';
 
-const CATEGORIES: ChallengeCategory[] = ['Sport', 'Education', 'Quest', 'Art', 'Tech'];
+const CATEGORIES = ['Все', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];
 
-const MOCK_CHALLENGES: Challenge[] = [
-  {
-    id: '1',
-    title: 'Утренний забег на 5км',
-    organizer: 'Nike Run Club',
-    category: 'Sport',
-    pointsReward: 150,
-    imageUrl: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=800&q=80',
-    participantsCount: 1240,
-    isJoined: true,
-    progress: 65,
-    badges: ['cooperative'],
-  },
-  {
-    id: '2',
-    title: 'Изучаем React Hooks',
-    organizer: 'Meta Open Source',
-    category: 'Tech',
-    pointsReward: 300,
-    imageUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=800&q=80',
-    participantsCount: 850,
-    isJoined: false,
-    badges: ['hot'],
-  },
-  {
-    id: '3',
-    title: 'Квест по экологии',
-    organizer: 'Green Earth',
-    category: 'Quest',
-    pointsReward: 500,
-    imageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80',
-    participantsCount: 3200,
-    isJoined: true,
-    progress: 20,
-  },
-  {
-    id: '4',
-    title: 'Выставка цифрового искусства',
-    organizer: 'Adobe Art',
-    category: 'Art',
-    pointsReward: 200,
-    imageUrl: 'https://images.unsplash.com/photo-1547891319-184a7783c0c6?auto=format&fit=crop&w=800&q=80',
-    participantsCount: 450,
-    isJoined: false,
-  },
-  {
-    id: '5',
-    title: 'Йога на закате',
-    organizer: 'Yoga Studio',
-    category: 'Sport',
-    pointsReward: 100,
-    imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80',
-    participantsCount: 2100,
-    isJoined: false,
-  },
-  {
-    id: '6',
-    title: 'Фото-тур: Старый город',
-    organizer: 'Photo Academy',
-    category: 'Quest',
-    pointsReward: 400,
-    imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
-    participantsCount: 115,
-    isJoined: false,
-  }
-];
+const CATEGORY_ICONS: Record<string, string> = {
+  'Все': '⚡',
+  'Спорт': '🏃',
+  'Обучение': '📚',
+  'Квесты': '🗺️',
+  'Искусство': '🎨',
+  'Технологии': '⚙️',
+};
 
-export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters = false }) => {
-  const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | 'All'>('All');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredChallenges = MOCK_CHALLENGES.filter((c) => {
-    const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+function SearchCard({ challenge }: { challenge: CatalogChallenge }) {
+  const availableSlots = challenge.maxParticipants - challenge.participantsCount;
 
   return (
-    <div className="challenge-feed-container">
-      {!hideFilters && (
-        <header className="feed-header">
-          <div className="header-top">
-            <h1 className="feed-title">
-              Каталог <span className="highlight">Активностей</span>
-              <Sparkles className="sparkle-icon" size={24} />
-            </h1>
+    <Link href={`/challenges/${challenge.id}`} className="search-card-link">
+      <div className="search-card">
+        <div className="sc-img-wrap">
+          <img src={challenge.imageUrl} alt={challenge.title} className="sc-img" />
+          <span className="sc-category">{challenge.category}</span>
+        </div>
+        <div className="sc-body">
+          <div className="sc-top">
+            <p className="sc-organizer">{challenge.organizer}</p>
+            <h3 className="sc-title">{challenge.title}</h3>
           </div>
+          <div className="sc-bottom">
+            <div className="sc-tags">
+              <span className="sc-tag achievement">🏆 {challenge.achievement}</span>
+              <span className="sc-tag reward">🎁 {challenge.reward}</span>
+            </div>
+            <div className="sc-footer">
+              <span className="sc-slots">
+                <Users size={13} /> {availableSlots} мест
+              </span>
+              <span className="sc-date">до {challenge.endDate}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .search-card-link {
+          text-decoration: none; color: inherit; display: block;
+        }
+        .search-card {
+          display: flex; background: white; border-radius: 18px;
+          overflow: hidden; border: 1px solid #f0f0f0;
+          transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+          height: 160px;
+        }
+        .search-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+        }
+        .sc-img-wrap {
+          width: 200px; flex-shrink: 0; position: relative; overflow: hidden;
+        }
+        .sc-img {
+          width: 100%; height: 100%; object-fit: cover;
+          transition: transform 0.4s ease;
+        }
+        .search-card:hover .sc-img { transform: scale(1.05); }
+        .sc-category {
+          position: absolute; top: 10px; left: 10px;
+          background: rgba(255,255,255,0.92); padding: 3px 10px;
+          border-radius: 99px; font-size: 11px; font-weight: 700;
+          backdrop-filter: blur(4px);
+        }
+        .sc-body {
+          flex: 1; padding: 16px; display: flex; flex-direction: column;
+          justify-content: space-between; min-width: 0;
+        }
+        .sc-top { display: flex; flex-direction: column; gap: 4px; }
+        .sc-organizer { font-size: 12px; color: #888; font-weight: 600; margin: 0; }
+        .sc-title {
+          font-size: 15px; font-weight: 800; color: #111; margin: 0;
+          line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .sc-bottom { display: flex; flex-direction: column; gap: 8px; }
+        .sc-tags { display: flex; flex-direction: column; gap: 4px; }
+        .sc-tag {
+          padding: 4px 8px; border-radius: 6px;
+          font-size: 11px; font-weight: 700;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .sc-tag.achievement { background: #fef3c7; color: #92400e; }
+        .sc-tag.reward { background: #dcfce7; color: #166534; }
+        .sc-footer {
+          display: flex; justify-content: space-between; align-items: center;
+          font-size: 11px; color: #888; font-weight: 600;
+        }
+        .sc-slots { display: flex; align-items: center; gap: 4px; }
+        @media (max-width: 640px) {
+          .search-card { flex-direction: column; height: auto; }
+          .sc-img-wrap { width: 100%; height: 140px; }
+        }
+      `}</style>
+    </Link>
+  );
+}
+
+export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters = false }) => {
+  const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredChallenges = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return MOCK_CHALLENGES.filter((c) => {
+      const matchCategory = selectedCategory === 'Все' || c.category === selectedCategory;
+      if (!matchCategory) return false;
+      if (!query) return true;
+      // Поиск по всем полям
+      return (
+        c.title.toLowerCase().includes(query) ||
+        c.organizer.toLowerCase().includes(query) ||
+        c.category.toLowerCase().includes(query) ||
+        c.description.toLowerCase().includes(query) ||
+        c.achievement.toLowerCase().includes(query) ||
+        c.reward.toLowerCase().includes(query) ||
+        c.location.toLowerCase().includes(query)
+      );
+    });
+  }, [selectedCategory, searchQuery]);
+
+  return (
+    <div className="search-page">
+      {!hideFilters && (
+        <header className="search-header">
+          <h1 className="search-title">
+            Поиск <span className="highlight">челленджей</span>
+            <Sparkles size={24} color="#ff8c00" />
+          </h1>
 
           <div className="search-bar">
-            <Search className="search-icon" size={20} />
-            <input 
-              type="text" 
-              placeholder="Название, бренд или тема..." 
+            <Search size={20} color="#aaa" />
+            <input
+              type="text"
+              placeholder="Название, бренд, тема, достижение, награда..."
               className="search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button className="filter-button">
-              <Filter size={20} /> Фильтры
-            </button>
+            {searchQuery && (
+              <button className="search-clear" onClick={() => setSearchQuery('')}>
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="category-scroll">
-            <button 
-              className={`category-pill ${selectedCategory === 'All' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('All')}
-            >
-              Все подряд
-            </button>
             {CATEGORIES.map((cat) => (
-              <button 
+              <button
                 key={cat}
-                className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
+                className={`cat-pill ${selectedCategory === cat ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(cat)}
               >
-                {cat === 'Sport' ? '🏃 Спорт' : cat === 'Education' ? '📚 Обучение' : cat === 'Quest' ? '🗺️ Квесты' : cat === 'Art' ? '🎨 Искусство' : '⚙️ Техно'}
+                {CATEGORY_ICONS[cat]} {cat}
               </button>
             ))}
           </div>
         </header>
       )}
 
-      <div className="challenges-grid">
-        {filteredChallenges.map((challenge) => (
-          <ChallengeCard key={challenge.id} challenge={challenge} />
-        ))}
+      <div className="search-results">
+        {searchQuery && (
+          <p className="results-count">
+            Найдено: {filteredChallenges.length} {filteredChallenges.length === 1 ? 'челлендж' : 'челенджей'}
+          </p>
+        )}
+
+        {filteredChallenges.length > 0 ? (
+          <div className="results-grid">
+            {filteredChallenges.map((c) => (
+              <SearchCard key={c.id} challenge={c} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon">🔍</div>
+            <p className="empty-title">Ничего не найдено</p>
+            <p className="empty-desc">Попробуйте изменить запрос или выбрать другую категорию</p>
+          </div>
+        )}
       </div>
 
-      {filteredChallenges.length === 0 && (
-        <div className="empty-state">
-          <p>Ничего не нашлось. Попробуйте изменить фильтры!</p>
-        </div>
-      )}
-
       <style jsx>{`
-        .challenge-feed-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          width: 100%;
+        .search-page {
+          max-width: 900px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 24px);
         }
-
-        .feed-header {
-          margin-bottom: 32px;
-          padding: 0 16px;
+        .search-header {
+          display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px;
         }
-
-        .header-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 24px;
+        .search-title {
+          font-size: 28px; font-weight: 900; margin: 0;
+          display: flex; align-items: center; gap: 10px; color: #111;
         }
-
-        .feed-title {
-          font-size: 32px;
-          font-weight: 900;
-          margin: 0;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .highlight { color: #ff385c; }
-        .sparkle-icon { color: #ff8c00; }
-
+        .highlight { color: #FF385C; }
         .search-bar {
-          position: relative;
-          margin-bottom: 24px;
-          display: flex;
-          gap: 12px;
+          display: flex; align-items: center; gap: 10px;
+          background: white; border: 1.5px solid #e5e7eb;
+          border-radius: 14px; padding: 12px 16px;
+          transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        .search-icon {
-          position: absolute;
-          left: 16px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-muted);
+        .search-bar:focus-within {
+          border-color: #FF385C;
+          box-shadow: 0 0 0 3px rgba(255,56,92,0.1);
         }
-
         .search-input {
-          flex: 1;
-          padding: 16px 16px 16px 48px;
-          border-radius: 20px;
-          border: 1px solid var(--line);
-          background: var(--surface);
-          font-size: 16px;
-          outline: none;
-          transition: all 0.2s;
+          flex: 1; border: none; outline: none; font-size: 15px;
+          color: #111; background: transparent;
         }
-
-        .search-input:focus { border-color: #ff385c; box-shadow: 0 0 0 4px rgba(255,56,92,0.1); }
-
-        .filter-button {
-          background: var(--surface);
-          border: 1px solid var(--line);
-          padding: 0 24px;
-          border-radius: 20px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 700;
+        .search-input::placeholder { color: #aaa; }
+        .search-clear {
+          border: none; background: none; color: #aaa;
+          cursor: pointer; font-size: 14px; padding: 4px;
         }
-
         .category-scroll {
-          display: flex;
-          gap: 12px;
-          overflow-x: auto;
-          padding-bottom: 8px;
-          scrollbar-width: none;
+          display: flex; gap: 8px; overflow-x: auto;
+          padding-bottom: 4px; scrollbar-width: none;
         }
-
         .category-scroll::-webkit-scrollbar { display: none; }
-
-        .category-pill {
-          white-space: nowrap;
-          padding: 10px 24px;
-          border-radius: 99px;
-          border: 1px solid var(--line);
-          background: var(--surface);
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
+        .cat-pill {
+          display: flex; align-items: center; gap: 6px;
+          padding: 10px 18px; border-radius: 99px;
+          border: 1.5px solid #e5e7eb; background: white;
+          font-size: 13px; font-weight: 700; color: #444;
+          cursor: pointer; white-space: nowrap;
+          transition: all 0.2s; flex-shrink: 0;
         }
-
-        .category-pill.active {
-          background: var(--text);
-          color: white;
-          border-color: var(--text);
+        .cat-pill:hover { border-color: #FF385C; color: #FF385C; }
+        .cat-pill.active { background: #111; border-color: #111; color: white; }
+        .search-results { display: flex; flex-direction: column; gap: 16px; }
+        .results-count {
+          font-size: 13px; color: #888; font-weight: 600; margin: 0;
         }
-
-        .challenges-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 24px;
-          padding: 0 16px;
+        .results-grid {
+          display: flex; flex-direction: column; gap: 12px;
         }
-
         .empty-state {
-          text-align: center;
-          padding: 80px;
-          color: var(--text-muted);
-          font-size: 18px;
-          font-weight: 600;
+          text-align: center; padding: 60px 20px;
         }
-
+        .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-title {
+          font-size: 20px; font-weight: 800; color: #111; margin: 0 0 8px;
+        }
+        .empty-desc { font-size: 14px; color: #888; margin: 0; }
         @media (max-width: 640px) {
-          .feed-title { font-size: 24px; }
-          .search-bar { flex-direction: column; }
-          .filter-button { padding: 14px; justify-content: center; }
+          .search-title { font-size: 22px; }
         }
       `}</style>
     </div>
