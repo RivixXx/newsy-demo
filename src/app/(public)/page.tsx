@@ -7,7 +7,6 @@ import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '
 import { PageShell } from '@/shared/components/page-shell';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
-import { SearchPanel } from '@/shared/components/search-panel';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 
 const CATEGORIES = ['Все подряд', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];

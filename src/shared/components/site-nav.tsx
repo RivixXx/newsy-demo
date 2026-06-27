@@ -51,9 +51,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
           {/* Search Bar */}
           <div className="nav-center">
-            <SearchPanel onSearch={(f) => {
-              window.location.href = '/';
-            }} />
+            <SearchPanel />
           </div>
 
           {/* Right: Capsule */}
