@@ -71,6 +71,9 @@ export default async function DashboardPage() {
             <Link href="/dashboard/challenges/new" style={styles.secondaryAction}>
               Создать челендж
             </Link>
+            <Link href="/dashboard/analytics" style={styles.secondaryAction}>
+              Аналитика
+            </Link>
           </div>
         </section>
       </main>
