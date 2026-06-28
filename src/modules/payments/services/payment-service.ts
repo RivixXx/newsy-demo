@@ -17,14 +17,27 @@ export function createPaymentService(
         include: { organizer: true },
       });
 
-      if (!challenge) throw new Error('Challenge not found');
-      if (challenge.status !== 'DRAFT') throw new Error('Only draft challenges can be published');
+      if (!challenge) throw new Error('Челлендж не найден');
+      if (challenge.status !== 'DRAFT') {
+        throw new Error('Публикация доступна только для черновиков');
+      }
 
-      const amount = challenge.publishPrice ?? 1000;
+      const existingPending = await prisma.paymentTransaction.findFirst({
+        where: { challengeId, status: 'PENDING' },
+      });
+      if (existingPending && existingPending.providerId) {
+        const payment = await yookassa.getPayment(existingPending.providerId);
+        if (payment.status === 'pending' && payment.confirmation?.confirmation_url) {
+          return { checkoutUrl: payment.confirmation.confirmation_url };
+        }
+      }
+
+      const amount = challenge.publishPrice ?? 0;
+      if (amount < 0) throw new Error('Некорректная стоимость публикации');
 
       const payment = await yookassa.createPayment({
         amount: {
-          value: amount.toString(),
+          value: amount.toFixed(2),
           currency: 'RUB',
         },
         capture: true,
@@ -58,26 +71,37 @@ export function createPaymentService(
     async handleWebhook(payload) {
       const { event, object } = payload;
 
-      if (event === 'payment.succeeded') {
-        const transaction = await prisma.paymentTransaction.findUnique({
-          where: { providerId: object.id },
-        });
+      if (!event || !object?.id) {
+        throw new Error('Invalid webhook payload');
+      }
 
-        if (transaction) {
-          await prisma.$transaction([
-            prisma.paymentTransaction.update({
-              where: { id: transaction.id },
-              data: { status: 'SUCCEEDED' },
-            }),
-            prisma.challenge.update({
-              where: { id: transaction.challengeId },
-              data: { status: 'PUBLISHED' },
-            }),
-          ]);
-        }
+      const transaction = await prisma.paymentTransaction.findUnique({
+        where: { providerId: object.id },
+      });
+
+      if (!transaction) {
+        console.warn(`Webhook for unknown payment: ${object.id}`);
+        return;
+      }
+
+      if (event === 'payment.succeeded') {
+        if (transaction.status === 'SUCCEEDED') return;
+
+        await prisma.$transaction([
+          prisma.paymentTransaction.update({
+            where: { id: transaction.id },
+            data: { status: 'SUCCEEDED' },
+          }),
+          prisma.challenge.update({
+            where: { id: transaction.challengeId },
+            data: { status: 'PUBLISHED' },
+          }),
+        ]);
       } else if (event === 'payment.canceled') {
-        await prisma.paymentTransaction.updateMany({
-          where: { providerId: object.id },
+        if (transaction.status === 'CANCELED') return;
+
+        await prisma.paymentTransaction.update({
+          where: { id: transaction.id },
           data: { status: 'CANCELED' },
         });
       }

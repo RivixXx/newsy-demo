@@ -71,8 +71,8 @@ export async function createChallengeAction(input: CreateChallengeInput) {
         isCooperative: input.isCooperative,
         startDate: input.startDate ? new Date(input.startDate) : null,
         endDate: input.endDate ? new Date(input.endDate) : null,
-        publishPrice: input.entryFee || 0,
-        status: 'PUBLISHED',
+        publishPrice: 0,
+        status: 'DRAFT',
         steps: {
           create: input.steps.map((s, i) => ({
             title: s.title || `Этап ${i + 1}`,

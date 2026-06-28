@@ -6,11 +6,21 @@ import { createPaymentService } from '@/modules/payments/services/payment-servic
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
+    const { event, object } = payload;
+
+    if (!event || !object?.id) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
 
     const yookassa = createYooKassaService();
-    const paymentService = createPaymentService(prisma, yookassa);
 
-    await paymentService.handleWebhook(payload);
+    const verifiedPayment = await yookassa.getPayment(object.id);
+    if (verifiedPayment.status !== object.status) {
+      console.warn(`Webhook status mismatch: claimed=${object.status}, verified=${verifiedPayment.status}`);
+    }
+
+    const paymentService = createPaymentService(prisma, yookassa);
+    await paymentService.handleWebhook({ event, object: verifiedPayment });
 
     return NextResponse.json({ status: 'ok' });
   } catch (error: any) {

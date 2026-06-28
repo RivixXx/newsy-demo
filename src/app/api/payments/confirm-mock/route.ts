@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
-import { createYooKassaService } from '@/modules/payments/services/yookassa-service';
-import { createPaymentService } from '@/modules/payments/services/payment-service';
 
 export async function POST(req: NextRequest) {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
+    }
+
     const session = await getCurrentAuthSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
@@ -28,16 +30,23 @@ export async function POST(req: NextRequest) {
 
     const isMember = challenge.organizer.members.some(m => m.userId === session.user.id);
     if (!isMember) {
-      return NextResponse.json({ error: 'Нет доступа к этому челленджу' }, { status: 403 });
+      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
 
-    const yookassa = createYooKassaService();
-    const paymentService = createPaymentService(prisma, yookassa);
-    const { checkoutUrl } = await paymentService.initiatePublishPayment(challengeId);
+    await prisma.$transaction([
+      prisma.paymentTransaction.updateMany({
+        where: { challengeId, status: 'PENDING' },
+        data: { status: 'SUCCEEDED' },
+      }),
+      prisma.challenge.update({
+        where: { id: challengeId },
+        data: { status: 'PUBLISHED' },
+      }),
+    ]);
 
-    return NextResponse.json({ checkoutUrl });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Payment creation error:', error);
+    console.error('Mock confirm error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

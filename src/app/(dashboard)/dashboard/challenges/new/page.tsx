@@ -61,7 +61,9 @@ export default function NewChallengePage() {
     setPublishing(true); setError(null);
     try {
       const r = await createChallengeAction({ title: data.title, description: data.description, category: data.category, coverImage: data.coverImage, startDate: data.startDate, endDate: data.endDate, maxParticipants: data.maxParticipants, entryFee: data.entryFee, isCooperative: data.isCooperative, rewardTitle: data.rewardTitle, rewardDescription: data.rewardDescription, steps: data.steps.map(s => ({ type: s.type, title: s.title, description: s.description, points: s.points, options: s.options, correctIndex: s.correctIndex, location: s.location })) });
-      if (r?.error) setError(r.error); else if (r?.success) window.location.href = '/';
+      if (r?.error) { setError(r.error); return; }
+      if (!r?.success || !r?.challengeId) { setError('Ошибка создания челенджа'); return; }
+      window.location.href = `/dashboard/challenges/${r.challengeId}/publish`;
     } catch { setError('Ошибка сети'); } finally { setPublishing(false); }
   };
 
