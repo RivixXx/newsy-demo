@@ -131,7 +131,11 @@ export function SearchPanel() {
     if (barLocation === 'online' && !c.location.includes('Онлайн')) return false;
     if (barLocation === 'moscow' && !c.location.includes('Москва')) return false;
     if (barLocation === 'spb' && !c.location.includes('Петербург')) return false;
-    if (participants > 0 && c.maxParticipants > participants) return false;
+    if (barWho.trim()) {
+      const q = barWho.toLowerCase();
+      const match = c.title.toLowerCase().includes(q) || c.organizer.toLowerCase().includes(q) || c.description.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
+      if (!match) return false;
+    }
     return true;
   });
 
@@ -142,7 +146,7 @@ export function SearchPanel() {
         {/* Category */}
         <div className="sb-seg" ref={catRef}>
           <button className="sb-btn" onClick={() => { setShowCategoryDrop(!showCategoryDrop); setShowLocationDrop(false); setShowWhoDrop(false); setShowCalendar(false); }}>
-            <span className="sb-label">Куда</span>
+            <span className="sb-label">Категории</span>
             <span className="sb-value">{CATEGORIES.find(c=>c.id===barCategory)?.label}</span>
           </button>
           {showCategoryDrop && (
@@ -163,7 +167,7 @@ export function SearchPanel() {
         <div className="sb-seg sb-when">
           <button className="sb-btn" onClick={() => { setShowCalendar(!showCalendar); setShowCategoryDrop(false); setShowLocationDrop(false); setShowWhoDrop(false); }}>
             <span className="sb-label">Когда</span>
-            <span className="sb-value">{barWhen || 'Выберите даты'}</span>
+            <span className="sb-value">{barWhen || 'Любая дата'}</span>
           </button>
           {showCalendar && (
             <div className="sb-drop sb-drop-calendar">
@@ -193,32 +197,24 @@ export function SearchPanel() {
 
         <div className="sb-divider" />
 
-        {/* Who */}
+        {/* Who → Text search */}
         <div className="sb-seg" ref={whoRef}>
-          <button className="sb-btn" onClick={() => { setShowWhoDrop(!showWhoDrop); setShowCategoryDrop(false); setShowLocationDrop(false); setShowCalendar(false); }}>
-            <span className="sb-label">Места</span>
-            <span className="sb-value">{participants ? `${participants} мест` : 'Любое количество'}</span>
-          </button>
-          {showWhoDrop && (
-            <div className="sb-drop sb-drop-who">
-              <div className="who-row">
-                <span className="who-label">Мест</span>
-                <div className="who-cnt">
-                  <button className="wc-btn" onClick={() => setParticipants(p=>Math.max(0,p-5))} disabled={participants<=0}>−</button>
-                  <span className="wc-val">{participants || '∞'}</span>
-                  <button className="wc-btn" onClick={() => setParticipants(p=>p+5)}>+</button>
-                </div>
-              </div>
-              <div className="who-row">
-                <span className="who-label">Только бесплатные</span>
-                <label className="tog"><input type="checkbox"/><span className="tog-s"/></label>
-              </div>
-              <div className="who-row">
-                <span className="who-label">С наградой</span>
-                <label className="tog"><input type="checkbox"/><span className="tog-s"/></label>
-              </div>
-            </div>
-          )}
+          <div className="sb-search-input-wrap">
+            <Search size={15} color="#888" />
+            <input
+              className="sb-search-input"
+              type="text"
+              placeholder="Найти челлендж..."
+              value={barWho}
+              onChange={e => setBarWho(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            {barWho && (
+              <button className="sb-search-clear" onClick={() => setBarWho('')}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search button */}
@@ -238,7 +234,7 @@ export function SearchPanel() {
                   {barCategory !== 'all' && <span className="mh-tag">{CATEGORIES.find(c=>c.id===barCategory)?.label}</span>}
                   {barLocation !== 'anywhere' && <span className="mh-tag">{LOCATIONS.find(l=>l.id===barLocation)?.label}</span>}
                   {barWhen && <span className="mh-tag">{barWhen}</span>}
-                  {participants > 0 && <span className="mh-tag">{participants} мест</span>}
+                  {barWho.trim() && <span className="mh-tag">"{barWho}"</span>}
                 </span>
               </div>
               <button className="mh-close" onClick={() => setShowResults(false)}>
@@ -357,6 +353,21 @@ export function SearchPanel() {
 
         /* Who dropdown */
         .sb-drop-who { width: 280px; padding: 12px; }
+        .sb-search-input-wrap {
+          display: flex; align-items: center; gap: 8px;
+          padding: 0 16px; height: 44px; width: 100%;
+        }
+        .sb-search-input {
+          flex: 1; border: none; outline: none; font-size: 14px;
+          color: #222; background: transparent; font-weight: 500;
+        }
+        .sb-search-input::placeholder { color: #888; font-weight: 400; }
+        .sb-search-clear {
+          width: 24px; height: 24px; border-radius: 50%;
+          border: none; background: #f3f4f6; display: grid; place-items: center;
+          cursor: pointer; color: #888; transition: background 0.15s;
+        }
+        .sb-search-clear:hover { background: #e5e7eb; color: #333; }
         .who-row {
           display: flex; align-items: center; justify-content: space-between;
           padding: 12px 4px; border-bottom: 1px solid #f5f5f5;

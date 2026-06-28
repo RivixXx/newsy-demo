@@ -283,7 +283,7 @@ function CarouselSection({
       </div>
 
       <style jsx>{`
-        .carousel-section { display: flex; flex-direction: column; gap: 20px; }
+        .carousel-section { display: flex; flex-direction: column; gap: 20px; width: 100%; }
         .carousel-title { font-size: 22px; font-weight: 800; color: #111; margin: 0; }
         .carousel-wrapper { position: relative; display: flex; align-items: center; }
         .carousel-track {
@@ -673,6 +673,7 @@ export default function PublicHomePage() {
           display: flex;
           flex-direction: column;
           gap: 48px;
+          align-items: center;
         }
 
         .results-count {

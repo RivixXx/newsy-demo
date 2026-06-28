@@ -138,69 +138,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
             <X size={20} />
           </button>
 
-          {/* LEFT PANE */}
-          <div className="modal-left">
-            <div className="modal-img-wrap">
-              <img src={challenge.imageUrl} alt={challenge.title} className="modal-img" />
-              <span className="modal-category">{challenge.category}</span>
-            </div>
-
-            <div className="modal-meta">
-              <div className="meta-row">
-                <MapPin size={15} />
-                <span>{challenge.location}</span>
-              </div>
-              <div className="meta-row">
-                <Calendar size={15} />
-                <span>До {challenge.endDate}</span>
-              </div>
-              <div className="meta-row">
-                <Users size={15} />
-                <span>
-                  <strong>{challenge.participantsCount}</strong> участников ·{' '}
-                  <strong className={availableSlots <= 5 ? 'few-slots' : ''}>{availableSlots} мест</strong>
-                </span>
-              </div>
-            </div>
-
-            <div className="modal-rewards-block">
-              <div className="reward-card achievement">
-                <Trophy size={18} />
-                <div>
-                  <span className="reward-label">Достижение</span>
-                  <span className="reward-value">{challenge.achievement}</span>
-                </div>
-              </div>
-              <div className="reward-card gift">
-                <Gift size={18} />
-                <div>
-                  <span className="reward-label">Награда</span>
-                  <span className="reward-value">{challenge.reward}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-desc">
-              <h3>Описание</h3>
-              <p>{challenge.description}</p>
-            </div>
-
-            <div className="modal-desc">
-              <h3>Требования</h3>
-              <p>{challenge.requirements}</p>
-            </div>
-
-            <div className="modal-refund">
-              <AlertTriangle size={15} />
-              <p>{challenge.refundPolicy}</p>
-            </div>
-
-            <div style={{ padding: '0 20px' }}>
-              <ShareButtons challengeId={challenge.id} title={challenge.title} />
-            </div>
-          </div>
-
-          {/* RIGHT PANE */}
+          {/* RIGHT PANE — Title + Stages */}
           <div className="modal-right">
             <div className="modal-title-block">
               <h2 className="modal-title">{challenge.title}</h2>
@@ -350,6 +288,68 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               </button>
             </div>
           </div>
+
+          {/* LEFT PANE — Details */}
+          <div className="modal-left">
+            <div className="modal-img-wrap">
+              <img src={challenge.imageUrl} alt={challenge.title} className="modal-img" />
+              <span className="modal-category">{challenge.category}</span>
+            </div>
+
+            <div className="modal-meta">
+              <div className="meta-row">
+                <MapPin size={15} />
+                <span>{challenge.location}</span>
+              </div>
+              <div className="meta-row">
+                <Calendar size={15} />
+                <span>До {challenge.endDate}</span>
+              </div>
+              <div className="meta-row">
+                <Users size={15} />
+                <span>
+                  <strong>{challenge.participantsCount}</strong> участников ·{' '}
+                  <strong className={availableSlots <= 5 ? 'few-slots' : ''}>{availableSlots} мест</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="modal-rewards-block">
+              <div className="reward-card achievement">
+                <Trophy size={18} />
+                <div>
+                  <span className="reward-label">Достижение</span>
+                  <span className="reward-value">{challenge.achievement}</span>
+                </div>
+              </div>
+              <div className="reward-card gift">
+                <Gift size={18} />
+                <div>
+                  <span className="reward-label">Награда</span>
+                  <span className="reward-value">{challenge.reward}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-desc">
+              <h3>Описание</h3>
+              <p>{challenge.description}</p>
+            </div>
+
+            <div className="modal-desc">
+              <h3>Требования</h3>
+              <p>{challenge.requirements}</p>
+            </div>
+
+            <div className="modal-refund">
+              <AlertTriangle size={15} />
+              <p>{challenge.refundPolicy}</p>
+            </div>
+
+            <div style={{ padding: '0 20px' }}>
+              <ShareButtons challengeId={challenge.id} title={challenge.title} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -381,7 +381,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           max-width: 980px;
           max-height: 90vh;
           display: grid;
-          grid-template-columns: 340px 1fr;
+          grid-template-columns: 1fr 1fr;
           overflow: hidden;
           box-shadow: 0 50px 120px rgba(0,0,0,0.35);
           position: relative;
@@ -412,7 +412,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         /* LEFT */
         .modal-left {
           overflow-y: auto;
-          border-right: 1px solid #f0f0f0;
+          border-left: 1px solid #f0f0f0;
           scrollbar-width: none;
         }
         .modal-left::-webkit-scrollbar { display: none; }
