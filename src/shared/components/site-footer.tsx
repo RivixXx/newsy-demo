@@ -70,15 +70,15 @@ export function SiteFooter() {
             <div className="footer-col">
               <h4 className="footer-col-title">Участникам</h4>
               <Link href="/dashboard/profile" className="footer-link">Мой профиль</Link>
-              <Link href="/favorites" className="footer-link">Достижения</Link>
-              <Link href="/favorites" className="footer-link">Награды</Link>
+              <Link href="/achievements" className="footer-link">Достижения</Link>
+              <Link href="/rewards" className="footer-link">Награды</Link>
               <Link href="/referral" className="footer-link">Реферальная программа</Link>
             </div>
             <div className="footer-col">
               <h4 className="footer-col-title">Организаторам</h4>
               <Link href="/dashboard/challenges/new" className="footer-link">Как создать ЧЕ</Link>
-              <Link href="/analytics" className="footer-link">Тарифы</Link>
-              <Link href="/analytics" className="footer-link">Аналитика</Link>
+              <Link href="/dashboard/subscription" className="footer-link">Тарифы</Link>
+              <Link href="/dashboard/analytics" className="footer-link">Аналитика</Link>
               <Link href="/api-docs" className="footer-link">API</Link>
             </div>
             <div className="footer-col">
