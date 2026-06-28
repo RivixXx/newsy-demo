@@ -1,428 +1,582 @@
--- CreateTable
-CREATE TABLE `User` (
-    `id` VARCHAR(191) NOT NULL,
-    `email` VARCHAR(191) NULL,
-    `phone` VARCHAR(191) NULL,
-    `passwordHash` VARCHAR(191) NOT NULL,
-    `firstName` VARCHAR(191) NOT NULL,
-    `lastName` VARCHAR(191) NOT NULL,
-    `status` ENUM('ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED') NOT NULL DEFAULT 'PENDING',
-    `points` INTEGER NOT NULL DEFAULT 0,
-    `rating` DOUBLE NOT NULL DEFAULT 0,
-    `lastLoginAt` DATETIME(3) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
 
-    UNIQUE INDEX `User_email_key`(`email`),
-    UNIQUE INDEX `User_phone_key`(`phone`),
-    INDEX `User_status_idx`(`status`),
-    INDEX `User_deletedAt_idx`(`deletedAt`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED');
 
--- CreateTable
-CREATE TABLE `Role` (
-    `id` VARCHAR(191) NOT NULL,
-    `key` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+-- CreateEnum
+CREATE TYPE "OrganizerType" AS ENUM ('BRAND', 'INFLUENCER', 'NGO', 'GOVERNMENT', 'OTHER');
 
-    UNIQUE INDEX `Role_key_key`(`key`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- CreateEnum
+CREATE TYPE "OrganizerStatus" AS ENUM ('ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED');
+
+-- CreateEnum
+CREATE TYPE "ChallengeStatus" AS ENUM ('DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'ONGOING', 'COMPLETED', 'ARCHIVED');
+
+-- CreateEnum
+CREATE TYPE "OwnershipType" AS ENUM ('USER', 'ORGANIZER', 'SYSTEM');
+
+-- CreateEnum
+CREATE TYPE "MediaType" AS ENUM ('IMAGE', 'VIDEO', 'DOCUMENT');
+
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('CHALLENGE_CREATED', 'CHALLENGE_UPDATED', 'STEP_COMPLETED', 'REWARD_EARNED', 'SYSTEM');
+
+-- CreateEnum
+CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED');
 
 -- CreateTable
-CREATE TABLE `Permission` (
-    `id` VARCHAR(191) NOT NULL,
-    `key` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT,
+    "phone" TEXT,
+    "passwordHash" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "status" "UserStatus" NOT NULL DEFAULT 'PENDING',
+    "points" INTEGER NOT NULL DEFAULT 0,
+    "rating" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "lastLoginAt" TIMESTAMP(3),
+    "referredBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    UNIQUE INDEX `Permission_key_key`(`key`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `PermissionRole` (
-    `id` VARCHAR(191) NOT NULL,
-    `roleId` VARCHAR(191) NOT NULL,
-    `permissionId` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `PermissionRole_roleId_idx`(`roleId`),
-    INDEX `PermissionRole_permissionId_idx`(`permissionId`),
-    UNIQUE INDEX `PermissionRole_roleId_permissionId_key`(`roleId`, `permissionId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `UserRole` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `roleId` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+CREATE TABLE "Role" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `UserRole_userId_idx`(`userId`),
-    INDEX `UserRole_roleId_idx`(`roleId`),
-    UNIQUE INDEX `UserRole_userId_roleId_key`(`userId`, `roleId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Organizer` (
-    `id` VARCHAR(191) NOT NULL,
-    `type` ENUM('BRAND', 'INFLUENCER', 'NGO', 'GOVERNMENT', 'OTHER') NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `legalName` VARCHAR(191) NULL,
-    `taxId` VARCHAR(191) NULL,
-    `description` VARCHAR(191) NULL,
-    `status` ENUM('ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED') NOT NULL DEFAULT 'PENDING',
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
-
-    UNIQUE INDEX `Organizer_taxId_key`(`taxId`),
-    INDEX `Organizer_type_idx`(`type`),
-    INDEX `Organizer_status_idx`(`status`),
-    INDEX `Organizer_deletedAt_idx`(`deletedAt`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Role_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `OrganizerMember` (
-    `id` VARCHAR(191) NOT NULL,
-    `organizerId` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `roleInOrganizer` VARCHAR(191) NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
+CREATE TABLE "Permission" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `OrganizerMember_organizerId_idx`(`organizerId`),
-    INDEX `OrganizerMember_userId_idx`(`userId`),
-    INDEX `OrganizerMember_status_idx`(`status`),
-    UNIQUE INDEX `OrganizerMember_organizerId_userId_key`(`organizerId`, `userId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Permission_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `Challenge` (
-    `id` VARCHAR(191) NOT NULL,
-    `organizerId` VARCHAR(191) NOT NULL,
-    `status` ENUM('DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'ONGOING', 'COMPLETED', 'ARCHIVED') NOT NULL DEFAULT 'DRAFT',
-    `title` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `category` VARCHAR(191) NULL,
-    `isCooperative` BOOLEAN NOT NULL DEFAULT false,
-    `startDate` DATETIME(3) NULL,
-    `endDate` DATETIME(3) NULL,
-    `publishPrice` DOUBLE NULL DEFAULT 1000.00,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
+CREATE TABLE "PermissionRole" (
+    "id" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "permissionId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX `Challenge_organizerId_idx`(`organizerId`),
-    INDEX `Challenge_status_idx`(`status`),
-    INDEX `Challenge_category_idx`(`category`),
-    INDEX `Challenge_deletedAt_idx`(`deletedAt`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "PermissionRole_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `Step` (
-    `id` VARCHAR(191) NOT NULL,
-    `challengeId` VARCHAR(191) NOT NULL,
-    `title` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `order` INTEGER NOT NULL DEFAULT 0,
-    `type` VARCHAR(191) NOT NULL,
-    `config` JSON NULL,
-    `rewardPoints` INTEGER NOT NULL DEFAULT 0,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "UserRole" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX `Step_challengeId_idx`(`challengeId`),
-    INDEX `Step_order_idx`(`order`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "UserRole_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `ChallengeMedia` (
-    `id` VARCHAR(191) NOT NULL,
-    `challengeId` VARCHAR(191) NOT NULL,
-    `type` ENUM('IMAGE', 'VIDEO', 'DOCUMENT') NOT NULL,
-    `url` VARCHAR(191) NOT NULL,
-    `sortOrder` INTEGER NOT NULL DEFAULT 0,
-    `altText` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "Organizer" (
+    "id" TEXT NOT NULL,
+    "type" "OrganizerType" NOT NULL,
+    "name" TEXT NOT NULL,
+    "legalName" TEXT,
+    "taxId" TEXT,
+    "description" TEXT,
+    "status" "OrganizerStatus" NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    INDEX `ChallengeMedia_challengeId_idx`(`challengeId`),
-    INDEX `ChallengeMedia_type_idx`(`type`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `ChallengePartner` (
-    `id` VARCHAR(191) NOT NULL,
-    `challengeId` VARCHAR(191) NOT NULL,
-    `partnerName` VARCHAR(191) NOT NULL,
-    `partnerLogoUrl` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `ChallengePartner_challengeId_idx`(`challengeId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Organizer_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `UserProgress` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `challengeId` VARCHAR(191) NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
-    `startedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `completedAt` DATETIME(3) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "OrganizerMember" (
+    "id" TEXT NOT NULL,
+    "organizerId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "roleInOrganizer" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    INDEX `UserProgress_userId_idx`(`userId`),
-    INDEX `UserProgress_challengeId_idx`(`challengeId`),
-    INDEX `UserProgress_status_idx`(`status`),
-    UNIQUE INDEX `UserProgress_userId_challengeId_key`(`userId`, `challengeId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "OrganizerMember_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `StepProgress` (
-    `id` VARCHAR(191) NOT NULL,
-    `userProgressId` VARCHAR(191) NOT NULL,
-    `stepId` VARCHAR(191) NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
-    `submission` JSON NULL,
-    `pointsEarned` INTEGER NOT NULL DEFAULT 0,
-    `completedAt` DATETIME(3) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "Challenge" (
+    "id" TEXT NOT NULL,
+    "organizerId" TEXT NOT NULL,
+    "status" "ChallengeStatus" NOT NULL DEFAULT 'DRAFT',
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "category" TEXT,
+    "isCooperative" BOOLEAN NOT NULL DEFAULT false,
+    "startDate" TIMESTAMP(3),
+    "endDate" TIMESTAMP(3),
+    "publishPrice" DOUBLE PRECISION DEFAULT 1000.00,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    INDEX `StepProgress_userProgressId_idx`(`userProgressId`),
-    INDEX `StepProgress_stepId_idx`(`stepId`),
-    UNIQUE INDEX `StepProgress_userProgressId_stepId_key`(`userProgressId`, `stepId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Achievement` (
-    `id` VARCHAR(191) NOT NULL,
-    `key` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `badgeUrl` VARCHAR(191) NULL,
-    `pointsRequired` INTEGER NULL DEFAULT 0,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
-    UNIQUE INDEX `Achievement_key_key`(`key`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Challenge_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `UserAchievement` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `achievementId` VARCHAR(191) NOT NULL,
-    `earnedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+CREATE TABLE "Step" (
+    "id" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "type" TEXT NOT NULL,
+    "config" JSONB,
+    "rewardPoints" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `UserAchievement_userId_idx`(`userId`),
-    INDEX `UserAchievement_achievementId_idx`(`achievementId`),
-    UNIQUE INDEX `UserAchievement_userId_achievementId_key`(`userId`, `achievementId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `SearchSession` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NULL,
-    `sessionKey` VARCHAR(191) NOT NULL,
-    `query` VARCHAR(191) NULL,
-    `filters` JSON NOT NULL,
-    `sort` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
-
-    UNIQUE INDEX `SearchSession_sessionKey_key`(`sessionKey`),
-    INDEX `SearchSession_userId_idx`(`userId`),
-    INDEX `SearchSession_deletedAt_idx`(`deletedAt`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Step_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `SavedSearch` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `query` VARCHAR(191) NULL,
-    `filters` JSON NOT NULL,
-    `sort` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
+CREATE TABLE "ChallengeMedia" (
+    "id" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "type" "MediaType" NOT NULL,
+    "url" TEXT NOT NULL,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "altText" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `SavedSearch_userId_idx`(`userId`),
-    INDEX `SavedSearch_deletedAt_idx`(`deletedAt`),
-    UNIQUE INDEX `SavedSearch_userId_name_key`(`userId`, `name`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "ChallengeMedia_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `Favorite` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `challengeId` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+CREATE TABLE "ChallengePartner" (
+    "id" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "partnerName" TEXT NOT NULL,
+    "partnerLogoUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX `Favorite_userId_idx`(`userId`),
-    INDEX `Favorite_challengeId_idx`(`challengeId`),
-    UNIQUE INDEX `Favorite_userId_challengeId_key`(`userId`, `challengeId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "ChallengePartner_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `Notification` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `type` ENUM('CHALLENGE_CREATED', 'CHALLENGE_UPDATED', 'STEP_COMPLETED', 'REWARD_EARNED', 'SYSTEM') NOT NULL,
-    `title` VARCHAR(191) NOT NULL,
-    `body` VARCHAR(191) NOT NULL,
-    `readAt` DATETIME(3) NULL,
-    `payload` JSON NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `deletedAt` DATETIME(3) NULL,
+CREATE TABLE "UserProgress" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `Notification_userId_idx`(`userId`),
-    INDEX `Notification_type_idx`(`type`),
-    INDEX `Notification_readAt_idx`(`readAt`),
-    INDEX `Notification_deletedAt_idx`(`deletedAt`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "UserProgress_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `AuditLog` (
-    `id` VARCHAR(191) NOT NULL,
-    `actorUserId` VARCHAR(191) NULL,
-    `action` VARCHAR(191) NOT NULL,
-    `entityType` VARCHAR(191) NOT NULL,
-    `entityId` VARCHAR(191) NULL,
-    `beforeState` JSON NULL,
-    `afterState` JSON NULL,
-    `metadata` JSON NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+CREATE TABLE "StepProgress" (
+    "id" TEXT NOT NULL,
+    "userProgressId" TEXT NOT NULL,
+    "stepId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "submission" JSONB,
+    "pointsEarned" INTEGER NOT NULL DEFAULT 0,
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `AuditLog_actorUserId_idx`(`actorUserId`),
-    INDEX `AuditLog_action_idx`(`action`),
-    INDEX `AuditLog_entityType_idx`(`entityType`),
-    INDEX `AuditLog_entityId_idx`(`entityId`),
-    INDEX `AuditLog_createdAt_idx`(`createdAt`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "StepProgress_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `PaymentTransaction` (
-    `id` VARCHAR(191) NOT NULL,
-    `organizerId` VARCHAR(191) NOT NULL,
-    `challengeId` VARCHAR(191) NOT NULL,
-    `amount` DOUBLE NOT NULL,
-    `currency` VARCHAR(191) NOT NULL DEFAULT 'RUB',
-    `provider` VARCHAR(191) NOT NULL DEFAULT 'YOOKASSA',
-    `providerId` VARCHAR(191) NULL,
-    `status` ENUM('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED') NOT NULL DEFAULT 'PENDING',
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "Achievement" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "badgeUrl" TEXT,
+    "pointsRequired" INTEGER DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    UNIQUE INDEX `PaymentTransaction_providerId_key`(`providerId`),
-    INDEX `PaymentTransaction_organizerId_idx`(`organizerId`),
-    INDEX `PaymentTransaction_challengeId_idx`(`challengeId`),
-    INDEX `PaymentTransaction_status_idx`(`status`),
-    INDEX `PaymentTransaction_providerId_idx`(`providerId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Achievement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserAchievement" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "achievementId" TEXT NOT NULL,
+    "earnedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserAchievement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SearchSession" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "sessionKey" TEXT NOT NULL,
+    "query" TEXT,
+    "filters" JSONB NOT NULL,
+    "sort" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "SearchSession_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SavedSearch" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "query" TEXT,
+    "filters" JSONB NOT NULL,
+    "sort" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "SavedSearch_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Favorite" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Favorite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "readAt" TIMESTAMP(3),
+    "payload" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "id" TEXT NOT NULL,
+    "actorUserId" TEXT,
+    "action" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT,
+    "beforeState" JSONB,
+    "afterState" JSONB,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PaymentTransaction" (
+    "id" TEXT NOT NULL,
+    "organizerId" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'RUB',
+    "provider" TEXT NOT NULL DEFAULT 'YOOKASSA',
+    "providerId" TEXT,
+    "status" "TransactionStatus" NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PaymentTransaction_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
+
+-- CreateIndex
+CREATE INDEX "User_status_idx" ON "User"("status");
+
+-- CreateIndex
+CREATE INDEX "User_deletedAt_idx" ON "User"("deletedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Role_key_key" ON "Role"("key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Permission_key_key" ON "Permission"("key");
+
+-- CreateIndex
+CREATE INDEX "PermissionRole_roleId_idx" ON "PermissionRole"("roleId");
+
+-- CreateIndex
+CREATE INDEX "PermissionRole_permissionId_idx" ON "PermissionRole"("permissionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PermissionRole_roleId_permissionId_key" ON "PermissionRole"("roleId", "permissionId");
+
+-- CreateIndex
+CREATE INDEX "UserRole_userId_idx" ON "UserRole"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserRole_roleId_idx" ON "UserRole"("roleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserRole_userId_roleId_key" ON "UserRole"("userId", "roleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Organizer_taxId_key" ON "Organizer"("taxId");
+
+-- CreateIndex
+CREATE INDEX "Organizer_type_idx" ON "Organizer"("type");
+
+-- CreateIndex
+CREATE INDEX "Organizer_status_idx" ON "Organizer"("status");
+
+-- CreateIndex
+CREATE INDEX "Organizer_deletedAt_idx" ON "Organizer"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "OrganizerMember_organizerId_idx" ON "OrganizerMember"("organizerId");
+
+-- CreateIndex
+CREATE INDEX "OrganizerMember_userId_idx" ON "OrganizerMember"("userId");
+
+-- CreateIndex
+CREATE INDEX "OrganizerMember_status_idx" ON "OrganizerMember"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OrganizerMember_organizerId_userId_key" ON "OrganizerMember"("organizerId", "userId");
+
+-- CreateIndex
+CREATE INDEX "Challenge_organizerId_idx" ON "Challenge"("organizerId");
+
+-- CreateIndex
+CREATE INDEX "Challenge_status_idx" ON "Challenge"("status");
+
+-- CreateIndex
+CREATE INDEX "Challenge_category_idx" ON "Challenge"("category");
+
+-- CreateIndex
+CREATE INDEX "Challenge_deletedAt_idx" ON "Challenge"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "Step_challengeId_idx" ON "Step"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "Step_order_idx" ON "Step"("order");
+
+-- CreateIndex
+CREATE INDEX "ChallengeMedia_challengeId_idx" ON "ChallengeMedia"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "ChallengeMedia_type_idx" ON "ChallengeMedia"("type");
+
+-- CreateIndex
+CREATE INDEX "ChallengePartner_challengeId_idx" ON "ChallengePartner"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "UserProgress_userId_idx" ON "UserProgress"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserProgress_challengeId_idx" ON "UserProgress"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "UserProgress_status_idx" ON "UserProgress"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserProgress_userId_challengeId_key" ON "UserProgress"("userId", "challengeId");
+
+-- CreateIndex
+CREATE INDEX "StepProgress_userProgressId_idx" ON "StepProgress"("userProgressId");
+
+-- CreateIndex
+CREATE INDEX "StepProgress_stepId_idx" ON "StepProgress"("stepId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "StepProgress_userProgressId_stepId_key" ON "StepProgress"("userProgressId", "stepId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Achievement_key_key" ON "Achievement"("key");
+
+-- CreateIndex
+CREATE INDEX "UserAchievement_userId_idx" ON "UserAchievement"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserAchievement_achievementId_idx" ON "UserAchievement"("achievementId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserAchievement_userId_achievementId_key" ON "UserAchievement"("userId", "achievementId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SearchSession_sessionKey_key" ON "SearchSession"("sessionKey");
+
+-- CreateIndex
+CREATE INDEX "SearchSession_userId_idx" ON "SearchSession"("userId");
+
+-- CreateIndex
+CREATE INDEX "SearchSession_deletedAt_idx" ON "SearchSession"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "SavedSearch_userId_idx" ON "SavedSearch"("userId");
+
+-- CreateIndex
+CREATE INDEX "SavedSearch_deletedAt_idx" ON "SavedSearch"("deletedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SavedSearch_userId_name_key" ON "SavedSearch"("userId", "name");
+
+-- CreateIndex
+CREATE INDEX "Favorite_userId_idx" ON "Favorite"("userId");
+
+-- CreateIndex
+CREATE INDEX "Favorite_challengeId_idx" ON "Favorite"("challengeId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Favorite_userId_challengeId_key" ON "Favorite"("userId", "challengeId");
+
+-- CreateIndex
+CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
+
+-- CreateIndex
+CREATE INDEX "Notification_type_idx" ON "Notification"("type");
+
+-- CreateIndex
+CREATE INDEX "Notification_readAt_idx" ON "Notification"("readAt");
+
+-- CreateIndex
+CREATE INDEX "Notification_deletedAt_idx" ON "Notification"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_actorUserId_idx" ON "AuditLog"("actorUserId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_action_idx" ON "AuditLog"("action");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_entityType_idx" ON "AuditLog"("entityType");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_entityId_idx" ON "AuditLog"("entityId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PaymentTransaction_providerId_key" ON "PaymentTransaction"("providerId");
+
+-- CreateIndex
+CREATE INDEX "PaymentTransaction_organizerId_idx" ON "PaymentTransaction"("organizerId");
+
+-- CreateIndex
+CREATE INDEX "PaymentTransaction_challengeId_idx" ON "PaymentTransaction"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "PaymentTransaction_status_idx" ON "PaymentTransaction"("status");
+
+-- CreateIndex
+CREATE INDEX "PaymentTransaction_providerId_idx" ON "PaymentTransaction"("providerId");
 
 -- AddForeignKey
-ALTER TABLE `PermissionRole` ADD CONSTRAINT `PermissionRole_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PermissionRole" ADD CONSTRAINT "PermissionRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PermissionRole` ADD CONSTRAINT `PermissionRole_permissionId_fkey` FOREIGN KEY (`permissionId`) REFERENCES `Permission`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PermissionRole" ADD CONSTRAINT "PermissionRole_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserRole` ADD CONSTRAINT `UserRole_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserRole` ADD CONSTRAINT `UserRole_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `OrganizerMember` ADD CONSTRAINT `OrganizerMember_organizerId_fkey` FOREIGN KEY (`organizerId`) REFERENCES `Organizer`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OrganizerMember" ADD CONSTRAINT "OrganizerMember_organizerId_fkey" FOREIGN KEY ("organizerId") REFERENCES "Organizer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `OrganizerMember` ADD CONSTRAINT `OrganizerMember_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OrganizerMember" ADD CONSTRAINT "OrganizerMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Challenge` ADD CONSTRAINT `Challenge_organizerId_fkey` FOREIGN KEY (`organizerId`) REFERENCES `Organizer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Challenge" ADD CONSTRAINT "Challenge_organizerId_fkey" FOREIGN KEY ("organizerId") REFERENCES "Organizer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Step` ADD CONSTRAINT `Step_challengeId_fkey` FOREIGN KEY (`challengeId`) REFERENCES `Challenge`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Step" ADD CONSTRAINT "Step_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChallengeMedia` ADD CONSTRAINT `ChallengeMedia_challengeId_fkey` FOREIGN KEY (`challengeId`) REFERENCES `Challenge`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChallengeMedia" ADD CONSTRAINT "ChallengeMedia_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChallengePartner` ADD CONSTRAINT `ChallengePartner_challengeId_fkey` FOREIGN KEY (`challengeId`) REFERENCES `Challenge`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChallengePartner" ADD CONSTRAINT "ChallengePartner_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserProgress` ADD CONSTRAINT `UserProgress_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserProgress" ADD CONSTRAINT "UserProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserProgress` ADD CONSTRAINT `UserProgress_challengeId_fkey` FOREIGN KEY (`challengeId`) REFERENCES `Challenge`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserProgress" ADD CONSTRAINT "UserProgress_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `StepProgress` ADD CONSTRAINT `StepProgress_userProgressId_fkey` FOREIGN KEY (`userProgressId`) REFERENCES `UserProgress`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "StepProgress" ADD CONSTRAINT "StepProgress_userProgressId_fkey" FOREIGN KEY ("userProgressId") REFERENCES "UserProgress"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `StepProgress` ADD CONSTRAINT `StepProgress_stepId_fkey` FOREIGN KEY (`stepId`) REFERENCES `Step`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StepProgress" ADD CONSTRAINT "StepProgress_stepId_fkey" FOREIGN KEY ("stepId") REFERENCES "Step"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserAchievement` ADD CONSTRAINT `UserAchievement_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserAchievement" ADD CONSTRAINT "UserAchievement_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserAchievement` ADD CONSTRAINT `UserAchievement_achievementId_fkey` FOREIGN KEY (`achievementId`) REFERENCES `Achievement`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserAchievement" ADD CONSTRAINT "UserAchievement_achievementId_fkey" FOREIGN KEY ("achievementId") REFERENCES "Achievement"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SearchSession` ADD CONSTRAINT `SearchSession_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "SearchSession" ADD CONSTRAINT "SearchSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SavedSearch` ADD CONSTRAINT `SavedSearch_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SavedSearch" ADD CONSTRAINT "SavedSearch_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Favorite` ADD CONSTRAINT `Favorite_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Favorite` ADD CONSTRAINT `Favorite_challengeId_fkey` FOREIGN KEY (`challengeId`) REFERENCES `Challenge`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Notification` ADD CONSTRAINT `Notification_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `AuditLog` ADD CONSTRAINT `AuditLog_actorUserId_fkey` FOREIGN KEY (`actorUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PaymentTransaction` ADD CONSTRAINT `PaymentTransaction_organizerId_fkey` FOREIGN KEY (`organizerId`) REFERENCES `Organizer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_organizerId_fkey" FOREIGN KEY ("organizerId") REFERENCES "Organizer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PaymentTransaction` ADD CONSTRAINT `PaymentTransaction_challengeId_fkey` FOREIGN KEY (`challengeId`) REFERENCES `Challenge`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
