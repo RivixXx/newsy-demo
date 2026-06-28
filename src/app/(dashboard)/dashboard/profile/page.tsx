@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { PageShell } from '@/shared/components/page-shell';
+import Link from 'next/link';
 import {
   Trophy, Flame, CheckCircle2, Zap, Settings, Bell, Shield,
   CreditCard, LogOut, TrendingUp, Edit3, Copy, Eye, Heart,
@@ -76,10 +77,10 @@ export default function ProfilePage() {
                 <div className="sc-icon" style={{ background: '#3b82f618', color: '#3b82f6' }}><Shield size={20} /></div>
                 <div className="sc-body"><h4>Безопасность</h4><p>Пароль, двухфакторная аутентификация</p></div>
               </div>
-              <div className="settings-card">
+              <Link href="/dashboard/subscription" className="settings-card">
                 <div className="sc-icon" style={{ background: '#8b5cf618', color: '#8b5cf6' }}><CreditCard size={20} /></div>
-                <div className="sc-body"><h4>Оплата</h4><p>Способы оплаты и история</p></div>
-              </div>
+                <div className="sc-body"><h4>Подписка</h4><p>Управление тарифом и оплатой</p></div>
+              </Link>
               <div className="settings-card">
                 <div className="sc-icon" style={{ background: '#f59e0b18', color: '#f59e0b' }}><Eye size={20} /></div>
                 <div className="sc-body"><h4>Приватность</h4><p>Видимость профиля</p></div>

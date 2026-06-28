@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createYooKassaService } from '@/modules/payments/services/yookassa-service';
 import { createPaymentService } from '@/modules/payments/services/payment-service';
+import { createSubscriptionService } from '@/modules/payments/services/subscription-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,8 +20,16 @@ export async function POST(req: NextRequest) {
       console.warn(`Webhook status mismatch: claimed=${object.status}, verified=${verifiedPayment.status}`);
     }
 
-    const paymentService = createPaymentService(prisma, yookassa);
-    await paymentService.handleWebhook({ event, object: verifiedPayment });
+    const metadata = verifiedPayment.metadata || object.metadata;
+    const paymentType = metadata?.type;
+
+    if (paymentType === 'SUBSCRIPTION') {
+      const subscriptionService = createSubscriptionService(prisma, yookassa);
+      await subscriptionService.handleWebhook({ event, object: verifiedPayment });
+    } else {
+      const paymentService = createPaymentService(prisma, yookassa);
+      await paymentService.handleWebhook({ event, object: verifiedPayment });
+    }
 
     return NextResponse.json({ status: 'ok' });
   } catch (error: any) {

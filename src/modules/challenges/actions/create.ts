@@ -69,6 +69,7 @@ export async function createChallengeAction(input: CreateChallengeInput) {
         description: input.description?.trim() || null,
         category: input.category || null,
         isCooperative: input.isCooperative,
+        entryFee: input.entryFee || 0,
         startDate: input.startDate ? new Date(input.startDate) : null,
         endDate: input.endDate ? new Date(input.endDate) : null,
         publishPrice: 0,

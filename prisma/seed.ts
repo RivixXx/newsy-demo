@@ -115,6 +115,51 @@ async function main() {
   }
 
   console.log('Seed completed successfully');
+
+  const subscriptionPlans = [
+    {
+      key: 'user_basic',
+      name: 'Базовый',
+      description: 'Бесплатный доступ к платформе',
+      price: 0,
+      interval: 'MONTHLY' as const,
+      features: ['Участие в челленджах', 'Базовая аналитика', 'До 3 активных челленджей'],
+      sortOrder: 0,
+    },
+    {
+      key: 'user_pro',
+      name: 'Профи',
+      description: 'Расширенный доступ для активных участников',
+      price: 299,
+      interval: 'MONTHLY' as const,
+      features: ['Безлимит челленджей', 'Расширенная аналитика', 'Приоритет в выдаче', 'Бейдж Профи', 'Эксклюзивные челленджи'],
+      sortOrder: 1,
+    },
+    {
+      key: 'organizer_basic',
+      name: 'Организатор',
+      description: 'Для бизнеса — создание и продвижение челленджей',
+      price: 4990,
+      interval: 'MONTHLY' as const,
+      features: ['Создание челленджей', 'До 500 участников', 'Брендирование', 'Аналитика охватов', 'Поддержка'],
+      sortOrder: 2,
+    },
+  ];
+
+  for (const plan of subscriptionPlans) {
+    await prisma.subscriptionPlan.upsert({
+      where: { key: plan.key },
+      update: { price: plan.price },
+      create: {
+        ...plan,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+  }
+
+  console.log('Subscription plans seeded');
 }
 
 main()

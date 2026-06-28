@@ -67,6 +67,18 @@ enum TransactionStatus {
   CANCELED
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
+}
+
 model User {
   id             String          @id @default(uuid())
   email          String?         @unique
@@ -92,6 +104,7 @@ model User {
   achievements          UserAchievement[]
   notifications         Notification[]
   auditLogs             AuditLog[]
+  subscriptions         UserSubscription[]
 
   @@index([status])
   @@index([deletedAt])
@@ -163,6 +176,7 @@ model Organizer {
   members     OrganizerMember[]
   challenges  Challenge[]
   payments    PaymentTransaction[]
+  payouts     CommissionPayout[]
 
   @@index([type])
   @@index([status])
@@ -198,6 +212,7 @@ model Challenge {
   isCooperative   Boolean                @default(false)
   startDate       DateTime?
   endDate         DateTime?
+  entryFee        Float                  @default(0)
   publishPrice    Float?               @default(1000.00)
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
@@ -210,6 +225,7 @@ model Challenge {
   favorites       Favorite[]
   partners        ChallengePartner[]
   payments        PaymentTransaction[]
+  commission      CommissionConfig?
 
   @@index([organizerId])
   @@index([status])
@@ -427,6 +443,7 @@ model PaymentTransaction {
   currency        String            @default("RUB")
   provider        String            @default("YOOKASSA")
   providerId      String?           @unique
+  type            String            @default("PUBLISH_CHALLENGE")
   status          TransactionStatus @default(PENDING)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -438,4 +455,76 @@ model PaymentTransaction {
   @@index([challengeId])
   @@index([status])
   @@index([providerId])
+}
+
+model SubscriptionPlan {
+  id              String               @id @default(uuid())
+  key             String               @unique
+  name            String
+  description     String?
+  price           Float
+  currency        String               @default("RUB")
+  interval        SubscriptionInterval @default(MONTHLY)
+  features        Json
+  isActive        Boolean              @default(true)
+  sortOrder       Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  subscriptions   UserSubscription[]
+
+  @@index([key])
+  @@index([isActive])
+}
+
+model UserSubscription {
+  id              String             @id @default(uuid())
+  userId          String
+  planId          String
+  status          SubscriptionStatus @default(ACTIVE)
+  providerId      String?            @unique
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  canceledAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([providerId])
+}
+
+model CommissionConfig {
+  id              String    @id @default(uuid())
+  challengeId     String    @unique
+  rate            Float
+  platformShare   Float
+  organizerShare  Float
+  createdAt       DateTime  @default(now())
+
+  challenge       Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+}
+
+model CommissionPayout {
+  id              String            @id @default(uuid())
+  organizerId     String
+  amount          Float
+  currency        String            @default("RUB")
+  status          TransactionStatus @default(PENDING)
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  organizer       Organizer         @relation(fields: [organizerId], references: [id], onDelete: Restrict)
+
+  @@index([organizerId])
+  @@index([status])
+  @@index([periodStart])
 }

@@ -25,6 +25,12 @@ CREATE TYPE "NotificationType" AS ENUM ('CHALLENGE_CREATED', 'CHALLENGE_UPDATED'
 -- CreateEnum
 CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED');
 
+-- CreateEnum
+CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'CANCELED', 'PAST_DUE', 'TRIALING');
+
+-- CreateEnum
+CREATE TYPE "SubscriptionInterval" AS ENUM ('MONTHLY', 'YEARLY');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -130,6 +136,7 @@ CREATE TABLE "Challenge" (
     "isCooperative" BOOLEAN NOT NULL DEFAULT false,
     "startDate" TIMESTAMP(3),
     "endDate" TIMESTAMP(3),
+    "entryFee" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "publishPrice" DOUBLE PRECISION DEFAULT 1000.00,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -312,6 +319,7 @@ CREATE TABLE "PaymentTransaction" (
     "currency" TEXT NOT NULL DEFAULT 'RUB',
     "provider" TEXT NOT NULL DEFAULT 'YOOKASSA',
     "providerId" TEXT,
+    "type" TEXT NOT NULL DEFAULT 'PUBLISH_CHALLENGE',
     "status" "TransactionStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -579,4 +587,116 @@ ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_organizerId_
 
 -- AddForeignKey
 ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- CreateTable
+CREATE TABLE "SubscriptionPlan" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "price" DOUBLE PRECISION NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'RUB',
+    "interval" "SubscriptionInterval" NOT NULL DEFAULT 'MONTHLY',
+    "features" JSONB NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SubscriptionPlan_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserSubscription" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "planId" TEXT NOT NULL,
+    "status" "SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
+    "providerId" TEXT,
+    "currentPeriodStart" TIMESTAMP(3) NOT NULL,
+    "currentPeriodEnd" TIMESTAMP(3) NOT NULL,
+    "canceledAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserSubscription_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CommissionConfig" (
+    "id" TEXT NOT NULL,
+    "challengeId" TEXT NOT NULL,
+    "rate" DOUBLE PRECISION NOT NULL,
+    "platformShare" DOUBLE PRECISION NOT NULL,
+    "organizerShare" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CommissionConfig_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CommissionPayout" (
+    "id" TEXT NOT NULL,
+    "organizerId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'RUB',
+    "status" "TransactionStatus" NOT NULL DEFAULT 'PENDING',
+    "periodStart" TIMESTAMP(3) NOT NULL,
+    "periodEnd" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CommissionPayout_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SubscriptionPlan_key_key" ON "SubscriptionPlan"("key");
+
+-- CreateIndex
+CREATE INDEX "SubscriptionPlan_key_idx" ON "SubscriptionPlan"("key");
+
+-- CreateIndex
+CREATE INDEX "SubscriptionPlan_isActive_idx" ON "SubscriptionPlan"("isActive");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserSubscription_providerId_key" ON "UserSubscription"("providerId");
+
+-- CreateIndex
+CREATE INDEX "UserSubscription_userId_idx" ON "UserSubscription"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserSubscription_planId_idx" ON "UserSubscription"("planId");
+
+-- CreateIndex
+CREATE INDEX "UserSubscription_status_idx" ON "UserSubscription"("status");
+
+-- CreateIndex
+CREATE INDEX "UserSubscription_providerId_idx" ON "UserSubscription"("providerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CommissionConfig_challengeId_key" ON "CommissionConfig"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "CommissionConfig_challengeId_idx" ON "CommissionConfig"("challengeId");
+
+-- CreateIndex
+CREATE INDEX "CommissionPayout_organizerId_idx" ON "CommissionPayout"("organizerId");
+
+-- CreateIndex
+CREATE INDEX "CommissionPayout_status_idx" ON "CommissionPayout"("status");
+
+-- CreateIndex
+CREATE INDEX "CommissionPayout_periodStart_idx" ON "CommissionPayout"("periodStart");
+
+-- AddForeignKey
+ALTER TABLE "UserSubscription" ADD CONSTRAINT "UserSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserSubscription" ADD CONSTRAINT "UserSubscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "SubscriptionPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CommissionConfig" ADD CONSTRAINT "CommissionConfig_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "Challenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CommissionPayout" ADD CONSTRAINT "CommissionPayout_organizerId_fkey" FOREIGN KEY ("organizerId") REFERENCES "Organizer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 

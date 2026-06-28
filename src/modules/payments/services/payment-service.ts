@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { YooKassaService } from './yookassa-service';
+import { createCommissionService } from './commission-service';
 
 export interface PaymentService {
   initiatePublishPayment(challengeId: string): Promise<{ checkoutUrl: string }>;
@@ -61,6 +62,7 @@ export function createPaymentService(
           currency: 'RUB',
           provider: 'YOOKASSA',
           providerId: payment.id,
+          type: 'PUBLISH_CHALLENGE',
           status: 'PENDING',
         },
       });
@@ -97,6 +99,27 @@ export function createPaymentService(
             data: { status: 'PUBLISHED' },
           }),
         ]);
+
+        if (transaction.type === 'PUBLISH_CHALLENGE') {
+          const challenge = await prisma.challenge.findUnique({
+            where: { id: transaction.challengeId },
+          });
+          if (challenge && challenge.entryFee && challenge.entryFee > 0) {
+            const commissionService = createCommissionService(prisma);
+            const commission = await commissionService.calculateCommission(
+              transaction.challengeId,
+              challenge.entryFee,
+              0
+            );
+            await commissionService.recordCommission(
+              transaction.challengeId,
+              commission.totalRevenue,
+              commission.platformShare,
+              commission.organizerShare,
+              commission.rate
+            );
+          }
+        }
       } else if (event === 'payment.canceled') {
         if (transaction.status === 'CANCELED') return;
 
