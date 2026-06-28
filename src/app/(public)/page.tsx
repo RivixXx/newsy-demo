@@ -8,6 +8,7 @@ import { PageShell } from '@/shared/components/page-shell';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
+import { useChallenges } from '@/shared/hooks/use-challenges';
 
 const CATEGORIES = ['Все подряд', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -45,22 +46,25 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
 }
 
 // ─── Карточка ─────────────────────────────────────────────────────────────
-function CatalogCard({ challenge, onOpen }: { challenge: CatalogChallenge; onOpen: (c: CatalogChallenge) => void }) {
+function CatalogCard({ challenge, onOpen, isAdmin }: { challenge: CatalogChallenge; onOpen: (c: CatalogChallenge) => void; isAdmin?: boolean }) {
   const [liked, setLiked] = useState(false);
   const availableSlots = challenge.maxParticipants - challenge.participantsCount;
+  const isDemo = challenge.isDemo || (!challenge.description && !challenge.location);
 
   return (
     <div className="catalog-card" onClick={() => onOpen(challenge)}>
       <div className="card-image-box">
         <img src={challenge.imageUrl} alt={challenge.title} className="card-bg-img" />
         <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {challenge.category}</span>
-        <span style={{
-          position: 'absolute', top: 12, left: 12,
-          background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-          color: 'white', padding: '4px 10px', borderRadius: 99,
-          fontSize: 10, fontWeight: 800, letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-        }}>ДЕМО</span>
+        {isAdmin && isDemo && (
+          <span style={{
+            position: 'absolute', top: 12, left: 12,
+            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+            color: 'white', padding: '4px 10px', borderRadius: 99,
+            fontSize: 10, fontWeight: 800, letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+          }}>ДЕМО</span>
+        )}
         <button
           className={`card-heart ${liked ? 'liked' : ''}`}
           onClick={e => { e.stopPropagation(); setLiked(v => !v); }}
@@ -188,11 +192,13 @@ function CarouselSection({
   challenges,
   onOpen,
   direction = 'right',
+  isAdmin,
 }: {
   title: string;
   challenges: CatalogChallenge[];
   onOpen: (c: CatalogChallenge) => void;
   direction?: 'left' | 'right';
+  isAdmin?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -260,7 +266,7 @@ function CarouselSection({
           onMouseMove={onMouseMove}
         >
           {challenges.map((c, i) => (
-            <CatalogCard key={`${c.id}-${i}`} challenge={c} onOpen={onOpen} />
+            <CatalogCard key={`${c.id}-${i}`} challenge={c} onOpen={onOpen} isAdmin={isAdmin} />
           ))}
         </div>
         <button className="carousel-btn next" onClick={() => scrollBy('right')}>
@@ -301,10 +307,11 @@ function CarouselSection({
 
 // ─── Главный компонент ─────────────────────────────────────────────────────
 export default function PublicHomePage() {
+  const { challenges, loading, isAdmin } = useChallenges();
   const [activeCategory, setActiveCategory] = useState('Все подряд');
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
 
-  const filtered = MOCK_CHALLENGES.filter(c => {
+  const filtered = challenges.filter(c => {
     const matchCat = activeCategory === 'Все подряд' || c.category === activeCategory;
     return matchCat;
   });
@@ -313,12 +320,12 @@ export default function PublicHomePage() {
   const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
 
   if (activeCategory === 'Все подряд') {
-    const recommended = MOCK_CHALLENGES.filter(c => c.isRecommended);
-    const sport = MOCK_CHALLENGES.filter(c => c.category === 'Спорт');
-    const quests = MOCK_CHALLENGES.filter(c => c.category === 'Квесты');
-    const education = MOCK_CHALLENGES.filter(c => c.category === 'Обучение');
-    const art = MOCK_CHALLENGES.filter(c => c.category === 'Искусство');
-    const tech = MOCK_CHALLENGES.filter(c => c.category === 'Технологии');
+    const recommended = challenges.filter(c => c.isRecommended);
+    const sport = challenges.filter(c => c.category === 'Спорт');
+    const quests = challenges.filter(c => c.category === 'Квесты');
+    const education = challenges.filter(c => c.category === 'Обучение');
+    const art = challenges.filter(c => c.category === 'Искусство');
+    const tech = challenges.filter(c => c.category === 'Технологии');
 
     if (recommended.length) sections.push({ title: 'Рекомендовано', challenges: recommended, direction: 'right' });
     if (sport.length) sections.push({ title: 'Спорт', challenges: sport, direction: 'left' });
@@ -368,6 +375,7 @@ export default function PublicHomePage() {
                   challenges={sec.challenges}
                   onOpen={c => setSelectedChallenge(c)}
                   direction={idx % 2 === 0 ? 'right' : 'left'}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>
@@ -381,7 +389,7 @@ export default function PublicHomePage() {
               </p>
               <div className="grid-layout">
                 {filtered.map(c => (
-                  <CatalogCard key={c.id} challenge={c} onOpen={ch => setSelectedChallenge(ch)} />
+                  <CatalogCard key={c.id} challenge={c} onOpen={ch => setSelectedChallenge(ch)} isAdmin={isAdmin} />
                 ))}
               </div>
             </>
