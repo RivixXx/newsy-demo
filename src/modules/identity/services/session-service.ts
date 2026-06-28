@@ -9,6 +9,8 @@ export function createSessionPayload(params: {
   userId: string;
   email?: string | null;
   phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   roles: string[];
   organizationIds: string[];
 }): AuthSession {
@@ -17,6 +19,8 @@ export function createSessionPayload(params: {
       id: params.userId,
       email: params.email ?? null,
       phone: params.phone ?? null,
+      firstName: params.firstName ?? null,
+      lastName: params.lastName ?? null,
       roles: params.roles,
       organizationIds: params.organizationIds
     },

@@ -47,6 +47,8 @@ export function createUserService(prisma: PrismaClient): UserService {
           id: true,
           email: true,
           phone: true,
+          firstName: true,
+          lastName: true,
           roles: {
             select: {
               role: {
@@ -72,6 +74,8 @@ export function createUserService(prisma: PrismaClient): UserService {
         id: user.id,
         email: user.email,
         phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
         roles: user.roles.map((role) => role.role.key),
         organizationIds: user.organizerMembership.map((membership) => membership.organizerId)
       };

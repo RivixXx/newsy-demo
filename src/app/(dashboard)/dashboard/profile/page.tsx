@@ -17,6 +17,7 @@ import {
 } from '@tabler/icons-react';
 import Link from 'next/link';
 import { logoutAction } from '@/modules/identity/actions';
+import { useSession } from '@/shared/components/session-provider';
 
 const ACTIVE_CHALLENGES = [
   {
@@ -153,8 +154,13 @@ function StatCard({ icon, label, value, trend, color }: {
 }
 
 export default function ProfilePage() {
+  const session = useSession();
   const [tab, setTab] = useState<'overview' | 'active' | 'achievements' | 'rewards' | 'history' | 'settings'>('overview');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
+  const userEmail = session?.user?.email || '';
+  const userInitial = userName.charAt(0).toUpperCase();
 
   const earnedCount = ACHIEVEMENTS.filter(a => a.earned).length;
   const completedCount = HISTORY.filter(h => h.result === 'completed').length;
@@ -179,7 +185,7 @@ export default function ProfilePage() {
               <div className="avatar-container">
                 <ProgressRing percent={75} size={96} stroke={4} />
                 <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4"
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}&backgroundColor=b6e3f4`}
                   alt="Avatar" className="avatar-img"
                 />
                 <button className="avatar-edit" title="Изменить фото" data-tour="avatar-edit">
@@ -189,7 +195,7 @@ export default function ProfilePage() {
               </div>
               <div className="hero-info">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <h1 className="hero-name">Alex Rivera</h1>
+                  <h1 className="hero-name">{userName}</h1>
                   <button className="edit-name-btn" data-tour="edit-name"><Edit3 size={14} /></button>
                 </div>
                 <p className="hero-rank">

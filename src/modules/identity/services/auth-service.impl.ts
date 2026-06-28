@@ -37,6 +37,8 @@ export function createAuthService(prisma: PrismaClient) {
         userId: authenticated.id,
         email: authenticated.email,
         phone: authenticated.phone,
+        firstName: authenticated.firstName,
+        lastName: authenticated.lastName,
         roles: authenticated.roles,
         organizationIds: authenticated.organizationIds
       });
