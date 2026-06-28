@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { createChallengeAction } from '@/modules/challenges/actions/create';
+import { FileUpload } from '@/shared/components/file-upload';
 
 type StepType = 'action' | 'photo' | 'geo' | 'question';
 type Device = 'mobile' | 'tablet' | 'desktop';
@@ -112,9 +113,14 @@ export default function NewChallengePage() {
                     ))}</div>
                   </div>
                   <div className="cc-f"><label>Обложка</label>
-                    <div className="cc-cover" onClick={() => update({ coverImage: data.coverImage ? '' : PLACEHOLDER })}>
-                      {data.coverImage ? <div className="cc-cover-img"><img src={data.coverImage} alt="" /><button className="cc-cover-x" onClick={e => { e.stopPropagation(); update({ coverImage: '' }); }}><X size={11} /></button></div> : <div className="cc-cover-empty"><Upload size={22} /><span>Загрузить обложку</span><small>1200×800 px</small></div>}
-                    </div>
+                    <FileUpload
+                      onUpload={(url) => update({ coverImage: url })}
+                      bucket="challenges"
+                      folder="covers"
+                      accept="image/jpeg,image/png,image/webp"
+                      maxSize={10}
+                      label="Загрузить обложку (1200×800 px)"
+                    />
                   </div>
                 </section>
               )}
