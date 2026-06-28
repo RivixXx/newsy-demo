@@ -23,9 +23,7 @@ export function useChallenges() {
 
   const challenges = isAdmin
     ? [...MOCK_CHALLENGES, ...dbChallenges]
-    : dbChallenges.length > 0
-      ? dbChallenges
-      : MOCK_CHALLENGES;
+    : dbChallenges;
 
   return { challenges, loading, isAdmin, dbChallenges };
 }

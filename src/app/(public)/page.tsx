@@ -365,7 +365,13 @@ export default function PublicHomePage() {
 
         {/* Контент */}
         <div className="catalog-content">
-          {activeCategory === 'Все подряд' ? (
+          {challenges.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, color: '#111', margin: '0 0 8px' }}>Челленджи пока не добавлены</h3>
+              <p style={{ fontSize: 14, color: '#888', margin: 0 }}>Скоро здесь появятся интересные активности</p>
+            </div>
+          ) : activeCategory === 'Все подряд' ? (
             // Несколько секций с чередованием направления
             <div className="sections-list">
               {sections.map((sec, idx) => (
