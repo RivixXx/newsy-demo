@@ -6,15 +6,23 @@ import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges
 import Link from 'next/link';
 import { Users, Trophy, ChevronRight, Gift } from 'lucide-react';
 
-const CATEGORIES = ['Все', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];
+const CATEGORY_LABELS: Record<string, string> = {
+  sport: 'Спорт',
+  education: 'Обучение',
+  quest: 'Квесты',
+  art: 'Искусство',
+  tech: 'Технологии',
+};
+const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
+const CATEGORIES = ['Все', ...CATEGORY_KEYS];
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Все': '⚡',
-  'Спорт': '🏃',
-  'Обучение': '📚',
-  'Квесты': '🗺️',
-  'Искусство': '🎨',
-  'Технологии': '⚙️',
+  sport: '🏃',
+  education: '📚',
+  quest: '🗺️',
+  art: '🎨',
+  tech: '⚙️',
 };
 
 function SearchCard({ challenge }: { challenge: CatalogChallenge }) {
@@ -25,7 +33,7 @@ function SearchCard({ challenge }: { challenge: CatalogChallenge }) {
       <div className="search-card">
         <div className="sc-img-wrap">
           <img src={challenge.imageUrl} alt={challenge.title} className="sc-img" />
-          <span className="sc-category">{challenge.category}</span>
+          <span className="sc-category">{CATEGORY_LABELS[challenge.category] || challenge.category}</span>
         </div>
         <div className="sc-body">
           <div className="sc-top">
@@ -164,7 +172,7 @@ export const ChallengeFeed: React.FC<{ hideFilters?: boolean }> = ({ hideFilters
                 className={`cat-pill ${selectedCategory === cat ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(cat)}
               >
-                {CATEGORY_ICONS[cat]} {cat}
+                {CATEGORY_ICONS[cat]} {cat === 'Все' ? cat : CATEGORY_LABELS[cat]}
               </button>
             ))}
           </div>

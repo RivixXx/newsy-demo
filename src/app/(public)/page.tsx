@@ -10,14 +10,22 @@ import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-mo
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
 
-const CATEGORIES = ['Все подряд', 'Спорт', 'Обучение', 'Квесты', 'Искусство', 'Технологии'];
+const CATEGORY_LABELS: Record<string, string> = {
+  sport: 'Спорт',
+  education: 'Обучение',
+  quest: 'Квесты',
+  art: 'Искусство',
+  tech: 'Технологии',
+};
+const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
+const CATEGORIES_ALL = ['Все подряд', ...CATEGORY_KEYS];
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Все подряд': <IconBolt size={16} />,
-  'Спорт': <IconRun size={16} />,
-  'Обучение': <IconSchool size={16} />,
-  'Квесты': <IconRoute size={16} />,
-  'Искусство': <IconPalette size={16} />,
-  'Технологии': <IconCpu size={16} />,
+  sport: <IconRun size={16} />,
+  education: <IconSchool size={16} />,
+  quest: <IconRoute size={16} />,
+  art: <IconPalette size={16} />,
+  tech: <IconCpu size={16} />,
 };
 
 function toModalChallenge(c: CatalogChallenge): ModalChallenge {
@@ -55,7 +63,7 @@ function CatalogCard({ challenge, onOpen, isAdmin }: { challenge: CatalogChallen
     <div className="catalog-card" onClick={() => onOpen(challenge)}>
       <div className="card-image-box">
         <img src={challenge.imageUrl} alt={challenge.title} className="card-bg-img" />
-        <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {challenge.category}</span>
+        <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {CATEGORY_LABELS[challenge.category] || challenge.category}</span>
         {isAdmin && isDemo && (
           <span style={{
             position: 'absolute', top: 12, left: 12,
@@ -316,23 +324,15 @@ export default function PublicHomePage() {
     return matchCat;
   });
 
-  // Сгруппировать по секциям для "Все подряд"
   const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
 
   if (activeCategory === 'Все подряд') {
     const recommended = challenges.filter(c => c.isRecommended);
-    const sport = challenges.filter(c => c.category === 'Спорт');
-    const quests = challenges.filter(c => c.category === 'Квесты');
-    const education = challenges.filter(c => c.category === 'Обучение');
-    const art = challenges.filter(c => c.category === 'Искусство');
-    const tech = challenges.filter(c => c.category === 'Технологии');
-
     if (recommended.length) sections.push({ title: 'Рекомендовано', challenges: recommended, direction: 'right' });
-    if (sport.length) sections.push({ title: 'Спорт', challenges: sport, direction: 'left' });
-    if (quests.length) sections.push({ title: 'Квесты', challenges: quests, direction: 'right' });
-    if (education.length) sections.push({ title: 'Обучение', challenges: education, direction: 'left' });
-    if (art.length) sections.push({ title: 'Искусство', challenges: art, direction: 'right' });
-    if (tech.length) sections.push({ title: 'Технологии', challenges: tech, direction: 'left' });
+    CATEGORY_KEYS.forEach((key, i) => {
+      const group = challenges.filter(c => c.category === key);
+      if (group.length) sections.push({ title: CATEGORY_LABELS[key], challenges: group, direction: i % 2 === 0 ? 'left' : 'right' });
+    });
   }
 
   return (
@@ -352,13 +352,13 @@ export default function PublicHomePage() {
 
         {/* Категории */}
         <div className="categories-scroll">
-            {CATEGORIES.map(cat => (
+            {CATEGORIES_ALL.map(cat => (
               <button
                 key={cat}
                 className={`cat-pill ${activeCategory === cat ? 'active' : ''}`}
                 onClick={() => setActiveCategory(cat)}
               >
-                {CATEGORY_ICONS[cat]} {cat}
+                {CATEGORY_ICONS[cat]} {cat === 'Все подряд' ? cat : CATEGORY_LABELS[cat]}
               </button>
             ))}
           </div>
