@@ -28,7 +28,11 @@ export default function AdminPage() {
     if (!isAdmin) return;
     fetch('/api/admin/stats')
       .then(r => r.json())
-      .then(d => { setStats(d); setLoading(false); })
+      .then(d => {
+        if (d.error) { setLoading(false); return; }
+        setStats(d);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [isAdmin]);
 
@@ -52,6 +56,27 @@ export default function AdminPage() {
       <PageShell>
         <div className="admin-page">
           <div className="admin-loading">Загрузка...</div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <PageShell>
+        <div className="admin-page">
+          <header className="admin-header">
+            <div>
+              <h1><Shield size={24} /> Админ-панель</h1>
+              <p>Управление платформой NEWSY</p>
+            </div>
+          </header>
+          <div className="admin-denied">
+            <TrendingUp size={48} color="#ddd" />
+            <h2>Данные недоступны</h2>
+            <p>Не удалось загрузить статистику. Возможно, база данных не мигрирована.</p>
+            <p style={{fontSize:12, color:'#aaa', marginTop:8}}>Выполните: npx prisma migrate deploy</p>
+          </div>
         </div>
       </PageShell>
     );

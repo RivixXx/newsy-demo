@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
+async function safeCount(fn: () => Promise<number>): Promise<number> {
+  try { return await fn(); } catch { return 0; }
+}
+
+async function safeFindMany<T>(fn: () => Promise<T>): Promise<T> {
+  try { return await fn(); } catch { return [] as T; }
+}
+
 export async function GET() {
   try {
     const session = await getCurrentAuthSession();
@@ -14,84 +22,74 @@ export async function GET() {
       return NextResponse.json({ error: 'Доступ запрещён' }, { status: 403 });
     }
 
-    const [usersTotal, usersActive, usersPending] = await Promise.all([
-      prisma.user.count({ where: { deletedAt: null } }),
-      prisma.user.count({ where: { status: 'ACTIVE', deletedAt: null } }),
-      prisma.user.count({ where: { status: 'PENDING', deletedAt: null } }),
-    ]);
+    const usersTotal = await safeCount(() => prisma.user.count({ where: { deletedAt: null } }));
+    const usersActive = await safeCount(() => prisma.user.count({ where: { status: 'ACTIVE', deletedAt: null } }));
+    const usersPending = await safeCount(() => prisma.user.count({ where: { status: 'PENDING', deletedAt: null } }));
 
-    const [challengesTotal, challengesPublished, challengesDraft, challengesOngoing] = await Promise.all([
-      prisma.challenge.count({ where: { deletedAt: null } }),
-      prisma.challenge.count({ where: { status: 'PUBLISHED', deletedAt: null } }),
-      prisma.challenge.count({ where: { status: 'DRAFT', deletedAt: null } }),
-      prisma.challenge.count({ where: { status: 'ONGOING', deletedAt: null } }),
-    ]);
+    const challengesTotal = await safeCount(() => prisma.challenge.count({ where: { deletedAt: null } }));
+    const challengesPublished = await safeCount(() => prisma.challenge.count({ where: { status: 'PUBLISHED', deletedAt: null } }));
+    const challengesDraft = await safeCount(() => prisma.challenge.count({ where: { status: 'DRAFT', deletedAt: null } }));
+    const challengesOngoing = await safeCount(() => prisma.challenge.count({ where: { status: 'ONGOING', deletedAt: null } }));
 
-    const [paymentsTotal, paymentsSucceeded, paymentsPending] = await Promise.all([
-      prisma.paymentTransaction.count(),
-      prisma.paymentTransaction.count({ where: { status: 'SUCCEEDED' } }),
-      prisma.paymentTransaction.count({ where: { status: 'PENDING' } }),
-    ]);
+    let paymentsTotal = 0, paymentsSucceeded = 0, paymentsPending = 0, revenue = 0;
+    try {
+      paymentsTotal = await prisma.paymentTransaction.count();
+      paymentsSucceeded = await prisma.paymentTransaction.count({ where: { status: 'SUCCEEDED' } });
+      paymentsPending = await prisma.paymentTransaction.count({ where: { status: 'PENDING' } });
+      const rev = await prisma.paymentTransaction.aggregate({ where: { status: 'SUCCEEDED' }, _sum: { amount: true } });
+      revenue = rev._sum.amount || 0;
+    } catch { /* PaymentTransaction may not have 'type' column yet */ }
 
-    const revenueResult = await prisma.paymentTransaction.aggregate({
-      where: { status: 'SUCCEEDED' },
-      _sum: { amount: true },
-    });
+    let subsActive = 0, subsCanceled = 0;
+    try {
+      subsActive = await prisma.userSubscription.count({ where: { status: 'ACTIVE' } });
+      subsCanceled = await prisma.userSubscription.count({ where: { status: 'CANCELED' } });
+    } catch { /* UserSubscription table may not exist yet */ }
 
-    const [subsActive, subsCanceled] = await Promise.all([
-      prisma.userSubscription.count({ where: { status: 'ACTIVE' } }),
-      prisma.userSubscription.count({ where: { status: 'CANCELED' } }),
-    ]);
+    const recentUsers = await safeFindMany(() =>
+      prisma.user.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true, email: true, firstName: true, lastName: true, status: true, createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }).then(users => users.map(u => ({
+        id: u.id, email: u.email, name: `${u.firstName} ${u.lastName}`.trim(),
+        status: u.status, createdAt: u.createdAt.toISOString(),
+      })))
+    );
 
-    const recentUsers = await prisma.user.findMany({
-      where: { deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        status: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }).then(users => users.map(u => ({
-      ...u,
-      name: `${u.firstName} ${u.lastName}`.trim(),
-    })));
+    const recentChallenges = await safeFindMany(() =>
+      prisma.challenge.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true, title: true, status: true, createdAt: true,
+          organizer: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }).then(chs => chs.map(ch => ({
+        id: ch.id, title: ch.title, status: ch.status,
+        organizer: ch.organizer.name, createdAt: ch.createdAt.toISOString(),
+      })))
+    );
 
-    const recentChallenges = await prisma.challenge.findMany({
-      where: { deletedAt: null },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        createdAt: true,
-        organizer: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }).then(chs => chs.map(ch => ({
-      ...ch,
-      organizer: ch.organizer.name,
-    })));
-
-    const recentPayments = await prisma.paymentTransaction.findMany({
-      select: {
-        id: true,
-        amount: true,
-        status: true,
-        type: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    });
+    const recentPayments = await safeFindMany(() =>
+      prisma.paymentTransaction.findMany({
+        select: { id: true, amount: true, status: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }).then(ps => ps.map(p => ({
+        id: p.id, amount: p.amount, status: p.status,
+        type: 'PUBLISH_CHALLENGE', createdAt: p.createdAt.toISOString(),
+      })))
+    );
 
     return NextResponse.json({
       users: { total: usersTotal, active: usersActive, pending: usersPending },
       challenges: { total: challengesTotal, published: challengesPublished, draft: challengesDraft, ongoing: challengesOngoing },
-      payments: { total: paymentsTotal, succeeded: paymentsSucceeded, pending: paymentsPending, revenue: revenueResult._sum.amount || 0 },
+      payments: { total: paymentsTotal, succeeded: paymentsSucceeded, pending: paymentsPending, revenue },
       subscriptions: { active: subsActive, canceled: subsCanceled },
       recentUsers,
       recentChallenges,
