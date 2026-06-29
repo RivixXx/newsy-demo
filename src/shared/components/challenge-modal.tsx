@@ -63,6 +63,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [stageInputs, setStageInputs] = useState<Record<string, string>>({});
   const [loadingChat, setLoadingChat] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const { toast } = useToast();
@@ -71,6 +72,19 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
+
+  useEffect(() => {
+    fetch(`/api/challenges/${challenge.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.stages) {
+          setStages(d.stages);
+          if (d.isJoined) setStatus('active');
+        }
+        setLoadingDetail(false);
+      })
+      .catch(() => setLoadingDetail(false));
+  }, [challenge.id]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -211,7 +225,14 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
             {/* STAGES TAB */}
             {activeTab === 'info' && (
               <div className="stages-list">
-                {stages.map((stage, idx) => (
+                {loadingDetail ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 40 }}>
+                    <div className="mini-spinner" />
+                    <span style={{ fontSize: 13, color: '#aaa' }}>Загрузка этапов...</span>
+                  </div>
+                ) : stages.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Этапы не найдены</div>
+                ) : stages.map((stage, idx) => (
                   <div
                     key={stage.id}
                     className={`stage-item ${stage.status}`}
@@ -293,7 +314,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                     )}
                   </div>
                 ))}
-              </div>
+                </div>
             )}
 
             {/* CHAT TAB */}
@@ -602,6 +623,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           flex-direction: column;
           max-height: 90vh;
           overflow: hidden;
+          min-width: 0;
         }
 
         .modal-title-block {
@@ -801,6 +823,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          min-height: 0;
         }
 
         .chat-history {
@@ -811,12 +834,14 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           flex-direction: column;
           gap: 12px;
           scrollbar-width: thin;
+          min-height: 0;
         }
 
         .chat-msg {
           display: flex;
           flex-direction: column;
           max-width: 75%;
+          flex-shrink: 0;
         }
 
         .chat-msg.me { align-self: flex-end; align-items: flex-end; }
@@ -953,6 +978,11 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(30px) scale(0.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .mini-spinner {
+          width: 32px; height: 32px; border-radius: 50%;
+          border: 3px solid #f0f0f0; border-top-color: #FF385C;
+          animation: spin 0.8s linear infinite;
         }
 
         @media (max-width: 768px) {
