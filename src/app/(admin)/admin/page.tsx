@@ -11,7 +11,7 @@ interface AdminStats {
   challenges: { total: number; published: number; draft: number; ongoing: number; pendingReview: number };
   payments: { total: number; succeeded: number; pending: number; revenue: number };
   subscriptions: { active: number; canceled: number };
-  recentUsers: { id: string; email: string; name: string; status: string; createdAt: string }[];
+  recentUsers: { id: string; email: string; name: string; status: string; createdAt: string; isOrganizer: boolean }[];
   recentChallenges: { id: string; title: string; status: string; organizer: string; createdAt: string }[];
   recentPayments: { id: string; amount: number; status: string; type: string; createdAt: string }[];
 }
@@ -260,25 +260,41 @@ export default function AdminPage() {
               {stats.recentUsers.map(u => (
                 <div key={u.id} className="list-row">
                   <div className="list-info">
-                    <span className="list-name">{u.name || u.email}</span>
+                    <span className="list-name">
+                      {u.name || u.email}
+                      {u.isOrganizer && <span className="org-badge">Организатор</span>}
+                    </span>
                     <span className="list-meta">{u.email} · {new Date(u.createdAt).toLocaleDateString('ru-RU')}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <span className={`status-badge ${u.status === 'ACTIVE' ? 'active' : 'pending'}`}>{u.status}</span>
-                    <button
-                      className="add-org-btn"
-                      onClick={async () => {
-                        const res = await fetch('/api/admin/organizer/add-member', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ userId: u.id }),
-                        });
-                        const data = await res.json();
-                        alert(data.message || data.error);
-                      }}
-                    >
-                      + В организацию
-                    </button>
+                    {!u.isOrganizer ? (
+                      <button
+                        className="add-org-btn"
+                        onClick={async () => {
+                          const res = await fetch('/api/admin/organizer/add-member', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: u.id }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setStats({
+                              ...stats,
+                              recentUsers: stats.recentUsers.map(usr =>
+                                usr.id === u.id ? { ...usr, isOrganizer: true } : usr
+                              ),
+                            });
+                          } else {
+                            alert(data.error);
+                          }
+                        }}
+                      >
+                        + В организацию
+                      </button>
+                    ) : (
+                      <span className="org-already">✓ В организации</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -412,6 +428,8 @@ export default function AdminPage() {
           .tab-content { display: flex; flex-direction: column; gap: 14px; }
           .add-org-btn { padding: 4px 10px; border-radius: 8px; border: 1px solid #16a34a; background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
           .add-org-btn:hover { background: #16a34a; color: white; }
+          .org-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: #ede9fe; color: #7c3aed; font-size: 10px; font-weight: 700; vertical-align: middle; }
+          .org-already { font-size: 11px; color: #16a34a; font-weight: 700; white-space: nowrap; }
           .pending-banner { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 24px; }
           .pending-banner:hover { background: #fef3c7; }
           .pending-banner span { font-size: 14px; color: #92400e; }

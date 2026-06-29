@@ -52,12 +52,14 @@ export async function GET() {
         where: { deletedAt: null },
         select: {
           id: true, email: true, firstName: true, lastName: true, status: true, createdAt: true,
+          organizerMembership: { select: { id: true } },
         },
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 20,
       }).then(users => users.map(u => ({
         id: u.id, email: u.email, name: `${u.firstName} ${u.lastName}`.trim(),
         status: u.status, createdAt: u.createdAt.toISOString(),
+        isOrganizer: u.organizerMembership.length > 0,
       })))
     );
 
