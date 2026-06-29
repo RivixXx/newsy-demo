@@ -1,27 +1,53 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { PageShell } from '@/shared/components/page-shell';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { PageShell } from '@/shared/components/page-shell';
 import {
   Trophy, Flame, CheckCircle2, Zap, Settings, Bell, Shield,
   CreditCard, LogOut, TrendingUp, Edit3, Copy, Eye, Heart,
-  Tag, Mail, ArrowUpRight, Crown
+  Tag, Mail, ArrowUpRight, Crown, Clock, Target
 } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 
-function AnimatedNumber({ value }: { value: number }) {
-  return <>{value}</>;
+interface ProfileData {
+  points: number;
+  rating: number;
+  memberSince: string;
+  activeChallenges: number;
+  completedChallenges: number;
+  achievements: number;
+  challenges: {
+    id: string;
+    title: string;
+    category: string;
+    status: string;
+    startedAt: string;
+    completedAt: string | null;
+    points: number;
+    completedSteps: number;
+    totalSteps: number;
+  }[];
 }
 
 export default function ProfilePage() {
   const session = useSession();
   const [tab, setTab] = useState<'overview' | 'settings'>('overview');
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+
+  useEffect(() => {
+    fetch('/api/user/profile-stats')
+      .then(r => r.json())
+      .then(d => setProfileData(d))
+      .catch(() => {});
+  }, []);
 
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
   const userEmail = session?.user?.email || '';
   const isOrganizer = (session?.user?.organizationIds?.length ?? 0) > 0;
+
+  const stats = profileData || { points: 0, rating: 0, activeChallenges: 0, completedChallenges: 0, achievements: 0, challenges: [], memberSince: '' };
 
   return (
     <PageShell>
@@ -48,16 +74,19 @@ export default function ProfilePage() {
                   {isOrganizer && <span className="org-tag">Организатор</span>}
                 </h1>
                 <p className="hero-meta"><Mail size={13} /> {userEmail}</p>
+                {profileData?.memberSince && (
+                  <p className="hero-meta"><Clock size={13} /> Участник с {new Date(profileData.memberSince).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         <div className="stats-grid">
-          <div className="stat-card"><div className="stat-icon"><Flame size={20} /></div><div className="stat-val"><AnimatedNumber value={0} /></div><div className="stat-lbl">Активных</div></div>
-          <div className="stat-card"><div className="stat-icon"><CheckCircle2 size={20} /></div><div className="stat-val"><AnimatedNumber value={0} /></div><div className="stat-lbl">Завершено</div></div>
-          <div className="stat-card"><div className="stat-icon"><Trophy size={20} /></div><div className="stat-val"><AnimatedNumber value={0} /></div><div className="stat-lbl">Достижений</div></div>
-          <div className="stat-card"><div className="stat-icon"><Zap size={20} /></div><div className="stat-val"><AnimatedNumber value={0} /></div><div className="stat-lbl">Баллов</div></div>
+          <div className="stat-card"><div className="stat-icon"><Flame size={20} /></div><div className="stat-val">{stats.activeChallenges}</div><div className="stat-lbl">Активных</div></div>
+          <div className="stat-card"><div className="stat-icon"><CheckCircle2 size={20} /></div><div className="stat-val">{stats.completedChallenges}</div><div className="stat-lbl">Завершено</div></div>
+          <div className="stat-card"><div className="stat-icon"><Trophy size={20} /></div><div className="stat-val">{stats.achievements}</div><div className="stat-lbl">Достижений</div></div>
+          <div className="stat-card"><div className="stat-icon"><Zap size={20} /></div><div className="stat-val">{stats.points}</div><div className="stat-lbl">Баллов</div></div>
         </div>
 
         <div className="tabs-bar">
@@ -67,11 +96,36 @@ export default function ProfilePage() {
 
         {tab === 'overview' && (
           <div className="tab-content fade-in">
-            <div className="empty-state">
-              <Trophy size={48} color="#ddd" />
-              <h3>Пока пусто</h3>
-              <p>Присоединяйтесь к челленджам и эта страница наполнится</p>
-            </div>
+            {stats.challenges.length === 0 ? (
+              <div className="empty-state">
+                <Trophy size={48} color="#ddd" />
+                <h3>Пока пусто</h3>
+                <p>Присоединяйтесь к челленджам и эта страница наполнится</p>
+                <Link href="/" style={{ display: 'inline-block', marginTop: 16, padding: '12px 24px', borderRadius: 12, background: '#FF385C', color: 'white', fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>
+                  Найти челлендж
+                </Link>
+              </div>
+            ) : (
+              <div className="challenges-list">
+                {stats.challenges.map(ch => (
+                  <Link key={ch.id} href={`/challenges/${ch.id}`} className="challenge-row">
+                    <div className="challenge-row-left">
+                      <Target size={18} color="#FF385C" />
+                      <div>
+                        <span className="challenge-row-title">{ch.title}</span>
+                        <span className="challenge-row-meta">{ch.category} · {new Date(ch.startedAt).toLocaleDateString('ru-RU')}</span>
+                      </div>
+                    </div>
+                    <div className="challenge-row-right">
+                      <span className="challenge-row-points">+{ch.points} б.</span>
+                      <span className={`challenge-row-status ${ch.status === 'COMPLETED' ? 'done' : ch.status === 'IN_PROGRESS' ? 'active' : ''}`}>
+                        {ch.status === 'COMPLETED' ? '✓ Завершён' : ch.status === 'IN_PROGRESS' ? `${ch.completedSteps}/${ch.totalSteps} этапов` : ch.status}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -145,6 +199,17 @@ export default function ProfilePage() {
         .settings-danger { margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0; }
         .danger-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .danger-btn:hover { background: #fee2e2; border-color: #f87171; }
+        .challenges-list { display: flex; flex-direction: column; gap: 8px; }
+        .challenge-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: white; border-radius: 14px; border: 1.5px solid #f0f0f0; text-decoration: none; transition: all 0.2s; }
+        .challenge-row:hover { border-color: #FF385C; box-shadow: 0 4px 12px rgba(255,56,92,0.08); }
+        .challenge-row-left { display: flex; align-items: center; gap: 12px; }
+        .challenge-row-title { display: block; font-size: 14px; font-weight: 700; color: #111; }
+        .challenge-row-meta { display: block; font-size: 12px; color: #aaa; margin-top: 2px; }
+        .challenge-row-right { display: flex; align-items: center; gap: 12px; }
+        .challenge-row-points { font-size: 13px; font-weight: 800; color: #FF385C; }
+        .challenge-row-status { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: #f3f4f6; color: #666; }
+        .challenge-row-status.done { background: #f0fdf4; color: #16a34a; }
+        .challenge-row-status.active { background: #fff7ed; color: #d97706; }
         @media (max-width: 768px) {
           .hero-content { flex-direction: column; align-items: stretch; padding: 0 20px 20px; }
           .hero-left { gap: 14px; }
