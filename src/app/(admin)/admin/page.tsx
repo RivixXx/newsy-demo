@@ -263,7 +263,23 @@ export default function AdminPage() {
                     <span className="list-name">{u.name || u.email}</span>
                     <span className="list-meta">{u.email} · {new Date(u.createdAt).toLocaleDateString('ru-RU')}</span>
                   </div>
-                  <span className={`status-badge ${u.status === 'ACTIVE' ? 'active' : 'pending'}`}>{u.status}</span>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span className={`status-badge ${u.status === 'ACTIVE' ? 'active' : 'pending'}`}>{u.status}</span>
+                    <button
+                      className="add-org-btn"
+                      onClick={async () => {
+                        const res = await fetch('/api/admin/organizer/add-member', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId: u.id }),
+                        });
+                        const data = await res.json();
+                        alert(data.message || data.error);
+                      }}
+                    >
+                      + В организацию
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -394,6 +410,8 @@ export default function AdminPage() {
           .admin-btn { padding: 12px 24px; border-radius: 12px; background: #111; color: white; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 12px; }
           .admin-loading { text-align: center; padding: 80px; color: #71717a; }
           .tab-content { display: flex; flex-direction: column; gap: 14px; }
+          .add-org-btn { padding: 4px 10px; border-radius: 8px; border: 1px solid #16a34a; background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+          .add-org-btn:hover { background: #16a34a; color: white; }
           .pending-banner { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 24px; }
           .pending-banner:hover { background: #fef3c7; }
           .pending-banner span { font-size: 14px; color: #92400e; }

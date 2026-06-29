@@ -109,6 +109,20 @@ async function main() {
     });
   }
 
+  const regularUser = await prisma.user.findFirst({ where: { email: 'user@newsy.ru' } });
+  if (existingOrganizer && regularUser) {
+    await prisma.organizerMember.upsert({
+      where: { organizerId_userId: { organizerId: existingOrganizer.id, userId: regularUser.id } },
+      update: {},
+      create: {
+        organizerId: existingOrganizer.id,
+        userId: regularUser.id,
+        roleInOrganizer: 'member',
+        status: 'ACTIVE',
+      },
+    });
+  }
+
   const user = await prisma.user.findFirst({ where: { email: 'user@newsy.ru' } });
   if (!user) {
     await prisma.user.create({
