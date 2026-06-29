@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Upload, X, Image, FileText, Loader2 } from 'lucide-react';
+import { useToast } from '@/shared/components/toast';
 
 interface FileUploadProps {
   onUpload: (url: string, path: string) => void;
@@ -26,12 +27,14 @@ export function FileUpload({
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > maxSize * 1024 * 1024) {
+      toast('warning', `Файл слишком большой (макс. ${maxSize} МБ)`);
       onError?.(`Файл слишком большой (макс. ${maxSize} МБ)`);
       return;
     }
@@ -62,7 +65,9 @@ export function FileUpload({
       }
 
       onUpload(data.url, data.path);
+      toast('success', 'Файл загружен');
     } catch (err: any) {
+      toast('error', err.message || 'Ошибка загрузки');
       onError?.(err.message || 'Ошибка загрузки');
       setPreview(null);
       setFileName(null);

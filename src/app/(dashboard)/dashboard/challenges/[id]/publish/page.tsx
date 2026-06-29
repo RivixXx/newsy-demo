@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { ChevronLeft, Check, Zap, Crown, Star, Loader2 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
+import { useToast } from '@/shared/components/toast';
 
 const TARIFF_ICONS: Record<string, React.ReactNode> = {
   basic: <Zap size={24} />,
@@ -25,6 +26,7 @@ export default function PublishPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const { toast } = useToast();
 
   const handlePublish = async () => {
     const tariff = PUBLISH_TARIFFS.find(t => t.id === selected);
@@ -46,6 +48,7 @@ export default function PublishPage() {
           return;
         }
         setSubmitted(true);
+        toast('success', 'Челлендж отправлен на модерацию!');
         return;
       }
 
@@ -62,6 +65,7 @@ export default function PublishPage() {
       window.location.href = data.checkoutUrl;
     } catch {
       setError('Ошибка сети');
+      toast('error', 'Ошибка сети при отправке');
     } finally {
       setLoading(false);
     }

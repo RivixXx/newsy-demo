@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Shield, Users, Trophy, CreditCard, Bell, TrendingUp, Activity, DollarSign, Eye, Edit3, Trash2, CheckCircle, XCircle, Clock, BarChart3 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { useSession } from '@/shared/components/session-provider';
+import { useToast } from '@/shared/components/toast';
 
 interface AdminStats {
   users: { total: number; active: number; pending: number };
@@ -38,6 +39,7 @@ export default function AdminPage() {
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [rejectModal, setRejectModal] = useState<{ challengeId: string; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const { toast } = useToast();
 
   const isAdmin = session?.user?.roles?.includes('admin');
 
@@ -82,6 +84,7 @@ export default function AdminPage() {
             },
           });
         }
+        toast('success', action === 'approve' ? 'Челлендж одобрен и опубликован' : 'Челлендж возвращён на доработку');
       }
     } catch {}
     setReviewing(null);
@@ -292,17 +295,18 @@ export default function AdminPage() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ userId: u.id }),
                           });
-                          const data = await res.json();
-                          if (data.success) {
-                            setStats({
-                              ...stats,
-                              recentUsers: stats.recentUsers.map(usr =>
-                                usr.id === u.id ? { ...usr, isOrganizer: true } : usr
-                              ),
-                            });
-                          } else {
-                            alert(data.error);
-                          }
+                      const data = await res.json();
+                      if (data.success) {
+                        setStats({
+                          ...stats,
+                          recentUsers: stats.recentUsers.map(usr =>
+                            usr.id === u.id ? { ...usr, isOrganizer: true } : usr
+                          ),
+                        });
+                        toast('success', data.message);
+                      } else {
+                        toast('error', data.error);
+                      }
                         }}
                       >
                         + В организацию
