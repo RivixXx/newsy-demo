@@ -57,21 +57,21 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
 function CatalogCard({ challenge, onOpen, isAdmin }: { challenge: CatalogChallenge; onOpen: (c: CatalogChallenge) => void; isAdmin?: boolean }) {
   const [liked, setLiked] = useState(false);
   const availableSlots = challenge.maxParticipants - challenge.participantsCount;
-  const isDemo = challenge.isDemo || (!challenge.description && !challenge.location);
+  const isNew = challenge.badges?.includes('new');
 
   return (
     <div className="catalog-card" onClick={() => onOpen(challenge)}>
       <div className="card-image-box">
         <img src={challenge.imageUrl} alt={challenge.title} className="card-bg-img" />
         <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {CATEGORY_LABELS[challenge.category] || challenge.category}</span>
-        {isAdmin && isDemo && (
+        {isNew && (
           <span style={{
             position: 'absolute', top: 12, left: 12,
-            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+            background: 'linear-gradient(135deg, #16a34a, #15803d)',
             color: 'white', padding: '4px 10px', borderRadius: 99,
             fontSize: 10, fontWeight: 800, letterSpacing: '0.05em',
             textTransform: 'uppercase',
-          }}>ДЕМО</span>
+          }}>Новый</span>
         )}
         <button
           className={`card-heart ${liked ? 'liked' : ''}`}

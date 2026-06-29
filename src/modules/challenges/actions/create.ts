@@ -46,20 +46,13 @@ export async function createChallengeAction(input: CreateChallengeInput) {
   }
 
   try {
-    // Get or create organizer for this user
+    // Get organizer where user is a member
     let organizer = await prisma.organizer.findFirst({
       where: { members: { some: { userId: session.user.id } } },
     });
 
     if (!organizer) {
-      // Use default NEWSY organizer
-      organizer = await prisma.organizer.findFirst({
-        where: { name: 'NEWSY' },
-      });
-    }
-
-    if (!organizer) {
-      return { error: 'Организатор не найден' };
+      return { error: 'Вы не являетесь участником организации. Обратитесь к администратору.' };
     }
 
     const challenge = await prisma.challenge.create({

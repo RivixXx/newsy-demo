@@ -236,3 +236,47 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
 export function getChallengeById(id: string): CatalogChallenge | undefined {
   return MOCK_CHALLENGES.find(c => c.id === id);
 }
+
+export async function getChallengeFromDb(id: string): Promise<CatalogChallenge | null> {
+  try {
+    const { prisma } = await import('@/lib/db');
+    const challenge = await prisma.challenge.findUnique({
+      where: { id, deletedAt: null },
+      include: {
+        organizer: { select: { name: true } },
+        media: { orderBy: { sortOrder: 'asc' }, take: 1 },
+        steps: { select: { title: true, description: true, type: true, rewardPoints: true, config: true, order: true }, orderBy: { order: 'asc' } },
+        _count: { select: { participations: true } },
+      },
+    });
+
+    if (!challenge) return null;
+
+    const CATEGORIES: Record<string, string> = {
+      sport: 'Спорт', education: 'Обучение', quest: 'Квесты', art: 'Искусство', tech: 'Технологии',
+    };
+
+    return {
+      id: challenge.id,
+      title: challenge.title,
+      organizer: challenge.organizer.name,
+      category: challenge.category || 'Другое',
+      imageUrl: challenge.media[0]?.url || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80',
+      participantsCount: challenge._count.participations,
+      maxParticipants: 100,
+      isJoined: false,
+      badges: challenge.status === 'PUBLISHED' ? [] : ['draft'],
+      isRecommended: false,
+      achievement: challenge.steps[0]?.rewardPoints ? `${challenge.steps[0].rewardPoints} баллов` : 'Участие',
+      reward: 'Награда',
+      location: 'Онлайн',
+      endDate: challenge.endDate ? new Date(challenge.endDate).toLocaleDateString('ru-RU') : 'Бессрочно',
+      description: challenge.description || '',
+      requirements: '',
+      refundPolicy: '',
+      isDemo: false,
+    };
+  } catch {
+    return null;
+  }
+}

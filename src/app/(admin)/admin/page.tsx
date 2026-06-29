@@ -8,7 +8,7 @@ import { useSession } from '@/shared/components/session-provider';
 
 interface AdminStats {
   users: { total: number; active: number; pending: number };
-  challenges: { total: number; published: number; draft: number; ongoing: number };
+  challenges: { total: number; published: number; draft: number; ongoing: number; pendingReview: number };
   payments: { total: number; succeeded: number; pending: number; revenue: number };
   subscriptions: { active: number; canceled: number };
   recentUsers: { id: string; email: string; name: string; status: string; createdAt: string }[];
@@ -16,11 +16,26 @@ interface AdminStats {
   recentPayments: { id: string; amount: number; status: string; type: string; createdAt: string }[];
 }
 
+interface PendingChallenge {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  status: string;
+  createdAt: string;
+  organizer: { name: string };
+  media: { url: string }[];
+  steps: { title: string; type: string; rewardPoints: number }[];
+  _count: { participations: number };
+}
+
 export default function AdminPage() {
   const session = useSession();
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [pendingChallenges, setPendingChallenges] = useState<PendingChallenge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'users' | 'challenges' | 'payments'>('overview');
+  const [tab, setTab] = useState<'overview' | 'users' | 'challenges' | 'payments' | 'moderation'>('overview');
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   const isAdmin = session?.user?.roles?.includes('admin');
 
@@ -34,7 +49,41 @@ export default function AdminPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetch('/api/admin/challenges/pending')
+      .then(r => r.json())
+      .then(d => {
+        if (d.challenges) setPendingChallenges(d.challenges);
+      })
+      .catch(() => {});
   }, [isAdmin]);
+
+  const handleReview = async (challengeId: string, action: 'approve' | 'reject') => {
+    setReviewing(challengeId);
+    try {
+      const res = await fetch(`/api/admin/challenges/${challengeId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
+        if (stats) {
+          setStats({
+            ...stats,
+            challenges: {
+              ...stats.challenges,
+              pendingReview: stats.challenges.pendingReview - 1,
+              published: action === 'approve' ? stats.challenges.published + 1 : stats.challenges.published,
+              draft: action === 'reject' ? stats.challenges.draft + 1 : stats.challenges.draft,
+            },
+          });
+        }
+      }
+    } catch {}
+    setReviewing(null);
+  };
 
   if (!isAdmin) {
     return (
@@ -93,9 +142,9 @@ export default function AdminPage() {
         </header>
 
         <div className="admin-tabs">
-          {(['overview', 'users', 'challenges', 'payments'] as const).map(t => (
+          {(['overview', 'moderation', 'users', 'challenges', 'payments'] as const).map(t => (
             <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-              {t === 'overview' ? 'Обзор' : t === 'users' ? 'Пользователи' : t === 'challenges' ? 'Челленджи' : 'Платежи'}
+              {t === 'overview' ? 'Обзор' : t === 'moderation' ? `Модерация (${pendingChallenges.length})` : t === 'users' ? 'Пользователи' : t === 'challenges' ? 'Челленджи' : 'Платежи'}
             </button>
           ))}
         </div>
@@ -132,6 +181,14 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+
+            {pendingChallenges.length > 0 && (
+              <div className="pending-banner" onClick={() => setTab('moderation')}>
+                <Clock size={20} />
+                <span><strong>{pendingChallenges.length}</strong> челлендж(ей) ожидают модерации</span>
+                <span className="pending-arrow">→</span>
+              </div>
+            )}
 
             <div className="detail-grid">
               <div className="detail-card">
@@ -213,6 +270,57 @@ export default function AdminPage() {
           </div>
         )}
 
+        {tab === 'moderation' && (
+          <div className="tab-content">
+            {pendingChallenges.length === 0 ? (
+              <div className="empty-state">
+                <CheckCircle size={48} color="#16a34a" />
+                <h3>Все проверено</h3>
+                <p>Нет челленджей, ожидающих модерации</p>
+              </div>
+            ) : (
+              pendingChallenges.map(ch => (
+                <div key={ch.id} className="moderation-card">
+                  <div className="mod-header">
+                    {ch.media[0] && <img src={ch.media[0].url} alt="" className="mod-thumb" />}
+                    <div className="mod-info">
+                      <h3>{ch.title}</h3>
+                      <p>{ch.description || 'Без описания'}</p>
+                      <div className="mod-meta">
+                        <span>Организатор: <strong>{ch.organizer.name}</strong></span>
+                        <span>Категория: <strong>{ch.category || '—'}</strong></span>
+                        <span>Этапов: <strong>{ch.steps.length}</strong></span>
+                        <span>{new Date(ch.createdAt).toLocaleDateString('ru-RU')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mod-steps">
+                    {ch.steps.map((s, i) => (
+                      <span key={i} className="mod-step-badge">{s.title} ({s.rewardPoints} б.)</span>
+                    ))}
+                  </div>
+                  <div className="mod-actions">
+                    <button
+                      className="mod-btn approve"
+                      onClick={() => handleReview(ch.id, 'approve')}
+                      disabled={reviewing === ch.id}
+                    >
+                      <CheckCircle size={16} /> Одобрить
+                    </button>
+                    <button
+                      className="mod-btn reject"
+                      onClick={() => handleReview(ch.id, 'reject')}
+                      disabled={reviewing === ch.id}
+                    >
+                      <XCircle size={16} /> Отклонить
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         {tab === 'challenges' && stats && (
           <div className="tab-content">
             <div className="list-card full">
@@ -286,6 +394,30 @@ export default function AdminPage() {
           .admin-btn { padding: 12px 24px; border-radius: 12px; background: #111; color: white; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 12px; }
           .admin-loading { text-align: center; padding: 80px; color: #71717a; }
           .tab-content { display: flex; flex-direction: column; gap: 14px; }
+          .pending-banner { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 24px; }
+          .pending-banner:hover { background: #fef3c7; }
+          .pending-banner span { font-size: 14px; color: #92400e; }
+          .pending-arrow { margin-left: auto; font-size: 18px; }
+          .empty-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px; text-align: center; }
+          .empty-state h3 { font-size: 18px; font-weight: 800; margin: 0; color: #111; }
+          .empty-state p { font-size: 14px; color: #888; margin: 0; }
+          .moderation-card { background: white; border-radius: 16px; padding: 20px; border: 1px solid #f0f0f0; display: flex; flex-direction: column; gap: 14px; }
+          .mod-header { display: flex; gap: 14px; }
+          .mod-thumb { width: 120px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+          .mod-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+          .mod-info h3 { font-size: 16px; font-weight: 800; margin: 0; color: #111; }
+          .mod-info p { font-size: 13px; color: #71717a; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+          .mod-meta { display: flex; gap: 14px; font-size: 12px; color: #888; margin-top: 4px; flex-wrap: wrap; }
+          .mod-meta strong { color: #333; }
+          .mod-steps { display: flex; gap: 6px; flex-wrap: wrap; }
+          .mod-step-badge { padding: 4px 10px; border-radius: 8px; background: #f3f4f6; font-size: 11px; font-weight: 600; color: #555; }
+          .mod-actions { display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid #f5f5f5; }
+          .mod-btn { display: flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: all 0.15s; }
+          .mod-btn:disabled { opacity: 0.5; cursor: default; }
+          .mod-btn.approve { background: #16a34a; color: white; }
+          .mod-btn.approve:hover:not(:disabled) { background: #15803d; }
+          .mod-btn.reject { background: #fee2e2; color: #dc2626; }
+          .mod-btn.reject:hover:not(:disabled) { background: #fecaca; }
           @media (max-width: 900px) { .stats-grid, .detail-grid, .lists-grid { grid-template-columns: 1fr; } }
         `}</style>
       </div>

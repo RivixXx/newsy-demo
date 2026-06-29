@@ -95,6 +95,20 @@ async function main() {
     console.log('Admin created: admin@newsy.ru / Newsy123!');
   }
 
+  const existingOrganizer = await prisma.organizer.findFirst({ where: { name: 'NEWSY' } });
+  if (existingOrganizer && admin) {
+    await prisma.organizerMember.upsert({
+      where: { organizerId_userId: { organizerId: existingOrganizer.id, userId: admin.id } },
+      update: {},
+      create: {
+        organizerId: existingOrganizer.id,
+        userId: admin.id,
+        roleInOrganizer: 'admin',
+        status: 'ACTIVE',
+      },
+    });
+  }
+
   const user = await prisma.user.findFirst({ where: { email: 'user@newsy.ru' } });
   if (!user) {
     await prisma.user.create({
@@ -160,6 +174,83 @@ async function main() {
   }
 
   console.log('Subscription plans seeded');
+
+  // =============================================
+  // STARTER CHALLENGE: "Гайд по платформе NEWSY"
+  // =============================================
+  const organizer = await prisma.organizer.findFirst({ where: { name: 'NEWSY' } });
+  if (organizer) {
+    const existingChallenge = await prisma.challenge.findUnique({ where: { id: 'ch-guide-001' } });
+    if (!existingChallenge) {
+      await prisma.challenge.create({
+        data: {
+          id: 'ch-guide-001',
+          organizerId: organizer.id,
+          status: 'DRAFT',
+          title: 'Гайд по платформе NEWSY: Первые шаги',
+          description: 'Познакомься с платформой NEWSY! Пройди 5 простых этапов, чтобы узнать все функции: загрузка файлов, профиль, навигация, поиск и достижения. Идеально для первого знакомства.',
+          category: 'education',
+          isCooperative: false,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          entryFee: 0,
+          publishPrice: 0,
+          steps: {
+            create: [
+              {
+                title: 'Заполни профиль',
+                description: 'Зайди в настройки профиля и заполни имя, фамилию. Загрузи аватар.',
+                order: 0,
+                type: 'action',
+                rewardPoints: 10,
+              },
+              {
+                title: 'Сфотографируй экран приветствия',
+                description: 'Сделай скриншот главной страницы и загрузи его как подтверждение.',
+                order: 1,
+                type: 'photo',
+                rewardPoints: 20,
+              },
+              {
+                title: 'Найди челлендж через поиск',
+                description: 'В поиске найди любой челлендж по ключевому слову. Выбери правильный ответ.',
+                order: 2,
+                type: 'question',
+                config: {
+                  options: ['Гайд по платформе NEWSY', 'Забег на 5 км', 'Что-то другое'],
+                  correctIndex: 0,
+                },
+                rewardPoints: 15,
+              },
+              {
+                title: 'Добавь челлендж в избранное',
+                description: 'Нажми на любой челлендж и добавь его в избранное. Это поможет тебе не потерять интересные задания.',
+                order: 3,
+                type: 'action',
+                rewardPoints: 15,
+              },
+              {
+                title: 'Посмотри свои достижения',
+                description: 'Перейди в раздел достижений и проверь, какие баллы ты уже заработал.',
+                order: 4,
+                type: 'action',
+                rewardPoints: 20,
+              },
+            ],
+          },
+          media: {
+            create: {
+              type: 'IMAGE',
+              url: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+              sortOrder: 0,
+              altText: 'Обложка гайда по платформе',
+            },
+          },
+        },
+      });
+      console.log('Starter challenge created: ch-guide-001 (DRAFT)');
+    }
+  }
 }
 
 main()

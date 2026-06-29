@@ -33,18 +33,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
 
-    await prisma.$transaction([
-      prisma.paymentTransaction.updateMany({
-        where: { challengeId, status: 'PENDING' },
-        data: { status: 'SUCCEEDED' },
-      }),
-      prisma.challenge.update({
-        where: { id: challengeId },
-        data: { status: 'PUBLISHED' },
-      }),
-    ]);
+    await prisma.challenge.update({
+      where: { id: challengeId },
+      data: { status: 'PENDING_REVIEW' },
+    });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, status: 'PENDING_REVIEW' });
   } catch (error: any) {
     console.error('Mock confirm error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

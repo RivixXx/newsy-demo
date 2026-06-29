@@ -44,9 +44,6 @@ export function createSubscriptionService(
         return { checkoutUrl: `/dashboard/profile?subscription=success` };
       }
 
-      const now = new Date();
-      const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
       const payment = await yookassa.createPayment({
         amount: {
           value: plan.price.toFixed(2),
@@ -62,17 +59,6 @@ export function createSubscriptionService(
           userId,
           planId: plan.id,
           type: 'SUBSCRIPTION',
-        },
-      });
-
-      await prisma.userSubscription.create({
-        data: {
-          userId,
-          planId: plan.id,
-          status: 'PENDING' as any,
-          providerId: payment.id,
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
         },
       });
 
@@ -104,32 +90,54 @@ export function createSubscriptionService(
         throw new Error('Invalid webhook payload');
       }
 
-      const subscription = await prisma.userSubscription.findUnique({
-        where: { providerId: object.id },
-      });
-
-      if (!subscription) {
-        console.warn(`Webhook for unknown subscription: ${object.id}`);
-        return;
-      }
-
       if (event === 'payment.succeeded') {
-        if (subscription.status === 'ACTIVE') return;
+        const metadata = object.metadata;
+        const userId = metadata?.userId;
+        const planId = metadata?.planId;
 
-        const now = new Date();
-        await prisma.userSubscription.update({
-          where: { id: subscription.id },
-          data: {
-            status: 'ACTIVE',
-            currentPeriodStart: now,
-            currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-          },
+        if (!userId || !planId) {
+          console.warn(`Webhook missing metadata for subscription: ${object.id}`);
+          return;
+        }
+
+        const existing = await prisma.userSubscription.findFirst({
+          where: { providerId: object.id },
         });
+
+        if (existing) {
+          if (existing.status === 'ACTIVE') return;
+          const now = new Date();
+          await prisma.userSubscription.update({
+            where: { id: existing.id },
+            data: {
+              status: 'ACTIVE',
+              currentPeriodStart: now,
+              currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+            },
+          });
+        } else {
+          const now = new Date();
+          await prisma.userSubscription.create({
+            data: {
+              userId,
+              planId,
+              status: 'ACTIVE',
+              providerId: object.id,
+              currentPeriodStart: now,
+              currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+            },
+          });
+        }
       } else if (event === 'payment.canceled') {
-        await prisma.userSubscription.update({
-          where: { id: subscription.id },
-          data: { status: 'CANCELED' },
+        const existing = await prisma.userSubscription.findFirst({
+          where: { providerId: object.id },
         });
+        if (existing) {
+          await prisma.userSubscription.update({
+            where: { id: existing.id },
+            data: { status: 'CANCELED' },
+          });
+        }
       }
     },
 

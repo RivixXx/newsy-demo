@@ -68,8 +68,8 @@ export async function registerAction(
   if (!firstName || !lastName || !email || !password) {
     return { error: 'Заполните все поля.' };
   }
-  if (password.length < 6) {
-    return { error: 'Пароль должен быть не менее 6 символов.' };
+  if (password.length < 8) {
+    return { error: 'Пароль должен быть не менее 8 символов.' };
   }
   if (password !== confirm) {
     return { error: 'Пароли не совпадают.' };

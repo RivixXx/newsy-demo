@@ -24,6 +24,7 @@ export default function PublishPage() {
   const [selected, setSelected] = useState<string>('pro');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const handlePublish = async () => {
     const tariff = PUBLISH_TARIFFS.find(t => t.id === selected);
@@ -44,7 +45,7 @@ export default function PublishPage() {
           setError(data.error || 'Ошибка публикации');
           return;
         }
-        window.location.href = '/';
+        setSubmitted(true);
         return;
       }
 
@@ -69,49 +70,68 @@ export default function PublishPage() {
   return (
     <PageShell>
       <div className="publish-page">
-        <header className="pub-header">
-          <Link href="/dashboard" className="pub-back">
-            <ChevronLeft size={18} /> Назад
-          </Link>
-          <h1>Публикация челленджа</h1>
-          <p>Выберите тариф для публикации</p>
-        </header>
+        {submitted ? (
+          <div className="submitted-card">
+            <div className="submitted-icon">
+              <Check size={48} color="#16a34a" />
+            </div>
+            <h2>Челлендж отправлен на модерацию</h2>
+            <p>Администратор проверит ваш челлендж и одобрит его для публикации. Обычно это занимает до 24 часов.</p>
+            <Link href="/dashboard" className="pub-btn" style={{ textDecoration: 'none' }}>
+              Вернуться в кабинет
+            </Link>
+          </div>
+        ) : (
+          <>
+            <header className="pub-header">
+              <Link href="/dashboard" className="pub-back">
+                <ChevronLeft size={18} /> Назад
+              </Link>
+              <h1>Публикация челленджа</h1>
+              <p>Выберите тариф для публикации</p>
+            </header>
 
-        <div className="tariffs-grid">
-          {PUBLISH_TARIFFS.map(tariff => (
-            <button
-              key={tariff.id}
-              className={`tariff-card ${selected === tariff.id ? 'selected' : ''} ${tariff.recommended ? 'recommended' : ''}`}
-              onClick={() => setSelected(tariff.id)}
-            >
-              {tariff.recommended && <span className="tariff-badge">Популярный</span>}
-              <div className="tariff-icon" style={{ background: `${TARIFF_COLORS[tariff.id]}15`, color: TARIFF_COLORS[tariff.id] }}>
-                {TARIFF_ICONS[tariff.id]}
-              </div>
-              <h3>{tariff.name}</h3>
-              <div className="tariff-price">
-                {tariff.price === 0 ? 'Бесплатно' : `${tariff.price.toLocaleString('ru-RU')} ₽`}
-              </div>
-              <ul className="tariff-features">
-                {tariff.features.map((f, i) => (
-                  <li key={i}><Check size={14} /> {f}</li>
-                ))}
-              </ul>
-              {selected === tariff.id && <div className="tariff-check"><Check size={16} /></div>}
-            </button>
-          ))}
-        </div>
+            <div className="tariffs-grid">
+              {PUBLISH_TARIFFS.map(tariff => (
+                <button
+                  key={tariff.id}
+                  className={`tariff-card ${selected === tariff.id ? 'selected' : ''} ${tariff.recommended ? 'recommended' : ''}`}
+                  onClick={() => setSelected(tariff.id)}
+                >
+                  {tariff.recommended && <span className="tariff-badge">Популярный</span>}
+                  <div className="tariff-icon" style={{ background: `${TARIFF_COLORS[tariff.id]}15`, color: TARIFF_COLORS[tariff.id] }}>
+                    {TARIFF_ICONS[tariff.id]}
+                  </div>
+                  <h3>{tariff.name}</h3>
+                  <div className="tariff-price">
+                    {tariff.price === 0 ? 'Бесплатно' : `${tariff.price.toLocaleString('ru-RU')} ₽`}
+                  </div>
+                  <ul className="tariff-features">
+                    {tariff.features.map((f, i) => (
+                      <li key={i}><Check size={14} /> {f}</li>
+                    ))}
+                  </ul>
+                  {selected === tariff.id && <div className="tariff-check"><Check size={16} /></div>}
+                </button>
+              ))}
+            </div>
 
-        {error && <div className="pub-error">{error}</div>}
+            {error && <div className="pub-error">{error}</div>}
 
-        <div className="pub-actions">
-          <button className="pub-btn" onClick={handlePublish} disabled={loading || !selected}>
-            {loading ? <Loader2 size={18} className="spin" /> : <>Опубликовать</>}
-          </button>
-        </div>
+            <div className="pub-actions">
+              <button className="pub-btn" onClick={handlePublish} disabled={loading || !selected}>
+                {loading ? <Loader2 size={18} className="spin" /> : <>Отправить на модерацию</>}
+              </button>
+            </div>
+          </>
+        )}
 
         <style jsx>{`
           .publish-page { max-width: 800px; margin: 0 auto; padding: 32px 20px 80px; }
+          .submitted-card { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 32px; background: white; border-radius: 20px; text-align: center; border: 1px solid #f0f0f0; }
+          .submitted-icon { width: 80px; height: 80px; border-radius: 50%; background: #f0fdf4; display: grid; place-items: center; }
+          .submitted-card h2 { font-size: 22px; font-weight: 900; margin: 0; color: #111; }
+          .submitted-card p { font-size: 14px; color: #71717a; margin: 0; max-width: 400px; line-height: 1.6; }
           .pub-header { text-align: center; margin-bottom: 40px; }
           .pub-back {
             display: inline-flex; align-items: center; gap: 4px;

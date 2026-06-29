@@ -2,11 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
-  serverExternalPackages: ['node:crypto'],
-  experimental: {
-    cpus: 1,
-    workerThreads: false,
-  },
   async headers() {
     return [
       {
@@ -29,7 +24,6 @@ const nextConfig = {
       { source: '/rules', destination: '/404', permanent: false },
       // Placeholder features
       { source: '/favorites', destination: '/404', permanent: false },
-      { source: '/referral', destination: '/404', permanent: false },
       { source: '/finance', destination: '/404', permanent: false },
       { source: '/help', destination: '/404', permanent: false },
       { source: '/brand-profile', destination: '/404', permanent: false },

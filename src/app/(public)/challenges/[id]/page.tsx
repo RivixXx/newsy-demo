@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { PageShell } from '@/shared/components/page-shell';
 import { JsonLd } from '@/shared/components/seo-jsonld';
-import { getChallengeById } from '@/shared/data/challenges';
+import { getChallengeFromDb, getChallengeById } from '@/shared/data/challenges';
 import ChallengeDetailContent from './challenge-detail-content';
 
 export async function generateMetadata({
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const challenge = getChallengeById(id);
+  const challenge = await getChallengeFromDb(id) || getChallengeById(id);
 
   if (!challenge) {
     return {
@@ -39,7 +39,7 @@ export default async function ChallengeDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const challenge = getChallengeById(id);
+  const challenge = await getChallengeFromDb(id) || getChallengeById(id);
 
   return (
     <PageShell variant="public">

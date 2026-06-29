@@ -30,6 +30,7 @@ export async function GET() {
     const challengesPublished = await safeCount(() => prisma.challenge.count({ where: { status: 'PUBLISHED', deletedAt: null } }));
     const challengesDraft = await safeCount(() => prisma.challenge.count({ where: { status: 'DRAFT', deletedAt: null } }));
     const challengesOngoing = await safeCount(() => prisma.challenge.count({ where: { status: 'ONGOING', deletedAt: null } }));
+    const challengesPendingReview = await safeCount(() => prisma.challenge.count({ where: { status: 'PENDING_REVIEW', deletedAt: null } }));
 
     let paymentsTotal = 0, paymentsSucceeded = 0, paymentsPending = 0, revenue = 0;
     try {
@@ -77,18 +78,18 @@ export async function GET() {
 
     const recentPayments = await safeFindMany(() =>
       prisma.paymentTransaction.findMany({
-        select: { id: true, amount: true, status: true, createdAt: true },
+        select: { id: true, amount: true, status: true, type: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
         take: 10,
       }).then(ps => ps.map(p => ({
         id: p.id, amount: p.amount, status: p.status,
-        type: 'PUBLISH_CHALLENGE', createdAt: p.createdAt.toISOString(),
+        type: p.type, createdAt: p.createdAt.toISOString(),
       })))
     );
 
     return NextResponse.json({
       users: { total: usersTotal, active: usersActive, pending: usersPending },
-      challenges: { total: challengesTotal, published: challengesPublished, draft: challengesDraft, ongoing: challengesOngoing },
+      challenges: { total: challengesTotal, published: challengesPublished, draft: challengesDraft, ongoing: challengesOngoing, pendingReview: challengesPendingReview },
       payments: { total: paymentsTotal, succeeded: paymentsSucceeded, pending: paymentsPending, revenue },
       subscriptions: { active: subsActive, canceled: subsCanceled },
       recentUsers,
