@@ -58,6 +58,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [chatInput, setChatInput] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'chat'>('info');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
+  const [stageInputs, setStageInputs] = useState<Record<string, string>>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Lock body scroll
@@ -217,9 +218,17 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                               </button>
                             )}
                             {stage.type === 'ДЕЙСТВИЕ' && (
-                              <button className="stage-btn">
-                                <CheckCircle2 size={15} /> Подтвердить выполнение
-                              </button>
+                              <>
+                                <input
+                                  className="stage-text-input"
+                                  placeholder="Опиши что ты сделал (или введи email для подтверждения)..."
+                                  value={stageInputs[stage.id] || ''}
+                                  onChange={e => setStageInputs(prev => ({ ...prev, [stage.id]: e.target.value }))}
+                                />
+                                <button className="stage-btn">
+                                  <CheckCircle2 size={15} /> Подтвердить выполнение
+                                </button>
+                              </>
                             )}
                             <button
                               className="stage-btn complete"
@@ -461,8 +470,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
 
         .modal-rewards-block {
           padding: 16px 20px;
-          display: flex;
-          flex-direction: column;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
           gap: 10px;
           border-bottom: 1px solid #f0f0f0;
         }
@@ -685,6 +694,23 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           gap: 8px;
         }
 
+        .stage-text-input {
+          width: 100%;
+          padding: 10px 14px;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 10px;
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.2s;
+          font-family: inherit;
+          resize: none;
+        }
+
+        .stage-text-input:focus {
+          border-color: #FF385C;
+          box-shadow: 0 0 0 3px rgba(255,56,92,0.06);
+        }
+
         .stage-btn {
           display: flex;
           align-items: center;
@@ -904,7 +930,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           .modal-left { max-height: 30vh; }
           .modal-img-wrap { height: 130px; }
           .modal-meta { padding: 12px 14px; }
-          .modal-rewards-block { padding: 12px 14px; }
+          .modal-rewards-block { padding: 12px 14px; grid-template-columns: 1fr; }
           .modal-desc { padding: 12px 14px; }
           .modal-refund { padding: 10px 14px; }
           .stage-header { padding: 10px 12px; }
