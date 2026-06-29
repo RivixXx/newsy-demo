@@ -48,6 +48,11 @@ export async function POST(
       return NextResponse.json({ error: 'Пустое сообщение' }, { status: 400 });
     }
 
+    const trimmed = text.trim();
+    if (trimmed.length > 1000) {
+      return NextResponse.json({ error: 'Сообщение слишком длинное (макс. 1000 символов)' }, { status: 400 });
+    }
+
     const message = await prisma.chatMessage.create({
       data: {
         challengeId: id,

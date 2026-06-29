@@ -29,6 +29,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
 
+    if (challenge.status === 'PENDING_REVIEW') {
+      return NextResponse.json({ error: 'Челлендж уже на модерации' }, { status: 400 });
+    }
+
+    if (challenge.status === 'PUBLISHED') {
+      return NextResponse.json({ error: 'Челлендж уже опубликован' }, { status: 400 });
+    }
+
     await prisma.challenge.update({
       where: { id: challengeId },
       data: { status: 'PENDING_REVIEW' },

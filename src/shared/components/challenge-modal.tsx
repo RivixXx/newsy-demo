@@ -45,19 +45,19 @@ interface ChallengeModalProps {
   onClose: () => void;
 }
 
-const INITIAL_CHAT = [
-  { id: '1', user: 'Алексей К.', text: 'Всем привет! Кто уже начал?', time: '10:23', isMe: false },
-  { id: '2', user: 'Марина С.', text: 'Да, только что зарегистрировалась 🔥', time: '10:25', isMe: false },
-  { id: '3', user: 'Ты', text: 'Жду вас на старте!', time: '10:30', isMe: true },
-  { id: '4', user: 'Дмитрий Р.', text: 'Этап 1 прошёл, теперь еду на геолокацию', time: '10:45', isMe: false },
-  { id: '5', user: 'Марина С.', text: 'Подскажите, где именно точка старта?', time: '11:02', isMe: false },
-  { id: '6', user: 'Алексей К.', text: 'У главного входа в парк Горького', time: '11:05', isMe: false },
-];
+export interface ChatMessage {
+  id: string;
+  user: string;
+  userId: string;
+  text: string;
+  time: string;
+  createdAt: string;
+}
 
 export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [status, setStatus] = useState<ParticipationStatus>(challenge.isJoined ? 'active' : 'none');
   const [stages, setStages] = useState<ChallengeStage[]>(challenge.stages);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'chat'>('info');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
@@ -93,22 +93,32 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   useEffect(() => {
     if (activeTab !== 'chat') return;
     setLoadingChat(true);
-    fetch(`/api/challenges/${challenge.id}/chat`)
-      .then(r => r.json())
-      .then(d => { setChatMessages(d.messages || []); setLoadingChat(false); })
-      .catch(() => setLoadingChat(false));
-  }, [activeTab, challenge.id]);
+    let mounted = true;
 
-  useEffect(() => {
-    if (activeTab !== 'chat') return;
-    const interval = setInterval(() => {
+    const loadChat = () => {
       fetch(`/api/challenges/${challenge.id}/chat`)
         .then(r => r.json())
-        .then(d => { if (d.messages) setChatMessages(d.messages); })
-        .catch(() => {});
-    }, 5000);
-    return () => clearInterval(interval);
+        .then(d => {
+          if (!mounted) return;
+          setChatMessages(d.messages || []);
+          setLoadingChat(false);
+        })
+        .catch(() => { if (mounted) setLoadingChat(false); });
+    };
+
+    loadChat();
+    const interval = setInterval(loadChat, 5000);
+    return () => { mounted = false; clearInterval(interval); };
   }, [activeTab, challenge.id]);
+
+  const refetchStages = () => {
+    fetch(`/api/challenges/${challenge.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.stages) setStages(d.stages);
+      })
+      .catch(() => {});
+  };
 
   const handleJoin = async () => {
     try {
@@ -116,14 +126,18 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
       const data = await res.json();
       if (data.success) {
         setStatus('active');
-        setStages(prev => prev.map((s, i) => i === 0 ? { ...s, status: 'active' } : s));
-        setExpandedStage(stages[0]?.id ?? null);
+        refetchStages();
         toast('success', 'Вы присоединились к челленджу!');
       }
     } catch {}
   };
 
   const handleCompleteStage = async (stageId: string) => {
+    const stage = stages.find(s => s.id === stageId);
+    if (stage?.type === 'ДЕЙСТВИЕ' && !stageInputs[stageId]?.trim()) {
+      toast('warning', 'Заполните поле перед подтверждением');
+      return;
+    }
     try {
       const res = await fetch(`/api/challenges/${challenge.id}/complete-step`, {
         method: 'POST',

@@ -33,10 +33,15 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
   useEffect(() => {
     if (!session) return;
-    fetch('/api/notifications/unread-count')
-      .then(r => r.json())
-      .then(d => setUnreadCount(d.count || 0))
-      .catch(() => {});
+    const loadCount = () => {
+      fetch('/api/notifications/unread-count')
+        .then(r => r.json())
+        .then(d => setUnreadCount(d.count || 0))
+        .catch(() => {});
+    };
+    loadCount();
+    const interval = setInterval(loadCount, 30000);
+    return () => clearInterval(interval);
   }, [session]);
 
   useEffect(() => {

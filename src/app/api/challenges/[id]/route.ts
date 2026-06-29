@@ -49,14 +49,13 @@ export async function GET(
     const stages = challenge.steps.map((step, idx) => {
       const stepProg = userProgress?.stepProgress.find((sp: any) => sp.stepId === step.id);
       let status: 'pending' | 'active' | 'completed' = 'pending';
-      if (stepProg?.status === 'COMPLETED') status = 'completed';
-      else if (isJoined && !stepProg) {
-        const prevCompleted = idx === 0 || userProgress?.stepProgress.some(
-          (sp: any, i: number) => sp.stepId === challenge.steps[idx - 1]?.id && sp.status === 'COMPLETED'
+      if (stepProg?.status === 'COMPLETED') {
+        status = 'completed';
+      } else if (isJoined) {
+        const prevDone = idx === 0 || userProgress?.stepProgress.some(
+          (sp: any) => sp.stepId === challenge.steps[idx - 1]?.id && sp.status === 'COMPLETED'
         );
-        if (prevCompleted) status = 'active';
-      } else if (isJoined && idx === 0 && !stepProg) {
-        status = 'active';
+        if (prevDone) status = 'active';
       }
 
       return {
@@ -66,7 +65,6 @@ export async function GET(
         type: STEP_TYPES[step.type] || step.type.toUpperCase(),
         status,
         rewardPoints: step.rewardPoints,
-        config: step.config,
       };
     });
 
