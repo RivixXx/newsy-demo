@@ -4,10 +4,6 @@ import { getCurrentAuthSession } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
-    }
-
     const session = await getCurrentAuthSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });

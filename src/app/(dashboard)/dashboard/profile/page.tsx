@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   Trophy, Flame, CheckCircle2, Zap, Settings, Bell, Shield,
   CreditCard, LogOut, TrendingUp, Edit3, Copy, Eye, Heart,
-  Tag, Mail, ArrowUpRight
+  Tag, Mail, ArrowUpRight, Crown
 } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
@@ -21,6 +21,7 @@ export default function ProfilePage() {
 
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
   const userEmail = session?.user?.email || '';
+  const isOrganizer = (session?.user?.organizationIds?.length ?? 0) > 0;
 
   return (
     <PageShell>
@@ -34,10 +35,18 @@ export default function ProfilePage() {
                   src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}&backgroundColor=b6e3f4`}
                   alt="Avatar" className="avatar-img"
                 />
+                {isOrganizer && (
+                  <div className="organizer-badge" title="Организатор">
+                    <Crown size={12} />
+                  </div>
+                )}
                 <button className="avatar-edit"><Edit3 size={14} /></button>
               </div>
               <div className="hero-info">
-                <h1 className="hero-name">{userName}</h1>
+                <h1 className="hero-name">
+                  {userName}
+                  {isOrganizer && <span className="org-tag">Организатор</span>}
+                </h1>
                 <p className="hero-meta"><Mail size={13} /> {userEmail}</p>
               </div>
             </div>
@@ -107,9 +116,11 @@ export default function ProfilePage() {
         .hero-left { display: flex; align-items: flex-end; gap: 20px; margin-top: -32px; }
         .avatar-container { position: relative; flex-shrink: 0; }
         .avatar-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .organizer-badge { position: absolute; bottom: -2px; left: -2px; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #15803d); color: white; border: 2px solid white; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(22,163,74,0.4); }
         .avatar-edit { position: absolute; bottom: 4px; right: -4px; width: 28px; height: 28px; border-radius: 50%; background: #FF385C; color: white; border: 2px solid white; display: grid; place-items: center; cursor: pointer; }
         .hero-info { padding-bottom: 4px; }
-        .hero-name { font-size: 24px; font-weight: 900; margin: 0; color: #111; }
+        .hero-name { font-size: 24px; font-weight: 900; margin: 0; color: #111; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .org-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 8px; background: linear-gradient(135deg, #16a34a, #15803d); color: white; font-size: 11px; font-weight: 700; }
         .hero-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #888; margin: 4px 0 0; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .stat-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #f0f0f0; display: flex; flex-direction: column; gap: 8px; }
