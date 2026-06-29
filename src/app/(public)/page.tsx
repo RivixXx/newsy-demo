@@ -335,6 +335,31 @@ export default function PublicHomePage() {
     });
   }
 
+  if (loading) {
+    return (
+      <PageShell variant="public">
+        <div className="loader-page">
+          <div className="loader-spinner">
+            <div className="spinner-ring" />
+            <div className="spinner-ring ring-2" />
+            <div className="spinner-logo">N</div>
+          </div>
+          <p className="loader-text">Загружаем челленджи...</p>
+          <style>{`
+            .loader-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 24px; }
+            .loader-spinner { position: relative; width: 80px; height: 80px; }
+            .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: #FF385C; animation: spin 1s linear infinite; }
+            .spinner-ring.ring-2 { inset: 8px; border-top-color: #E31C5F; animation-duration: 1.5s; animation-direction: reverse; }
+            .spinner-logo { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; font-weight: 900; color: #FF385C; }
+            .loader-text { font-size: 14px; color: #888; font-weight: 600; margin: 0; animation: pulse 1.5s ease-in-out infinite; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+            @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+          `}</style>
+        </div>
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell variant="public">
       {/* Попап-баннер */}
