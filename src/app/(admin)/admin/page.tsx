@@ -115,13 +115,13 @@ export default function AdminPage() {
               <p>Управление платформой NEWSY</p>
             </div>
           </header>
-          <div className="admin-loading">
-            <div className="admin-spinner">
-              <div className="admin-spinner-ring" />
-              <div className="admin-spinner-ring ring-2" />
-              <Shield size={20} className="admin-spinner-icon" />
+          <div className="loader-page">
+            <div className="loader-spinner">
+              <div className="spinner-ring" />
+              <div className="spinner-ring ring-2" />
+              <div className="spinner-logo">N</div>
             </div>
-            <p>Загрузка данных...</p>
+            <p className="loader-text">Загружаем данные...</p>
           </div>
         </div>
       </PageShell>
@@ -444,11 +444,13 @@ export default function AdminPage() {
           .admin-denied p { font-size: 14px; color: #888; margin: 0; }
           .admin-btn { padding: 12px 24px; border-radius: 12px; background: #111; color: white; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 12px; }
           .admin-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 120px 20px; gap: 16px; }
-          .admin-loading p { font-size: 14px; color: #888; font-weight: 600; margin: 0; animation: pulse 1.5s ease-in-out infinite; }
-          .admin-spinner { position: relative; width: 60px; height: 60px; }
-          .admin-spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: #FF385C; animation: spin 1s linear infinite; }
-          .admin-spinner-ring.ring-2 { inset: 6px; border-top-color: #E31C5F; animation-duration: 1.5s; animation-direction: reverse; }
-          .admin-spinner-icon { position: absolute; inset: 0; margin: auto; color: #FF385C; }
+          .admin-loading p { font-size: 14px; color: #888; font-weight: 600; margin: 0; }
+          .loader-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 24px; }
+          .loader-spinner { position: relative; width: 80px; height: 80px; }
+          .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: #FF385C; animation: spin 1s linear infinite; }
+          .spinner-ring.ring-2 { inset: 8px; border-top-color: #E31C5F; animation-duration: 1.5s; animation-direction: reverse; }
+          .spinner-logo { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; font-weight: 900; color: #FF385C; }
+          .loader-text { font-size: 14px; color: #888; font-weight: 600; margin: 0; animation: pulse 1.5s ease-in-out infinite; }
           @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
           .tab-content { display: flex; flex-direction: column; gap: 14px; }
           .add-org-btn { padding: 4px 10px; border-radius: 8px; border: 1px solid #16a34a; background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }

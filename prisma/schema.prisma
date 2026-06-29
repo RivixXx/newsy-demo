@@ -105,6 +105,7 @@ model User {
   notifications         Notification[]
   auditLogs             AuditLog[]
   subscriptions         UserSubscription[]
+  chatMessages          ChatMessage[]
 
   @@index([status])
   @@index([deletedAt])
@@ -227,6 +228,7 @@ model Challenge {
   partners        ChallengePartner[]
   payments        PaymentTransaction[]
   commission      CommissionConfig?
+  chatMessages    ChatMessage[]
 
   @@index([organizerId])
   @@index([status])
@@ -528,4 +530,19 @@ model CommissionPayout {
   @@index([organizerId])
   @@index([status])
   @@index([periodStart])
+}
+
+model ChatMessage {
+  id              String    @id @default(uuid())
+  challengeId     String
+  userId          String
+  text            String
+  createdAt       DateTime  @default(now())
+
+  challenge       Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+  @@index([userId])
+  @@index([createdAt])
 }

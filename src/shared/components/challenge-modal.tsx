@@ -7,6 +7,8 @@ import {
   AlertTriangle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { ShareButtons } from '@/shared/components/share-buttons';
+import { useSession } from '@/shared/components/session-provider';
+import { useToast } from '@/shared/components/toast';
 
 export type ParticipationStatus = 'none' | 'active' | 'completed' | 'failed';
 export type StageStatus = 'pending' | 'active' | 'completed';
@@ -35,6 +37,7 @@ export interface ModalChallenge {
   requirements: string;
   refundPolicy: string;
   stages: ChallengeStage[];
+  isJoined?: boolean;
 }
 
 interface ChallengeModalProps {
@@ -52,58 +55,101 @@ const INITIAL_CHAT = [
 ];
 
 export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
-  const [status, setStatus] = useState<ParticipationStatus>('none');
+  const [status, setStatus] = useState<ParticipationStatus>(challenge.isJoined ? 'active' : 'none');
   const [stages, setStages] = useState<ChallengeStage[]>(challenge.stages);
-  const [chatMessages, setChatMessages] = useState(INITIAL_CHAT);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'chat'>('info');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [stageInputs, setStageInputs] = useState<Record<string, string>>({});
+  const [loadingChat, setLoadingChat] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const session = useSession();
+  const { toast } = useToast();
 
-  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // Scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const handleJoin = () => {
-    setStatus('active');
-    setStages(prev => prev.map((s, i) => i === 0 ? { ...s, status: 'active' } : s));
-    setExpandedStage(stages[0]?.id ?? null);
-  };
+  useEffect(() => {
+    if (activeTab !== 'chat') return;
+    setLoadingChat(true);
+    fetch(`/api/challenges/${challenge.id}/chat`)
+      .then(r => r.json())
+      .then(d => { setChatMessages(d.messages || []); setLoadingChat(false); })
+      .catch(() => setLoadingChat(false));
+  }, [activeTab, challenge.id]);
 
-  const handleCompleteStage = (stageId: string) => {
-    setStages(prev => {
-      const updated = prev.map(s => s.id === stageId ? { ...s, status: 'completed' as StageStatus } : s);
-      const nextIdx = updated.findIndex(s => s.status === 'pending');
-      if (nextIdx !== -1) {
-        updated[nextIdx] = { ...updated[nextIdx], status: 'active' };
-        setExpandedStage(updated[nextIdx].id);
-      } else {
-        // all done
-        setStatus('completed');
-        setExpandedStage(null);
+  useEffect(() => {
+    if (activeTab !== 'chat') return;
+    const interval = setInterval(() => {
+      fetch(`/api/challenges/${challenge.id}/chat`)
+        .then(r => r.json())
+        .then(d => { if (d.messages) setChatMessages(d.messages); })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeTab, challenge.id]);
+
+  const handleJoin = async () => {
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/join`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setStatus('active');
+        setStages(prev => prev.map((s, i) => i === 0 ? { ...s, status: 'active' } : s));
+        setExpandedStage(stages[0]?.id ?? null);
+        toast('success', 'Вы присоединились к челленджу!');
       }
-      return updated;
-    });
+    } catch {}
   };
 
-  const handleSendChat = () => {
+  const handleCompleteStage = async (stageId: string) => {
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/complete-step`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stepId: stageId, submission: stageInputs[stageId] || null }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast('success', `+${data.pointsEarned} баллов! Этап завершён`);
+        setStages(prev => {
+          const updated = prev.map(s => s.id === stageId ? { ...s, status: 'completed' as StageStatus } : s);
+          const nextIdx = updated.findIndex(s => s.status === 'pending');
+          if (nextIdx !== -1) {
+            updated[nextIdx] = { ...updated[nextIdx], status: 'active' };
+            setExpandedStage(updated[nextIdx].id);
+          } else {
+            setStatus('completed');
+            setExpandedStage(null);
+          }
+          return updated;
+        });
+      }
+    } catch {}
+  };
+
+  const handleSendChat = async () => {
     if (!chatInput.trim()) return;
-    setChatMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      user: 'Ты',
-      text: chatInput.trim(),
-      time: new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }),
-      isMe: true,
-    }]);
+    const text = chatInput.trim();
     setChatInput('');
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (data.id) {
+        setChatMessages(prev => [...prev, data]);
+      }
+    } catch {}
   };
 
   const availableSlots = challenge.maxParticipants - challenge.participantsCount;
@@ -254,9 +300,13 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
             {activeTab === 'chat' && (
               <div className="chat-wrap">
                 <div className="chat-history">
-                  {chatMessages.map(msg => (
-                    <div key={msg.id} className={`chat-msg ${msg.isMe ? 'me' : 'other'}`}>
-                      {!msg.isMe && <span className="chat-user">{msg.user}</span>}
+                  {loadingChat ? (
+                    <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Загрузка сообщений...</div>
+                  ) : chatMessages.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Пока нет сообщений. Начните общение!</div>
+                  ) : chatMessages.map(msg => (
+                    <div key={msg.id} className={`chat-msg ${msg.userId === session?.user?.id ? 'me' : 'other'}`}>
+                      {msg.userId !== session?.user?.id && <span className="chat-user">{msg.user}</span>}
                       <div className="chat-bubble">
                         {msg.text}
                         <span className="chat-time">{msg.time}</span>

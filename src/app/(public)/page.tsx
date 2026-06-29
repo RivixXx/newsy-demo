@@ -44,12 +44,8 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
     description: c.description,
     requirements: c.requirements,
     refundPolicy: c.refundPolicy,
-    stages: [
-      { id: 's1', title: 'Регистрация', description: 'Подтвердите участие и ознакомьтесь с правилами.', type: 'ДЕЙСТВИЕ', status: 'pending' },
-      { id: 's2', title: 'Выполнение задания', description: 'Выполните основное задание челенджа и загрузите подтверждение.', type: 'ФОТО', status: 'pending' },
-      { id: 's3', title: 'Геолокация', description: 'Подтвердите своё местоположение на точке проведения.', type: 'ГЕО', status: 'pending' },
-      { id: 's4', title: 'Финальный отчёт', description: 'Загрузите итоговый файл с результатами.', type: 'ФАЙЛ', status: 'pending' },
-    ],
+    isJoined: false,
+    stages: [],
   };
 }
 
