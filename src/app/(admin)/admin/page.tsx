@@ -407,7 +407,7 @@ export default function AdminPage() {
         )}
 
         <style jsx>{`
-          .admin-page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
+          .admin-page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; display: flex; flex-direction: column; }
           .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
           .admin-header h1 { display: flex; align-items: center; gap: 10px; font-size: 28px; font-weight: 900; margin: 0; color: #111; }
           .admin-header p { font-size: 14px; color: #71717a; margin: 4px 0 0; }
@@ -445,7 +445,7 @@ export default function AdminPage() {
           .admin-btn { padding: 12px 24px; border-radius: 12px; background: #111; color: white; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 12px; }
           .admin-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 120px 20px; gap: 16px; }
           .admin-loading p { font-size: 14px; color: #888; font-weight: 600; margin: 0; }
-          .loader-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 24px; }
+          .loader-page { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 50vh; gap: 24px; }
           .loader-spinner { position: relative; width: 80px; height: 80px; }
           .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: #FF385C; animation: spin 1s linear infinite; }
           .spinner-ring.ring-2 { inset: 8px; border-top-color: #E31C5F; animation-duration: 1.5s; animation-direction: reverse; }
