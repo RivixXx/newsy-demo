@@ -214,6 +214,7 @@ model Challenge {
   endDate         DateTime?
   entryFee        Float                  @default(0)
   publishPrice    Float?               @default(1000.00)
+  rejectionReason String?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   deletedAt       DateTime?

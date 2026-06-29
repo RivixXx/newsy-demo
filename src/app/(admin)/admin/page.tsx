@@ -36,6 +36,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'overview' | 'users' | 'challenges' | 'payments' | 'moderation'>('overview');
   const [reviewing, setReviewing] = useState<string | null>(null);
+  const [rejectModal, setRejectModal] = useState<{ challengeId: string; title: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const isAdmin = session?.user?.roles?.includes('admin');
 
@@ -58,13 +60,13 @@ export default function AdminPage() {
       .catch(() => {});
   }, [isAdmin]);
 
-  const handleReview = async (challengeId: string, action: 'approve' | 'reject') => {
+  const handleReview = async (challengeId: string, action: 'approve' | 'reject', reason?: string) => {
     setReviewing(challengeId);
     try {
       const res = await fetch(`/api/admin/challenges/${challengeId}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, reason }),
       });
       const data = await res.json();
       if (data.success) {
@@ -354,7 +356,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       className="mod-btn reject"
-                      onClick={() => handleReview(ch.id, 'reject')}
+                      onClick={() => setRejectModal({ challengeId: ch.id, title: ch.title })}
                       disabled={reviewing === ch.id}
                     >
                       <XCircle size={16} /> Отклонить
@@ -474,8 +476,46 @@ export default function AdminPage() {
           .mod-btn.reject { background: #fee2e2; color: #dc2626; }
           .mod-btn.reject:hover:not(:disabled) { background: #fecaca; }
           @media (max-width: 900px) { .stats-grid, .detail-grid, .lists-grid { grid-template-columns: 1fr; } }
+          .reject-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000; display: grid; place-items: center; animation: fadeIn 0.2s; }
+          .reject-modal { background: white; border-radius: 20px; padding: 28px; width: 90%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
+          .reject-modal h3 { font-size: 18px; font-weight: 900; margin: 0 0 6px; color: #111; }
+          .reject-modal .reject-subtitle { font-size: 13px; color: #888; margin: 0 0 16px; }
+          .reject-modal .reject-challenge { font-size: 14px; font-weight: 700; color: #dc2626; margin-bottom: 16px; padding: 10px 14px; background: #fef2f2; border-radius: 10px; }
+          .reject-modal textarea { width: 100%; min-height: 100px; padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; transition: border-color 0.2s; }
+          .reject-modal textarea:focus { border-color: #dc2626; }
+          .reject-modal .reject-hint { font-size: 12px; color: #aaa; margin: 8px 0 0; }
+          .reject-modal .reject-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+          .reject-modal .reject-cancel { padding: 10px 20px; border-radius: 10px; border: 1px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+          .reject-modal .reject-confirm { padding: 10px 20px; border-radius: 10px; border: none; background: #dc2626; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+          .reject-modal .reject-confirm:hover { background: #b91c1c; }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         `}</style>
       </div>
+
+      {rejectModal && (
+        <div className="reject-overlay" onClick={() => { setRejectModal(null); setRejectReason(''); }}>
+          <div className="reject-modal" onClick={e => e.stopPropagation()}>
+            <h3>Отклонить челлендж</h3>
+            <p className="reject-subtitle">Укажите причину возврата на доработку</p>
+            <div className="reject-challenge">«{rejectModal.title}»</div>
+            <textarea
+              placeholder="Что нужно исправить или улучшить..."
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+            />
+            <p className="reject-hint">Если поле пустое, будет отправлено стандартное сообщение</p>
+            <div className="reject-actions">
+              <button className="reject-cancel" onClick={() => { setRejectModal(null); setRejectReason(''); }}>Отмена</button>
+              <button className="reject-confirm" onClick={() => {
+                handleReview(rejectModal.challengeId, 'reject', rejectReason);
+                setRejectModal(null);
+                setRejectReason('');
+              }}>Отклонить</button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }

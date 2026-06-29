@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { getCurrentAuthSession } from '@/lib/session';
 import { SessionProvider } from '@/shared/components/session-provider';
+import { ToastProvider } from '@/shared/components/toast';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -47,7 +48,9 @@ export default async function RootLayout({
     <html lang="ru">
       <body>
         <SessionProvider session={session}>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </SessionProvider>
       </body>
     </html>

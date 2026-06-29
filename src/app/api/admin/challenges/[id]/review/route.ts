@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
+const DEFAULT_REJECTION_REASON = 'Челлендж не соответствует требованиям платформы. Пожалуйста, проверьте описание, этапы и категорию, затем повторите попытку.';
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,7 +25,10 @@ export async function POST(
       return NextResponse.json({ error: 'Действие: approve или reject' }, { status: 400 });
     }
 
-    const challenge = await prisma.challenge.findUnique({ where: { id } });
+    const challenge = await prisma.challenge.findUnique({
+      where: { id },
+      include: { organizer: { select: { name: true } } },
+    });
     if (!challenge) {
       return NextResponse.json({ error: 'Челлендж не найден' }, { status: 404 });
     }
@@ -32,17 +37,51 @@ export async function POST(
       return NextResponse.json({ error: 'Челлендж не на модерации' }, { status: 400 });
     }
 
-    const newStatus = action === 'approve' ? 'PUBLISHED' : 'DRAFT';
+    if (action === 'approve') {
+      await prisma.challenge.update({
+        where: { id },
+        data: { status: 'PUBLISHED', rejectionReason: null },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: session.user.id,
+          type: 'CHALLENGE_UPDATED',
+          title: 'Челлендж одобрен',
+          body: `«${challenge.title}» опубликован и доступен в каталоге.`,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        challengeId: id,
+        status: 'PUBLISHED',
+        message: 'Челлендж одобрен и опубликован',
+      });
+    }
+
+    const rejectionMessage = (reason && reason.trim()) || DEFAULT_REJECTION_REASON;
+
     await prisma.challenge.update({
       where: { id },
-      data: { status: newStatus },
+      data: { status: 'DRAFT', rejectionReason: rejectionMessage },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: session.user.id,
+        type: 'CHALLENGE_UPDATED',
+        title: 'Челлендж отклонён',
+        body: `«${challenge.title}» возвращён на доработку. Причина: ${rejectionMessage}`,
+      },
     });
 
     return NextResponse.json({
       success: true,
       challengeId: id,
-      status: newStatus,
-      message: action === 'approve' ? 'Челлендж одобрен и опубликован' : 'Челлендж возвращён в черновик',
+      status: 'DRAFT',
+      rejectionReason: rejectionMessage,
+      message: 'Челлендж возвращён на доработку',
     });
   } catch (error: any) {
     console.error('Review error:', error);
