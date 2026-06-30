@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal, MapPin } from 'lucide-react';
 import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
-import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
+import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
+
+const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
 
 const CATEGORY_LABELS: Record<string, string> = {
   sport: 'Спорт',
@@ -363,10 +365,12 @@ export default function PublicHomePage() {
 
       {/* Модальное окно ЧЕ */}
       {selectedChallenge && (
-        <ChallengeModal
-          challenge={toModalChallenge(selectedChallenge)}
-          onClose={() => setSelectedChallenge(null)}
-        />
+        <Suspense fallback={null}>
+          <ChallengeModal
+            challenge={toModalChallenge(selectedChallenge)}
+            onClose={() => setSelectedChallenge(null)}
+          />
+        </Suspense>
       )}
 
       <main className="catalog-main">

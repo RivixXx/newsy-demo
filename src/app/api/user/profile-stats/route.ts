@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
+export const revalidate = 30;
+
 const LEVELS = [
   { level: 1, name: 'Новичок', xp: 0, color: '#94a3b8' },
   { level: 2, name: 'Участник', xp: 100, color: '#60a5fa' },

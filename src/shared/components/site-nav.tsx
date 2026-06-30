@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, User, Search, UserCircle, LayoutDashboard, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
-import { SearchPanel } from '@/shared/components/search-panel';
+
+const SearchPanel = lazy(() => import('@/shared/components/search-panel').then(m => ({ default: m.SearchPanel })));
 
 type SiteNavProps = {
   variant?: 'compact' | 'public';
@@ -92,11 +93,13 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
           </div>
 
           <div className="nav-center">
-            <SearchPanel />
+            <Suspense fallback={<div style={{ width: 500, height: 52 }} />}>
+              <SearchPanel />
+            </Suspense>
           </div>
 
           <div className="nav-right">
-            <Link href="/dashboard/challenges/new" className="host-link hide-tablet">
+            <Link href="/dashboard/challenges/new" className="host-link hide-tablet" prefetch={true}>
               Создать челендж
             </Link>
 
