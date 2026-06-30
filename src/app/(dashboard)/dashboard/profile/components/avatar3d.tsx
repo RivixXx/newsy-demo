@@ -1,22 +1,44 @@
 'use client';
 
-import React, { Suspense, useRef } from 'react';
+import React, { Suspense, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 
 function Model({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  const ref = useRef<THREE.Group>(null);
+  const { scene, animations } = useGLTF(url);
+  const groupRef = useRef<THREE.Group>(null);
+  const { actions, names } = useAnimations(animations, scene);
 
-  useFrame((_, delta) => {
-    if (ref.current) {
-      ref.current.rotation.y += delta * 0.3;
+  useEffect(() => {
+    if (names.length > 0) {
+      const idleAnim = names.find(n => n.toLowerCase().includes('idle'))
+        || names.find(n => n.toLowerCase().includes('breath'))
+        || names.find(n => n.toLowerCase().includes('stand'))
+        || names[0];
+      if (idleAnim && actions[idleAnim]) {
+        actions[idleAnim].play();
+      }
     }
+  }, [actions, names]);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    const t = state.clock.getElapsedTime();
+
+    // Floating / bobbing
+    groupRef.current.position.y = -0.8 + Math.sin(t * 1.2) * 0.04;
+
+    // Subtle breathing scale
+    const breathe = 1 + Math.sin(t * 1.8) * 0.008;
+    groupRef.current.scale.set(breathe, breathe, breathe);
+
+    // Very subtle tilt
+    groupRef.current.rotation.z = Math.sin(t * 0.7) * 0.015;
   });
 
   return (
-    <group ref={ref} position={[0, -0.8, 0]}>
+    <group ref={groupRef} position={[0, -0.8, 0]}>
       <primitive object={scene} />
     </group>
   );
