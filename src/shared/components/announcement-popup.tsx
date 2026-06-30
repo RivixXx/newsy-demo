@@ -102,10 +102,12 @@ export function AnnouncementPopup() {
           background: #fff;
           border-radius: 28px;
           width: 100%;
-          max-width: 520px;
+          max-width: 960px;
           overflow: hidden;
           box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
           position: relative;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
         }
 
         .popup-close {
@@ -130,17 +132,16 @@ export function AnnouncementPopup() {
           transform: scale(1.08);
         }
 
-        /* Hero */
+        {/* Hero */}
         .popup-hero {
           background: linear-gradient(145deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-          padding: 36px 32px 28px;
+          padding: 48px 40px 40px;
           color: white;
           position: relative;
           overflow: hidden;
-          min-height: 240px;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 16px;
         }
 
         .popup-badge {
@@ -191,8 +192,8 @@ export function AnnouncementPopup() {
           position: absolute;
           right: -20px;
           bottom: -10px;
-          width: 220px;
-          height: 160px;
+          width: 280px;
+          height: 200px;
           object-fit: cover;
           border-radius: 20px;
           opacity: 0.35;
@@ -201,10 +202,11 @@ export function AnnouncementPopup() {
 
         /* Body */
         .popup-body {
-          padding: 24px 32px 28px;
+          padding: 40px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          justify-content: center;
+          gap: 24px;
         }
 
         .popup-desc {
@@ -265,6 +267,14 @@ export function AnnouncementPopup() {
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(40px) scale(0.96); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @media (max-width: 768px) {
+          .popup-card { grid-template-columns: 1fr; max-width: 480px; }
+          .popup-hero { padding: 32px 24px 24px; }
+          .popup-body { padding: 24px; }
+          .popup-img { width: 180px; height: 120px; }
+          .popup-title { font-size: 22px; }
         }
       `}</style>
     </>

@@ -32,13 +32,6 @@ const CATEGORIES = [
   { id: 'tech', label: 'Технологии' },
 ];
 
-const LOCATIONS = [
-  { id: 'anywhere', label: 'Все локации' },
-  { id: 'online', label: 'Онлайн' },
-  { id: 'moscow', label: 'Москва' },
-  { id: 'spb', label: 'Санкт-Петербург' },
-];
-
 const QUICK_DATES = [
   { label: 'Сегодня', days: 0 },
   { label: 'Завтра', days: 1 },
@@ -49,7 +42,6 @@ const QUICK_DATES = [
 
 export function SearchPanel() {
   const [barCategory, setBarCategory] = useState('all');
-  const [barLocation, setBarLocation] = useState('anywhere');
   const [barWhen, setBarWhen] = useState('');
   const [barWho, setBarWho] = useState('');
 
@@ -57,21 +49,14 @@ export function SearchPanel() {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCategoryDrop, setShowCategoryDrop] = useState(false);
-  const [showLocationDrop, setShowLocationDrop] = useState(false);
-  const [showWhoDrop, setShowWhoDrop] = useState(false);
-  const [participants, setParticipants] = useState(0);
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const catRef = useRef<HTMLDivElement>(null);
-  const locRef = useRef<HTMLDivElement>(null);
-  const whoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (catRef.current && !catRef.current.contains(e.target as Node)) setShowCategoryDrop(false);
-      if (locRef.current && !locRef.current.contains(e.target as Node)) setShowLocationDrop(false);
-      if (whoRef.current && !whoRef.current.contains(e.target as Node)) setShowWhoDrop(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -98,8 +83,6 @@ export function SearchPanel() {
     setShowResults(true);
     setShowCalendar(false);
     setShowCategoryDrop(false);
-    setShowLocationDrop(false);
-    setShowWhoDrop(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -128,9 +111,6 @@ export function SearchPanel() {
       const catMap: Record<string, string> = { sport: 'Спорт', education: 'Обучение', quests: 'Квесты', art: 'Искусство', tech: 'Технологии' };
       if (c.category !== catMap[barCategory]) return false;
     }
-    if (barLocation === 'online' && !c.location.includes('Онлайн')) return false;
-    if (barLocation === 'moscow' && !c.location.includes('Москва')) return false;
-    if (barLocation === 'spb' && !c.location.includes('Петербург')) return false;
     if (barWho.trim()) {
       const q = barWho.toLowerCase();
       const match = c.title.toLowerCase().includes(q) || c.organizer.toLowerCase().includes(q) || c.description.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
@@ -145,8 +125,7 @@ export function SearchPanel() {
       <div className="search-bar" onKeyDown={handleKeyDown}>
         {/* Category */}
         <div className="sb-seg" ref={catRef}>
-          <button className="sb-btn" onClick={() => { setShowCategoryDrop(!showCategoryDrop); setShowLocationDrop(false); setShowWhoDrop(false); setShowCalendar(false); }}>
-            <span className="sb-label">Категории</span>
+          <button className="sb-btn" onClick={() => { setShowCategoryDrop(!showCategoryDrop); setShowCalendar(false); }}>
             <span className="sb-value">{CATEGORIES.find(c=>c.id===barCategory)?.label}</span>
           </button>
           {showCategoryDrop && (
@@ -165,9 +144,8 @@ export function SearchPanel() {
 
         {/* When */}
         <div className="sb-seg sb-when">
-          <button className="sb-btn" onClick={() => { setShowCalendar(!showCalendar); setShowCategoryDrop(false); setShowLocationDrop(false); setShowWhoDrop(false); }}>
-            <span className="sb-label">Когда</span>
-            <span className="sb-value">{barWhen || 'Любая дата'}</span>
+          <button className="sb-btn" onClick={() => { setShowCalendar(!showCalendar); setShowCategoryDrop(false); }}>
+            <span className="sb-value">{barWhen || 'Когда'}</span>
           </button>
           {showCalendar && (
             <div className="sb-drop sb-drop-calendar">
@@ -197,14 +175,14 @@ export function SearchPanel() {
 
         <div className="sb-divider" />
 
-        {/* Who → Text search */}
-        <div className="sb-seg" ref={whoRef}>
+        {/* Text search */}
+        <div className="sb-seg">
           <div className="sb-search-input-wrap">
             <Search size={15} color="#888" />
             <input
               className="sb-search-input"
               type="text"
-              placeholder="Найти челлендж..."
+              placeholder="Найти челлендж по названию..."
               value={barWho}
               onChange={e => setBarWho(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -232,7 +210,6 @@ export function SearchPanel() {
                 <span className="mh-count">{results.length} челенджей</span>
                 <span className="mh-filters">
                   {barCategory !== 'all' && <span className="mh-tag">{CATEGORIES.find(c=>c.id===barCategory)?.label}</span>}
-                  {barLocation !== 'anywhere' && <span className="mh-tag">{LOCATIONS.find(l=>l.id===barLocation)?.label}</span>}
                   {barWhen && <span className="mh-tag">{barWhen}</span>}
                   {barWho.trim() && <span className="mh-tag">"{barWho}"</span>}
                 </span>
