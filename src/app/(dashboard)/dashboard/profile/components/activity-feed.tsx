@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { CheckCircle2, Trophy, Users, Zap, Clock, ArrowUpRight } from 'lucide-react';
 
 interface Activity {
@@ -17,6 +16,7 @@ interface Activity {
 
 interface ActivityFeedProps {
   activities: Activity[];
+  onChallengeClick: (challengeId: string) => void;
 }
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -44,7 +44,7 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-export function ActivityFeed({ activities }: ActivityFeedProps) {
+export function ActivityFeed({ activities, onChallengeClick }: ActivityFeedProps) {
   return (
     <div className="feed-card">
       <div className="feed-header">
@@ -59,7 +59,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
       ) : (
         <div className="feed-list">
           {activities.map(a => (
-            <Link key={a.id} href={`/challenges/${a.challengeId}`} className="feed-item">
+            <div key={a.id} className="feed-item" onClick={() => onChallengeClick(a.challengeId)} style={{ cursor: 'pointer' }}>
               <div className="feed-icon" style={{ color: CATEGORY_COLORS[a.category] || '#6b7280' }}>
                 {ICONS[a.icon] || <Zap size={16} />}
               </div>
@@ -74,7 +74,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                 {a.points > 0 && <span className="feed-points">+{a.points}</span>}
                 <ArrowUpRight size={14} color="#ccc" />
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

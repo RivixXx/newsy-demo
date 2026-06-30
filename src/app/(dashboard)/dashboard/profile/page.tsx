@@ -12,6 +12,7 @@ import { ActivityCalendar } from './components/activity-calendar';
 import { AchievementShowcase } from './components/achievement-showcase';
 import { ActivityFeed } from './components/activity-feed';
 import { ProfileEditModal } from './components/profile-edit-modal';
+import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
 
 interface ProfileData {
   name: string;
@@ -38,6 +39,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState<ModalChallenge | null>(null);
 
   useEffect(() => {
     fetch('/api/user/profile-stats')
@@ -45,6 +47,23 @@ export default function ProfilePage() {
       .then(d => { setProfileData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  const handleChallengeClick = (challengeId: string) => {
+    fetch(`/api/challenges/${challengeId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.id) {
+          setSelectedChallenge({
+            id: d.id, title: d.title, organizer: d.organizer, category: d.category,
+            imageUrl: d.imageUrl, participantsCount: d.participantsCount, maxParticipants: d.maxParticipants,
+            endDate: d.endDate, location: d.location, achievement: d.achievement, reward: d.reward,
+            description: d.description, requirements: d.requirements || '', refundPolicy: d.refundPolicy || '',
+            stages: d.stages || [], isJoined: d.isJoined || false,
+          });
+        }
+      })
+      .catch(() => {});
+  };
 
   const refetchProfile = () => {
     fetch('/api/user/profile-stats')
@@ -83,6 +102,9 @@ export default function ProfilePage() {
 
   return (
     <PageShell>
+      {selectedChallenge && (
+        <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
+      )}
       <div className="profile-page">
         <ProfileHero
           name={data.name}
@@ -130,7 +152,7 @@ export default function ProfilePage() {
                 <AchievementShowcase count={data.achievements} />
               </div>
               <div className="content-right">
-                <ActivityFeed activities={data.activity} />
+                <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
               </div>
             </div>
           </div>
