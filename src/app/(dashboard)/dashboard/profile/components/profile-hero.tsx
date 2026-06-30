@@ -25,9 +25,10 @@ interface ProfileHeroProps {
   isOrganizer: boolean;
   gender?: string | null;
   birthDate?: string | null;
+  avatarUrl?: string;
 }
 
-export function ProfileHero({ name, email, level, points, streak, isOrganizer, gender, birthDate }: ProfileHeroProps) {
+export function ProfileHero({ name, email, level, points, streak, isOrganizer, gender, birthDate, avatarUrl }: ProfileHeroProps) {
   const circumference = 2 * Math.PI * 28;
   const offset = circumference - (level.progress / 100) * circumference;
 
@@ -59,7 +60,7 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
           <div className="hero-info-top">
             <div className="photo-avatar">
               <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=b6e3f4`}
+                src={avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=b6e3f4`}
                 alt={name}
               />
               <div className="photo-level" style={{ background: level.color }}>{level.level}</div>

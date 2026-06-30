@@ -46,6 +46,13 @@ export default function ProfilePage() {
       .catch(() => setLoading(false));
   }, []);
 
+  const refetchProfile = () => {
+    fetch('/api/user/profile-stats')
+      .then(r => r.json())
+      .then(d => setProfileData(d))
+      .catch(() => {});
+  };
+
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
   const isOrganizer = (session?.user?.organizationIds?.length ?? 0) > 0;
 
@@ -70,8 +77,8 @@ export default function ProfilePage() {
     memberSince: '', activity: [], calendar: [],
   };
 
-  const handleProfileSave = (updated: any) => {
-    setProfileData(prev => prev ? { ...prev, ...updated, name: `${updated.firstName || ''} ${updated.lastName || ''}`.trim() || prev.name } : prev);
+  const handleProfileSave = () => {
+    refetchProfile();
   };
 
   return (
@@ -86,6 +93,7 @@ export default function ProfilePage() {
           isOrganizer={isOrganizer}
           gender={data.gender}
           birthDate={data.birthDate}
+          avatarUrl={data.avatarUrl}
         />
 
         {/* Bio + Edit button */}
