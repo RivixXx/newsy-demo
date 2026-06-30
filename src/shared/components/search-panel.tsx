@@ -6,6 +6,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import { ChallengeModal, type ModalChallenge } from '@/shared/components/challenge-modal';
+import { useSession } from '@/shared/components/session-provider';
 
 function toModalChallenge(c: CatalogChallenge): ModalChallenge {
   return {
@@ -14,12 +15,8 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
     maxParticipants: c.maxParticipants, endDate: c.endDate, location: c.location,
     achievement: c.achievement, reward: c.reward, description: c.description,
     requirements: c.requirements, refundPolicy: c.refundPolicy,
-    stages: [
-      { id: 's1', title: 'Регистрация', description: 'Подтвердите участие и ознакомьтесь с правилами.', type: 'ДЕЙСТВИЕ', status: 'pending' },
-      { id: 's2', title: 'Выполнение задания', description: 'Выполните основное задание челенджа и загрузите подтверждение.', type: 'ФОТО', status: 'pending' },
-      { id: 's3', title: 'Геолокация', description: 'Подтвердите своё местоположение на точке проведения.', type: 'ГЕО', status: 'pending' },
-      { id: 's4', title: 'Финальный отчёт', description: 'Загрузите итоговый файл с результатами.', type: 'ФАЙЛ', status: 'pending' },
-    ],
+    stages: [],
+    isJoined: false,
   };
 }
 
@@ -50,6 +47,20 @@ export function SearchPanel() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCategoryDrop, setShowCategoryDrop] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
+  const [allChallenges, setAllChallenges] = useState<CatalogChallenge[]>([]);
+
+  const session = useSession();
+  const isAdmin = session?.user?.roles?.includes('admin') ?? false;
+
+  useEffect(() => {
+    fetch('/api/challenges')
+      .then(r => r.json())
+      .then(data => {
+        const real = Array.isArray(data) ? data : [];
+        setAllChallenges(isAdmin ? [...MOCK_CHALLENGES, ...real] : real);
+      })
+      .catch(() => setAllChallenges(isAdmin ? [...MOCK_CHALLENGES] : []));
+  }, [isAdmin]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const catRef = useRef<HTMLDivElement>(null);
@@ -106,7 +117,7 @@ export function SearchPanel() {
     }
   };
 
-  const results = MOCK_CHALLENGES.filter(c => {
+  const results = allChallenges.filter(c => {
     if (barCategory !== 'all') {
       const catMap: Record<string, string> = { sport: 'Спорт', education: 'Обучение', quests: 'Квесты', art: 'Искусство', tech: 'Технологии' };
       if (c.category !== catMap[barCategory]) return false;
