@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
-import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart } from 'lucide-react';
+import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3 } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { ProfileHero } from './components/profile-hero';
@@ -11,6 +11,7 @@ import { StatsGrid } from './components/stats-grid';
 import { ActivityCalendar } from './components/activity-calendar';
 import { AchievementShowcase } from './components/achievement-showcase';
 import { ActivityFeed } from './components/activity-feed';
+import { ProfileEditModal } from './components/profile-edit-modal';
 
 interface ProfileData {
   name: string;
@@ -24,6 +25,8 @@ interface ProfileData {
   rating: number;
   gender: string | null;
   birthDate: string | null;
+  bio: string;
+  avatarUrl: string;
   memberSince: string;
   activity: any[];
   calendar: { date: string; count: number }[];
@@ -34,6 +37,7 @@ export default function ProfilePage() {
   const [tab, setTab] = useState<'overview' | 'settings'>('overview');
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/user/profile-stats')
@@ -62,8 +66,12 @@ export default function ProfilePage() {
     name: userName, email: session?.user?.email || '', points: 0,
     level: { level: 1, name: 'Новичок', xp: 0, color: '#94a3b8', xpInLevel: 0, xpNeeded: 100, progress: 0 },
     streak: 0, activeChallenges: 0, completedChallenges: 0, achievements: 0, rating: 0,
-    gender: null, birthDate: null,
+    gender: null, birthDate: null, bio: '', avatarUrl: '',
     memberSince: '', activity: [], calendar: [],
+  };
+
+  const handleProfileSave = (updated: any) => {
+    setProfileData(prev => prev ? { ...prev, ...updated, name: `${updated.firstName || ''} ${updated.lastName || ''}`.trim() || prev.name } : prev);
   };
 
   return (
@@ -79,6 +87,20 @@ export default function ProfilePage() {
           gender={data.gender}
           birthDate={data.birthDate}
         />
+
+        {/* Bio + Edit button */}
+        <div className="bio-section">
+          <div className="bio-content">
+            {data.bio ? (
+              <p className="bio-text">{data.bio}</p>
+            ) : (
+              <p className="bio-empty">Расскажите о себе — чего вы хотите достичь, какие у вас интересы</p>
+            )}
+          </div>
+          <button className="bio-edit-btn" onClick={() => setEditOpen(true)}>
+            <Edit3 size={14} /> Редактировать
+          </button>
+        </div>
 
         <StatsGrid
           activeChallenges={data.activeChallenges}
@@ -139,8 +161,28 @@ export default function ProfilePage() {
         )}
       </div>
 
+      <ProfileEditModal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        initialData={{
+          firstName: session?.user?.firstName || '',
+          lastName: session?.user?.lastName || '',
+          bio: data.bio,
+          avatarUrl: data.avatarUrl,
+          gender: data.gender || '',
+          birthDate: data.birthDate || '',
+        }}
+        onSave={handleProfileSave}
+      />
+
       <style>{`
         .profile-page { max-width: 1100px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 24px) 80px; display: flex; flex-direction: column; gap: 20px; }
+        .bio-section { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 16px; padding: 16px 20px; border: 1px solid #f0f0f0; gap: 16px; }
+        .bio-content { flex: 1; min-width: 0; }
+        .bio-text { font-size: 14px; color: #333; line-height: 1.6; margin: 0; }
+        .bio-empty { font-size: 13px; color: #aaa; font-style: italic; margin: 0; }
+        .bio-edit-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+        .bio-edit-btn:hover { border-color: #FF385C; color: #FF385C; background: #fff5f7; }
         .profile-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
         .profile-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #f0f0f0; border-top-color: #FF385C; animation: spin 0.8s linear infinite; }
         .profile-loading p { font-size: 14px; color: #888; margin: 0; }

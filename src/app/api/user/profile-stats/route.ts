@@ -42,7 +42,7 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { points: true, rating: true, createdAt: true, firstName: true, lastName: true, email: true, gender: true, birthDate: true },
+      select: { points: true, rating: true, createdAt: true, firstName: true, lastName: true, email: true, gender: true, birthDate: true, bio: true, avatarUrl: true },
     });
 
     const activeParticipations = await prisma.userProgress.count({
@@ -115,6 +115,8 @@ export async function GET() {
       rating: user?.rating || 0,
       gender: user?.gender || null,
       birthDate: user?.birthDate?.toISOString() || null,
+      bio: user?.bio || '',
+      avatarUrl: user?.avatarUrl || '',
       memberSince: user?.createdAt.toISOString() || new Date().toISOString(),
       activity,
       calendar: calendarDays,
