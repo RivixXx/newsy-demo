@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { Zap, Crown, Flame } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const Avatar3D = dynamic(() => import('./avatar3d').then(m => m.Avatar3D), { ssr: false });
 
 interface LevelInfo {
   level: number;
@@ -57,11 +60,7 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
               />
             </svg>
             <div className="avatar-inner">
-              <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=b6e3f4`}
-                alt={name}
-                className="avatar-img"
-              />
+              <Avatar3D gender={gender ?? null} className="avatar-3d" />
               <div className="level-badge" style={{ background: level.color }}>
                 {level.level}
               </div>
@@ -114,7 +113,8 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
         .avatar-section { flex-shrink: 0; }
         .xp-ring { position: relative; width: 110px; height: 110px; }
         .xp-ring svg { position: absolute; inset: 0; }
-        .avatar-inner { position: absolute; inset: 8px; display: flex; align-items: center; justify-content: center; }
+        .avatar-inner { position: absolute; inset: 4px; display: flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; background: #f8f8f8; }
+        .avatar-3d { width: 100% !important; height: 100% !important; }
         .avatar-img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
         .level-badge {
           position: absolute; bottom: -2px; right: -2px;
