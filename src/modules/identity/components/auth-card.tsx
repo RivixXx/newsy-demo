@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useActionState } from 'react';
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Tag } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Tag, Calendar } from 'lucide-react';
 import { loginAction, registerAction, type AuthActionState } from '@/modules/identity/actions';
 
 export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'register' }) {
@@ -212,7 +212,20 @@ function RegisterForm({ action }: { action: (state: AuthActionState, formData: F
           <InputField icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
         </div>
         <InputField icon={<Mail size={18} />} name="email" placeholder="demo@newsy.ru" label="Email" type="email" />
-        <InputField icon={<Lock size={18} />} name="password" placeholder="Минимум 6 символов" label="Пароль" type={showPass ? 'text' : 'password'} trailing={<button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>} />
+        <div className="reg-name-row">
+          <div style={s.inputGroup}>
+            <label style={s.label}>Пол</label>
+            <div style={s.inputWrap}>
+              <select name="gender" style={{ ...s.input, cursor: 'pointer' }}>
+                <option value="">Не указан</option>
+                <option value="male">Мужской</option>
+                <option value="female">Женский</option>
+              </select>
+            </div>
+          </div>
+          <InputField icon={<Calendar size={18} />} name="birthDate" placeholder="дд.мм.гггг" label="Дата рождения" type="date" />
+        </div>
+        <InputField icon={<Lock size={18} />} name="password" placeholder="Минимум 8 символов" label="Пароль" type={showPass ? 'text' : 'password'} trailing={<button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>} />
         <InputField icon={<Lock size={18} />} name="confirm" placeholder="Повторите пароль" label="Повторите пароль" type="password" />
         <InputField icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
 

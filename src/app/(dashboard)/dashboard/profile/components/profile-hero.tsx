@@ -20,11 +20,23 @@ interface ProfileHeroProps {
   points: number;
   streak: number;
   isOrganizer: boolean;
+  gender?: string | null;
+  birthDate?: string | null;
 }
 
-export function ProfileHero({ name, email, level, points, streak, isOrganizer }: ProfileHeroProps) {
+export function ProfileHero({ name, email, level, points, streak, isOrganizer, gender, birthDate }: ProfileHeroProps) {
   const circumference = 2 * Math.PI * 42;
   const offset = circumference - (level.progress / 100) * circumference;
+
+  const genderLabel = gender === 'male' ? 'Мужчина' : gender === 'female' ? 'Женщина' : null;
+  let age: number | null = null;
+  if (birthDate) {
+    const bd = new Date(birthDate);
+    const today = new Date();
+    age = today.getFullYear() - bd.getFullYear();
+    const m = today.getMonth() - bd.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+  }
 
   return (
     <div className="hero-card">
@@ -68,6 +80,12 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer }:
             <span className="level-sep">·</span>
             <span className="level-xp">{level.xpInLevel} / {level.xpNeeded} XP</span>
           </div>
+          {(genderLabel || age) && (
+            <div className="user-meta">
+              {genderLabel && <span className="meta-tag">{genderLabel}</span>}
+              {age && <span className="meta-tag">{age} лет</span>}
+            </div>
+          )}
         </div>
 
         {streak > 0 && (
@@ -119,6 +137,12 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer }:
         .level-name { font-size: 14px; font-weight: 800; }
         .level-sep { color: #ddd; }
         .level-xp { font-size: 12px; color: #aaa; font-weight: 600; }
+        .user-meta { display: flex; gap: 8px; margin-top: 8px; }
+        .meta-tag {
+          display: inline-flex; align-items: center; gap: 4px;
+          padding: 3px 10px; border-radius: 8px;
+          background: #f5f5f5; font-size: 12px; font-weight: 600; color: #555;
+        }
         .streak-badge {
           display: flex; flex-direction: column; align-items: center;
           padding: 12px 16px; border-radius: 16px;

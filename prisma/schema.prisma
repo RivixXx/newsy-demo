@@ -91,6 +91,8 @@ model User {
   rating         Float           @default(0)
   lastLoginAt    DateTime?
   referredBy     String?
+  gender         String?
+  birthDate      DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   deletedAt      DateTime?

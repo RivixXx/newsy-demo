@@ -22,6 +22,8 @@ interface ProfileData {
   completedChallenges: number;
   achievements: number;
   rating: number;
+  gender: string | null;
+  birthDate: string | null;
   memberSince: string;
   activity: any[];
   calendar: { date: string; count: number }[];
@@ -60,6 +62,7 @@ export default function ProfilePage() {
     name: userName, email: session?.user?.email || '', points: 0,
     level: { level: 1, name: 'Новичок', xp: 0, color: '#94a3b8', xpInLevel: 0, xpNeeded: 100, progress: 0 },
     streak: 0, activeChallenges: 0, completedChallenges: 0, achievements: 0, rating: 0,
+    gender: null, birthDate: null,
     memberSince: '', activity: [], calendar: [],
   };
 
@@ -73,6 +76,8 @@ export default function ProfilePage() {
           points={data.points}
           streak={data.streak}
           isOrganizer={isOrganizer}
+          gender={data.gender}
+          birthDate={data.birthDate}
         />
 
         <StatsGrid
