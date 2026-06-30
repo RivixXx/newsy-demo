@@ -18,7 +18,7 @@ export default function ReferralPage() {
   const [stats, setStats] = useState<ReferralStats>({ totalReferrals: 0, activeReferrals: 0, totalEarned: 0 });
 
   const referralCode = session?.user?.id ? `NEWSY-${session.user.id.slice(0, 8).toUpperCase()}` : '';
-  const referralLink = `https://newsy-demo.vercel.app/register?ref=${referralCode}`;
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://chillenge-russia.ru'}/register?ref=${referralCode}`;
 
   useEffect(() => {
     if (session?.user?.id) {
