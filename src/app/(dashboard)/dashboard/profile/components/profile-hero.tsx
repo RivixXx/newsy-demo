@@ -123,7 +123,7 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
           display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
           overflow: hidden;
         }
-        .hero-3d-wrapper { width: 100%; height: 240px; position: relative; }
+        .hero-3d-wrapper { width: 100%; height: 280px; position: relative; margin-top: 20px; }
         .hero-3d { width: 100% !important; height: 100% !important; }
         .level-badge-3d {
           position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
