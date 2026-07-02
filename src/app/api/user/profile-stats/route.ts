@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
@@ -43,7 +42,15 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    const { user, activeParticipations, completedParticipations, achievements } = await getUserStats(userId);
+    const [user, activeParticipations, completedParticipations, achievements] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { points: true, rating: true, createdAt: true, firstName: true, lastName: true, email: true, gender: true, birthDate: true, bio: true, avatarUrl: true },
+      }),
+      prisma.userProgress.count({ where: { userId, status: 'IN_PROGRESS' } }),
+      prisma.userProgress.count({ where: { userId, status: 'COMPLETED' } }),
+      prisma.userAchievement.count({ where: { userId } }),
+    ]);
 
     const totalPoints = user?.points || 0;
     const levelInfo = getLevel(totalPoints);
@@ -87,7 +94,31 @@ export async function GET() {
       };
     });
 
-    const calendarDays = await getActivityCalendarCached(userId);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
+
+    const completions = await prisma.stepProgress.findMany({
+      where: {
+        userProgress: { userId },
+        status: 'COMPLETED',
+        completedAt: { gte: thirtyDaysAgo },
+      },
+      select: { completedAt: true },
+    });
+
+    const counts: Record<string, number> = {};
+    completions.forEach(c => {
+      const date = new Date(c.completedAt!).toISOString().split('T')[0];
+      counts[date] = (counts[date] || 0) + 1;
+    });
+
+    const calendarDays = [];
+    for (let i = 89; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      calendarDays.push({ date: dateStr, count: counts[dateStr] || 0 });
+    }
 
     return NextResponse.json({
       name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Пользователь',
@@ -107,62 +138,12 @@ export async function GET() {
       activity,
       calendar: calendarDays,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Profile stats error:', error);
-    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message }, { status: 500 });
   }
 }
-
-const getUserStats = unstable_cache(
-  async (userId: string) => {
-    const [user, activeParticipations, completedParticipations, achievements] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { points: true, rating: true, createdAt: true, firstName: true, lastName: true, email: true, gender: true, birthDate: true, bio: true, avatarUrl: true },
-      }),
-      prisma.userProgress.count({ where: { userId, status: 'IN_PROGRESS' } }),
-      prisma.userProgress.count({ where: { userId, status: 'COMPLETED' } }),
-      prisma.userAchievement.count({ where: { userId } }),
-    ]);
-    return { user, activeParticipations, completedParticipations, achievements };
-  },
-  ['profile-stats'],
-  { revalidate: 30 }
-);
-
-const getActivityCalendarCached = unstable_cache(
-  async (userId: string) => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
-
-    const completions = await prisma.stepProgress.findMany({
-      where: {
-        userProgress: { userId },
-        status: 'COMPLETED',
-        completedAt: { gte: thirtyDaysAgo },
-      },
-      select: { completedAt: true },
-    });
-
-    const counts: Record<string, number> = {};
-    completions.forEach(c => {
-      const date = new Date(c.completedAt!).toISOString().split('T')[0];
-      counts[date] = (counts[date] || 0) + 1;
-    });
-
-    const days = [];
-    for (let i = 89; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      days.push({ date: dateStr, count: counts[dateStr] || 0 });
-    }
-
-    return days;
-  },
-  ['activity-calendar'],
-  { revalidate: 30 }
-);
 
 async function calculateStreak(userId: string): Promise<number> {
   const completions = await prisma.stepProgress.findMany({

@@ -44,7 +44,14 @@ export default function ProfilePage() {
   useEffect(() => {
     fetch('/api/user/profile-stats')
       .then(r => r.json())
-      .then(d => { setProfileData(d); setLoading(false); })
+      .then(d => {
+        if (d.error || !d.level) {
+          setLoading(false);
+          return;
+        }
+        setProfileData(d);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 
