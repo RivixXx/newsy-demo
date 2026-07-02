@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://newsy-demo.vercel.app';
+const BASE_URL = process.env.BASE_URL || 'https://newsy-demo.vercel.app';
+const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@newsy.ru';
+const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Newsy123!';
 
 test.describe('Полный цикл пользователя NEWSY', () => {
 
@@ -26,8 +28,8 @@ test.describe('Полный цикл пользователя NEWSY', () => {
 
   test('3. Авторизация', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="identifier"]', 'admin@newsy.ru');
-    await page.fill('input[name="password"]', 'Newsy123!');
+    await page.fill('input[name="identifier"]', TEST_ADMIN_EMAIL);
+    await page.fill('input[name="password"]', TEST_ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
 
     await page.waitForURL(BASE_URL + '/', { timeout: 10000 });
@@ -48,8 +50,8 @@ test.describe('Полный цикл пользователя NEWSY', () => {
 
   test('5. Профиль пользователя', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="identifier"]', 'admin@newsy.ru');
-    await page.fill('input[name="password"]', 'Newsy123!');
+    await page.fill('input[name="identifier"]', TEST_ADMIN_EMAIL);
+    await page.fill('input[name="password"]', TEST_ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL(BASE_URL + '/', { timeout: 10000 });
 
@@ -64,8 +66,8 @@ test.describe('Полный цикл пользователя NEWSY', () => {
 
   test('6. Страница создания челленджа', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="identifier"]', 'admin@newsy.ru');
-    await page.fill('input[name="password"]', 'Newsy123!');
+    await page.fill('input[name="identifier"]', TEST_ADMIN_EMAIL);
+    await page.fill('input[name="password"]', TEST_ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL(BASE_URL + '/', { timeout: 10000 });
 

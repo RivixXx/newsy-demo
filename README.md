@@ -12,12 +12,7 @@ NEWSY is an interactive digital marketing social platform designed to launch "ch
 
 ## Tech Stack
 
-- **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
-- **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Database:** [PostgreSQL](https://www.postgresql.org/)
-- **ORM:** [Prisma](https://www.prisma.io/)
-- **Icons:** [Lucide React](https://lucide.dev/)
-- **Styling:** CSS Modules / `styled-jsx`
+Next.js 15 (фронтенд и серверная логика), TypeScript (типизация), Supabase (база данных PostgreSQL и аутентификация), Prisma (ORM для работы с БД), React 19 (UI-компоненты), Vercel (хостинг и деплой), Three.js (3D-графика), Zod (валидация данных), Lucide React (иконки)
 
 ## Getting Started
 
@@ -26,7 +21,7 @@ NEWSY is an interactive digital marketing social platform designed to launch "ch
     npm install
     ```
 2.  **Environment Setup:**
-    Copy `.env.example` to `.env` and configure your database URL.
+    Copy `.env.example` to `.env` and configure Supabase keys.
 3.  **Database Migration:**
     ```bash
     npm run prisma:migrate

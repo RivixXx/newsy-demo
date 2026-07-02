@@ -4,11 +4,13 @@ import { cookies } from 'next/headers';
 
 import type { AuthSession } from './auth';
 
-const SESSION_COOKIE_NAME = 'newsy_session';
+const SESSION_COOKIE_NAME = '__Host-newsy_session';
 const SESSION_LIFETIME_MS = 1000 * 60 * 60 * 24 * 7;
 
 function getSecret(): string {
-  return process.env.NEXTAUTH_SECRET?.trim() || 'newsy-development-secret';
+  const secret = process.env.NEXTAUTH_SECRET?.trim();
+  if (!secret) throw new Error('NEXTAUTH_SECRET is not set');
+  return secret;
 }
 
 function encode(value: string): string {
@@ -88,8 +90,8 @@ export async function setAuthSession(session: AuthSession): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, createSessionCookieValue(session), {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    secure: true,
     path: '/',
     expires: new Date(Date.now() + SESSION_LIFETIME_MS)
   });
@@ -99,8 +101,8 @@ export async function clearAuthSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, '', {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    secure: true,
     path: '/',
     expires: new Date(0)
   });

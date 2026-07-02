@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { prisma } from '@/lib/db';
 import { clearAuthSession, setAuthSession } from '@/lib/session';
+import { rateLimit } from '@/lib/rate-limit';
 
 import { createAuthService } from './services';
 import { hashPassword } from './services/password-hash';
@@ -36,6 +37,11 @@ export async function loginAction(
 
   if (!credentialsResult.success) {
     return { error: 'Проверьте логин, пароль и способ входа.' };
+  }
+
+  const rl = rateLimit(`login:${credentialsResult.data.identifier}`, { windowMs: 300_000, max: 5 });
+  if (!rl.allowed) {
+    return { error: `Слишком много попыток. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
   }
 
   try {
@@ -75,6 +81,11 @@ export async function registerAction(
   }
   if (password !== confirm) {
     return { error: 'Пароли не совпадают.' };
+  }
+
+  const rl = rateLimit(`register:${email}`, { windowMs: 600_000, max: 3 });
+  if (!rl.allowed) {
+    return { error: `Слишком много регистраций. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
   }
 
   try {

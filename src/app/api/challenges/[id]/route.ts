@@ -88,6 +88,6 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('Challenge detail error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { z } from 'zod';
+
+const createPartnerSchema = z.object({
+  challengeId: z.string().uuid(),
+  partnerName: z.string().min(1, 'partnerName обязателен'),
+  partnerLogoUrl: z.string().url('partnerLogoUrl должен быть валидным URL').optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ partners });
   } catch (error: any) {
     console.error('Get partners error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }
 
@@ -30,11 +37,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const { challengeId, partnerName, partnerLogoUrl } = await req.json();
-
-    if (!challengeId || !partnerName) {
-      return NextResponse.json({ error: 'challengeId и partnerName обязательны' }, { status: 400 });
+    const body = await req.json();
+    const parsed = createPartnerSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+
+    const { challengeId, partnerName, partnerLogoUrl } = parsed.data;
 
     const challenge = await prisma.challenge.findUnique({
       where: { id: challengeId },
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ partner });
   } catch (error: any) {
     console.error('Create partner error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }
 
@@ -93,6 +102,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Delete partner error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }

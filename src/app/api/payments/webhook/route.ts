@@ -3,9 +3,32 @@ import { prisma } from '@/lib/db';
 import { createYooKassaService } from '@/modules/payments/services/yookassa-service';
 import { createPaymentService } from '@/modules/payments/services/payment-service';
 import { createSubscriptionService } from '@/modules/payments/services/subscription-service';
+import { rateLimit } from '@/lib/rate-limit';
+
+const YOOKASSA_IPS = [
+  '185.70.44.',
+  '5.35.4.',
+  '37.139.32.',
+];
+
+function isYooKassaIP(ip: string): boolean {
+  return YOOKASSA_IPS.some(prefix => ip.startsWith(prefix));
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = rateLimit('webhook:yookassa', { windowMs: 60_000, max: 50 });
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    const forwarded = req.headers.get('x-forwarded-for');
+    const clientIP = forwarded?.split(',')[0]?.trim() || 'unknown';
+
+    if (!isYooKassaIP(clientIP)) {
+      console.warn(`Webhook from unknown IP: ${clientIP}`);
+    }
+
     const payload = await req.json();
     const { event, object } = payload;
 
@@ -32,8 +55,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ status: 'ok' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message }, { status: 500 });
   }
 }

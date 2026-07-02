@@ -27,11 +27,21 @@ export async function POST(
 
     const challenge = await prisma.challenge.findUnique({
       where: { id },
-      include: { organizer: { select: { name: true } } },
+      select: {
+        title: true,
+        status: true,
+        organizer: {
+          select: {
+            members: { select: { userId: true } },
+          },
+        },
+      },
     });
     if (!challenge) {
       return NextResponse.json({ error: 'Челлендж не найден' }, { status: 404 });
     }
+
+    const memberIds = challenge.organizer?.members?.map(m => m.userId) || [];
 
     if (challenge.status !== 'PENDING_REVIEW') {
       return NextResponse.json({ error: 'Челлендж не на модерации' }, { status: 400 });
@@ -43,14 +53,16 @@ export async function POST(
         data: { status: 'PUBLISHED', rejectionReason: null },
       });
 
-      await prisma.notification.create({
-        data: {
-          userId: session.user.id,
-          type: 'CHALLENGE_UPDATED',
-          title: 'Челлендж одобрен',
-          body: `«${challenge.title}» опубликован и доступен в каталоге.`,
-        },
-      });
+      if (memberIds.length > 0) {
+        await prisma.notification.createMany({
+          data: memberIds.map(userId => ({
+            userId,
+            type: 'CHALLENGE_UPDATED' as const,
+            title: 'Челлендж одобрен',
+            body: `«${challenge.title}» опубликован и доступен в каталоге.`,
+          })),
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -67,14 +79,16 @@ export async function POST(
       data: { status: 'DRAFT', rejectionReason: rejectionMessage },
     });
 
-    await prisma.notification.create({
-      data: {
-        userId: session.user.id,
-        type: 'CHALLENGE_UPDATED',
-        title: 'Челлендж отклонён',
-        body: `«${challenge.title}» возвращён на доработку. Причина: ${rejectionMessage}`,
-      },
-    });
+    if (memberIds.length > 0) {
+      await prisma.notification.createMany({
+        data: memberIds.map(userId => ({
+          userId,
+          type: 'CHALLENGE_UPDATED' as const,
+          title: 'Челлендж отклонён',
+          body: `«${challenge.title}» возвращён на доработку. Причина: ${rejectionMessage}`,
+        })),
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -85,6 +99,6 @@ export async function POST(
     });
   } catch (error: any) {
     console.error('Review error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }

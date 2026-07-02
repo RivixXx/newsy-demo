@@ -19,6 +19,10 @@ export async function POST(
       return NextResponse.json({ error: 'Челлендж не найден' }, { status: 404 });
     }
 
+    if (challenge.status !== 'PUBLISHED') {
+      return NextResponse.json({ error: 'Челлендж недоступен для участия' }, { status: 400 });
+    }
+
     const existing = await prisma.userProgress.findUnique({
       where: { userId_challengeId: { userId: session.user.id, challengeId: id } },
     });
@@ -47,6 +51,6 @@ export async function POST(
     return NextResponse.json({ success: true, progressId: progress.id });
   } catch (error: any) {
     console.error('Join error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }

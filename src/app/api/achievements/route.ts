@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
+export const revalidate = 300;
+
 const DEFAULT_ACHIEVEMENTS = [
   { key: 'first_step', name: 'Первый шаг', description: 'Заверши первый челлендж', pointsRequired: 0 },
   { key: 'marathon', name: 'Марафонец', description: 'Заверши 10 челленджей', pointsRequired: 500 },

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { z } from 'zod';
+
+const completeStepSchema = z.object({
+  stepId: z.string().uuid('stepId должен быть UUID'),
+  submission: z.any().optional(),
+});
 
 export async function POST(
   req: NextRequest,
@@ -13,7 +19,14 @@ export async function POST(
     }
 
     const { id } = await params;
-    const { stepId, submission } = await req.json();
+    const body = await req.json();
+
+    const parsed = completeStepSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
+    const { stepId, submission } = parsed.data;
 
     if (!stepId) {
       return NextResponse.json({ error: 'stepId обязателен' }, { status: 400 });
@@ -75,6 +88,6 @@ export async function POST(
     return NextResponse.json({ success: true, pointsEarned: step.rewardPoints, completedSteps, totalSteps: allSteps.length });
   } catch (error: any) {
     console.error('Complete step error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }

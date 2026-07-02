@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, sentCount });
   } catch (error: any) {
     console.error('Mailing error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }
 
@@ -53,6 +53,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ notifications });
   } catch (error: any) {
     console.error('Get notifications error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }

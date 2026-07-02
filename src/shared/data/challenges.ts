@@ -239,16 +239,28 @@ export function getChallengeById(id: string): CatalogChallenge | undefined {
 
 export async function getChallengeFromDb(id: string): Promise<CatalogChallenge | null> {
   try {
-    const { prisma } = await import('@/lib/db');
-    const challenge = await prisma.challenge.findUnique({
-      where: { id, deletedAt: null },
-      include: {
-        organizer: { select: { name: true } },
-        media: { orderBy: { sortOrder: 'asc' }, take: 1 },
-        steps: { select: { title: true, description: true, type: true, rewardPoints: true, config: true, order: true }, orderBy: { order: 'asc' } },
-        _count: { select: { participations: true } },
+    const [{ prisma }, { unstable_cache }] = await Promise.all([
+      import('@/lib/db'),
+      import('next/cache'),
+    ]);
+
+    const cachedFn = unstable_cache(
+      async (challengeId: string) => {
+        return prisma.challenge.findUnique({
+          where: { id: challengeId, deletedAt: null },
+          include: {
+            organizer: { select: { name: true } },
+            media: { orderBy: { sortOrder: 'asc' }, take: 1 },
+            steps: { select: { title: true, description: true, type: true, rewardPoints: true, config: true, order: true }, orderBy: { order: 'asc' } },
+            _count: { select: { participations: true } },
+          },
+        });
       },
-    });
+      ['challenge-db'],
+      { revalidate: 30 }
+    );
+
+    const challenge = await cachedFn(id);
 
     if (!challenge) return null;
 

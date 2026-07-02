@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+
+const updateProfileSchema = z.object({
+  bio: z.string().max(500).optional(),
+  avatarUrl: z.string().url().optional().nullable(),
+  firstName: z.string().trim().min(1).max(50).optional(),
+  lastName: z.string().trim().min(1).max(50).optional(),
+  gender: z.enum(['male', 'female', 'other']).optional().nullable(),
+  birthDate: z.string().optional().nullable(),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,14 +20,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { bio, avatarUrl, firstName, lastName, gender, birthDate } = body;
+    const parsed = updateProfileSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Невалидные данные', details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+
+    const { bio, avatarUrl, firstName, lastName, gender, birthDate } = parsed.data;
 
     const data: Record<string, any> = {};
 
     if (bio !== undefined) {
-      if (bio.length > 500) {
-        return NextResponse.json({ error: 'Био не может превышать 500 символов' }, { status: 400 });
-      }
       data.bio = bio;
     }
 
@@ -54,6 +67,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, user: updated });
   } catch (error: any) {
     console.error('Update profile error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
   }
 }
