@@ -18,8 +18,9 @@ export interface ChallengeStage {
   id: string;
   title: string;
   description: string;
-  type: 'ДЕЙСТВИЕ' | 'ГЕО' | 'ФОТО' | 'ФАЙЛ';
+  type: 'ДЕЙСТВИЕ' | 'ГЕО' | 'ФОТО' | 'ФАЙЛ' | 'ВОПРОС';
   status: StageStatus;
+  config?: Record<string, unknown> | null;
 }
 
 export interface ModalChallenge {
@@ -135,10 +136,30 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
 
   const handleCompleteStage = async (stageId: string) => {
     const stage = stages.find(s => s.id === stageId);
+    const cfg = stage?.config as Record<string, unknown> || {};
+
+    // Client-side validation
+    if (cfg.minTextLength && (!stageInputs[stageId] || stageInputs[stageId].trim().length < (cfg.minTextLength as number))) {
+      toast('warning', `Минимальная длина текста — ${cfg.minTextLength} символов`);
+      return;
+    }
+    if (cfg.requirePhoto && stage?.type === 'ФОТО' && !stageInputs[stageId]) {
+      toast('warning', 'Загрузите фото для этого этапа');
+      return;
+    }
+    if (cfg.requireGeo && stage?.type === 'ГЕО' && !stageInputs[stageId]) {
+      toast('warning', 'Подтвердите геолокацию для этого этапа');
+      return;
+    }
+    if (cfg.requireOption && stage?.type === 'ВОПРОС' && !stageInputs[stageId]) {
+      toast('warning', 'Выберите один из вариантов ответа');
+      return;
+    }
     if (stage?.type === 'ДЕЙСТВИЕ' && !stageInputs[stageId]?.trim()) {
       toast('warning', 'Заполните поле перед подтверждением');
       return;
     }
+
     try {
       const res = await fetch(`/api/challenges/${challenge.id}/complete-step`, {
         method: 'POST',
@@ -146,6 +167,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         body: JSON.stringify({ stepId: stageId, submission: stageInputs[stageId] || null }),
       });
       const data = await res.json();
+      if (!res.ok) { toast('error', data.error || 'Ошибка'); return; }
       if (data.success) {
         toast('success', `+${data.pointsEarned} баллов! Этап завершён`);
         setStages(prev => {
@@ -282,6 +304,16 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                     {expandedStage === stage.id && (
                       <div className="stage-body">
                         <p>{stage.description}</p>
+                        {stage.config && (
+                          <div className="stage-verify-hints">
+                            {'minTextLength' in stage.config && stage.config.minTextLength ? <span className="verify-hint">Минимум {String(stage.config.minTextLength)} символов</span> : null}
+                            {'minPhotoWidth' in stage.config && stage.config.minPhotoWidth ? <span className="verify-hint">Фото: минимум {String(stage.config.minPhotoWidth)}×{String(stage.config.minPhotoHeight || 0)} px</span> : null}
+                            {'requirePhoto' in stage.config && stage.config.requirePhoto && !('minPhotoWidth' in stage.config) ? <span className="verify-hint">Фото обязательно</span> : null}
+                            {'maxGeoAccuracy' in stage.config && stage.config.maxGeoAccuracy ? <span className="verify-hint">Точность: не хуже {String(stage.config.maxGeoAccuracy)} м</span> : null}
+                            {'requireGeo' in stage.config && stage.config.requireGeo && !('maxGeoAccuracy' in stage.config) ? <span className="verify-hint">Геолокация обязательна</span> : null}
+                            {'requireOption' in stage.config && stage.config.requireOption ? <span className="verify-hint">Выбор ответа обязателен</span> : null}
+                          </div>
+                        )}
                         {stage.status === 'active' && (
                           <div className="stage-actions">
                             {stage.type === 'ФОТО' && (
@@ -773,6 +805,25 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           color: #555;
           line-height: 1.5;
           margin: 0 0 14px 0;
+        }
+
+        .stage-verify-hints {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-bottom: 14px;
+        }
+        .verify-hint {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 3px 8px;
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #92400e;
         }
 
         .stage-actions {

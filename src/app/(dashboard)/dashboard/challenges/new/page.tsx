@@ -16,7 +16,19 @@ import { FileUpload } from '@/shared/components/file-upload';
 type StepType = 'action' | 'photo' | 'geo' | 'question';
 type Device = 'mobile' | 'tablet' | 'desktop';
 
-interface Step { id: string; type: StepType; title: string; description: string; points: number; options?: string[]; correctIndex?: number; location?: string; }
+interface Step {
+  id: string; type: StepType; title: string; description: string; points: number;
+  options?: string[]; correctIndex?: number; location?: string;
+  verification?: {
+    minTextLength?: number;
+    requirePhoto?: boolean;
+    minPhotoWidth?: number;
+    minPhotoHeight?: number;
+    requireGeo?: boolean;
+    maxGeoAccuracy?: number;
+    requireOption?: boolean;
+  };
+}
 interface FormData { title: string; description: string; category: string; coverImage: string; startDate: string; endDate: string; maxParticipants: number; entryFee: number; isCooperative: boolean; steps: Step[]; rewardTitle: string; rewardDescription: string; }
 
 const CATEGORIES = [
@@ -62,7 +74,7 @@ export default function NewChallengePage() {
   const handlePublish = async () => {
     setPublishing(true); setError(null);
     try {
-      const r = await createChallengeAction({ title: data.title, description: data.description, category: data.category, coverImage: data.coverImage, startDate: data.startDate, endDate: data.endDate, maxParticipants: data.maxParticipants, entryFee: data.entryFee, isCooperative: data.isCooperative, rewardTitle: data.rewardTitle, rewardDescription: data.rewardDescription, steps: data.steps.map(s => ({ type: s.type, title: s.title, description: s.description, points: s.points, options: s.options, correctIndex: s.correctIndex, location: s.location })) });
+      const r = await createChallengeAction({ title: data.title, description: data.description, category: data.category, coverImage: data.coverImage, startDate: data.startDate, endDate: data.endDate, maxParticipants: data.maxParticipants, entryFee: data.entryFee, isCooperative: data.isCooperative, rewardTitle: data.rewardTitle, rewardDescription: data.rewardDescription, steps: data.steps.map(s => ({ type: s.type, title: s.title, description: s.description, points: s.points, options: s.options, correctIndex: s.correctIndex, location: s.location, verification: s.verification })) });
       if (r?.error) { setError(r.error); return; }
       if (!r?.success || !r?.challengeId) { setError('Ошибка создания челенджа'); return; }
       window.location.href = `/dashboard/challenges/${r.challengeId}/publish`;
@@ -154,6 +166,46 @@ export default function NewChallengePage() {
                               )}
                               {s.type === 'question' && <div className="cc-opts">{(s.options || []).map((o, oi) => (<div key={oi} className="cc-opt"><button className={`cc-opt-r ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={9} /></button><input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />{(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}</div>))}<button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button></div>}
                               {s.type === 'geo' && <input className="cc-card-geo" placeholder="Локация..." value={s.location || ''} onChange={e => updateStep(s.id, { location: e.target.value })} />}
+                            </div>
+
+                            {/* Verification rules */}
+                            <div className="cc-card-verify">
+                              <span className="cc-verify-label">Верификация</span>
+                              {s.type === 'action' && (
+                                <div className="cc-verify-row">
+                                  <label>Мин. длина текста</label>
+                                  <input type="number" min={0} placeholder="0" value={s.verification?.minTextLength || ''}
+                                    onChange={e => updateStep(s.id, { verification: { ...s.verification, minTextLength: parseInt(e.target.value) || undefined } })} />
+                                  <span>символов</span>
+                                </div>
+                              )}
+                              {s.type === 'photo' && (
+                                <>
+                                  <div className="cc-verify-row">
+                                    <label>Мин. ширина</label>
+                                    <input type="number" min={0} placeholder="800" value={s.verification?.minPhotoWidth || ''}
+                                      onChange={e => updateStep(s.id, { verification: { ...s.verification, minPhotoWidth: parseInt(e.target.value) || undefined } })} />
+                                    <span>px</span>
+                                  </div>
+                                  <div className="cc-verify-row">
+                                    <label>Мин. высота</label>
+                                    <input type="number" min={0} placeholder="600" value={s.verification?.minPhotoHeight || ''}
+                                      onChange={e => updateStep(s.id, { verification: { ...s.verification, minPhotoHeight: parseInt(e.target.value) || undefined } })} />
+                                    <span>px</span>
+                                  </div>
+                                </>
+                              )}
+                              {s.type === 'geo' && (
+                                <div className="cc-verify-row">
+                                  <label>Макс. точность</label>
+                                  <input type="number" min={0} placeholder="200" value={s.verification?.maxGeoAccuracy || ''}
+                                    onChange={e => updateStep(s.id, { verification: { ...s.verification, maxGeoAccuracy: parseInt(e.target.value) || undefined } })} />
+                                  <span>метров</span>
+                                </div>
+                              )}
+                              {s.type === 'question' && (
+                                <div className="cc-verify-row"><span className="cc-verify-hint">Выбор ответа обязателен</span></div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -355,6 +407,15 @@ export default function NewChallengePage() {
         .cc-opt-add { align-self: flex-start; background: none; border: 1px dashed #FF385C; color: #FF385C; padding: 2px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 2px; }
         .cc-card-geo { border: 1px solid #e4e4e7; border-radius: 5px; padding: 4px 7px; font-size: 11px; outline: none; width: 100%; }
         .cc-card-geo:focus { border-color: #FF385C; }
+
+        .cc-card-verify { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f0f0f0; }
+        .cc-verify-label { font-size: 9px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cc-verify-row { display: flex; align-items: center; gap: 6px; }
+        .cc-verify-row label { font-size: 11px; color: #71717a; font-weight: 600; }
+        .cc-verify-row input { width: 56px; border: 1px solid #e4e4e7; border-radius: 5px; padding: 3px 5px; font-size: 11px; font-weight: 700; text-align: center; outline: none; }
+        .cc-verify-row input:focus { border-color: #FF385C; }
+        .cc-verify-row span { font-size: 10px; color: #a1a1aa; }
+        .cc-verify-hint { font-size: 11px; color: #16a34a; font-weight: 600; }
 
         /* Settings */
         .cc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

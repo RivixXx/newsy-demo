@@ -26,6 +26,15 @@ export interface CreateChallengeInput {
     options?: string[];
     correctIndex?: number;
     location?: string;
+    verification?: {
+      minTextLength?: number;
+      requirePhoto?: boolean;
+      minPhotoWidth?: number;
+      minPhotoHeight?: number;
+      requireGeo?: boolean;
+      maxGeoAccuracy?: number;
+      requireOption?: boolean;
+    };
   }[];
 }
 
@@ -73,18 +82,32 @@ export async function createChallengeAction(input: CreateChallengeInput) {
         publishPrice: 0,
         status: 'DRAFT',
         steps: {
-          create: input.steps.map((s, i) => ({
-            title: s.title || `Этап ${i + 1}`,
-            description: s.description || null,
-            order: i,
-            type: s.type,
-            rewardPoints: s.points || 0,
-            ...(s.options
-              ? { config: { options: s.options, correctIndex: s.correctIndex } }
-              : s.location
-              ? { config: { location: s.location } }
-              : {}),
-          })),
+          create: input.steps.map((s, i) => {
+            const config: Record<string, unknown> = {};
+            if (s.options) { config.options = s.options; config.correctIndex = s.correctIndex; }
+            if (s.location) { config.location = s.location; }
+            if (s.verification) {
+              if (s.verification.minTextLength) config.minTextLength = s.verification.minTextLength;
+              if (s.type === 'photo') {
+                config.requirePhoto = true;
+                if (s.verification.minPhotoWidth) config.minPhotoWidth = s.verification.minPhotoWidth;
+                if (s.verification.minPhotoHeight) config.minPhotoHeight = s.verification.minPhotoHeight;
+              }
+              if (s.type === 'geo') {
+                config.requireGeo = true;
+                if (s.verification.maxGeoAccuracy) config.maxGeoAccuracy = s.verification.maxGeoAccuracy;
+              }
+              if (s.type === 'question') config.requireOption = true;
+            }
+            return {
+              title: s.title || `Этап ${i + 1}`,
+              description: s.description || null,
+              order: i,
+              type: s.type,
+              rewardPoints: s.points || 0,
+              config: Object.keys(config).length > 0 ? config as any : undefined,
+            };
+          }),
         },
         media: input.coverImage
           ? {

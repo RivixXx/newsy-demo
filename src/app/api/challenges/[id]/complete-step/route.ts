@@ -53,6 +53,28 @@ export async function POST(
       return NextResponse.json({ success: true, message: 'Этап уже завершён' });
     }
 
+    // Validate submission against step config
+    const config = (step.config as Record<string, unknown>) || {};
+    if (config.minTextLength && typeof submission === 'string') {
+      if (submission.trim().length < (config.minTextLength as number)) {
+        return NextResponse.json({ error: `Минимальная длина текста — ${config.minTextLength} символов` }, { status: 400 });
+      }
+    }
+    if (config.requirePhoto && (!submission || (typeof submission === 'string' && !submission.trim()))) {
+      return NextResponse.json({ error: 'Фото обязательно для этого этапа' }, { status: 400 });
+    }
+    if (config.requireGeo && (!submission || (typeof submission === 'object' && !(submission as any)?.lat))) {
+      return NextResponse.json({ error: 'Геолокация обязательна для этого этапа' }, { status: 400 });
+    }
+    if (config.maxGeoAccuracy && typeof submission === 'object' && (submission as any)?.accuracy) {
+      if ((submission as any).accuracy > (config.maxGeoAccuracy as number)) {
+        return NextResponse.json({ error: `Точность геолокации должна быть не хуже ${config.maxGeoAccuracy} м` }, { status: 400 });
+      }
+    }
+    if (config.requireOption && (!submission || (typeof submission === 'string' && !submission.trim()))) {
+      return NextResponse.json({ error: 'Выберите один из вариантов ответа' }, { status: 400 });
+    }
+
     await prisma.stepProgress.upsert({
       where: { userProgressId_stepId: { userProgressId: progress.id, stepId } },
       update: { status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },

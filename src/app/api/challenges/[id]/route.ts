@@ -65,6 +65,7 @@ export async function GET(
         type: STEP_TYPES[step.type] || step.type.toUpperCase(),
         status,
         rewardPoints: step.rewardPoints,
+        config: step.config || null,
       };
     });
 
