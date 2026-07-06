@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ChevronLeft, Send, Loader2, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Send, CheckCircle } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { Spinner } from '@/shared/components/spinner';
 
 export default function MailingPage() {
   const params = useParams<{ id: string }>();
@@ -62,7 +63,7 @@ export default function MailingPage() {
             </div>
             {error && <div className="m-error">{error}</div>}
             <button className="m-send" onClick={handleSend} disabled={sending || !title.trim() || !body.trim()}>
-              {sending ? <Loader2 size={16} className="spin" /> : <><Send size={16} /> Отправить</>}
+              {sending ? <Spinner size={16} /> : <><Send size={16} /> Отправить</>}
             </button>
           </div>
         )}
@@ -88,8 +89,6 @@ export default function MailingPage() {
           .m-success h2 { font-size: 22px; font-weight: 900; margin: 8px 0 0; color: #111; }
           .m-success p { font-size: 14px; color: #71717a; margin: 0; }
           .m-btn { padding: 12px 24px; border-radius: 10px; background: #111; color: white; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 16px; }
-          .spin { animation: spin 1s linear infinite; }
-          @keyframes spin { to { transform: rotate(360deg); } }
         `}</style>
       </div>
     </PageShell>

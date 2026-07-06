@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ChevronLeft, Plus, Trash2, Loader2, Building2 } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, Building2 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { Spinner } from '@/shared/components/spinner';
 
 interface Partner {
   id: string;
@@ -80,7 +81,7 @@ export default function PartnersPage() {
               <input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
             </div>
             <button className="p-add-btn" onClick={handleAdd} disabled={saving || !name.trim()}>
-              {saving ? <Loader2 size={16} className="spin" /> : <><Plus size={16} /> Добавить</>}
+              {saving ? <Spinner size={16} /> : <><Plus size={16} /> Добавить</>}
             </button>
           </div>
           {error && <div className="p-error">{error}</div>}
@@ -125,8 +126,6 @@ export default function PartnersPage() {
           .p-url { font-size: 11px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
           .p-del { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
           .p-del:hover { background: #fee2e2; }
-          .spin { animation: spin 1s linear infinite; }
-          @keyframes spin { to { transform: rotate(360deg); } }
           @media (max-width: 600px) { .p-input-row { flex-direction: column; } .p-add-btn { width: 100%; justify-content: center; } }
         `}</style>
       </div>

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Check, Crown, Zap, Star, Loader2, X } from 'lucide-react';
+import { ChevronLeft, Check, Crown, Zap, Star, X } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { Spinner, PageSpinner } from '@/shared/components/spinner';
 import { useSession } from '@/shared/components/session-provider';
 
 interface Plan {
@@ -110,7 +111,7 @@ export default function SubscriptionPage() {
     return (
       <PageShell>
         <div className="sub-page">
-          <div className="sub-loading"><Loader2 size={32} className="spin" /><p>Загрузка...</p></div>
+          <div className="sub-loading"><PageSpinner text="Загрузка..." /></div>
         </div>
       </PageShell>
     );
@@ -164,7 +165,7 @@ export default function SubscriptionPage() {
                     onClick={() => !isCurrent && handleSubscribe(plan.key)}
                     disabled={isCurrent || purchasing === plan.key}
                   >
-                    {isCurrent ? 'Текущий' : purchasing === plan.key ? <Loader2 size={16} className="spin" /> : 'Подписаться'}
+                    {isCurrent ? 'Текущий' : purchasing === plan.key ? <Spinner size={16} /> : 'Подписаться'}
                   </button>
                 </div>
               );
@@ -183,7 +184,7 @@ export default function SubscriptionPage() {
                 <p>Активна до {new Date(subscription.currentPeriodEnd).toLocaleDateString('ru-RU')}</p>
               </div>
               <button className="cancel-btn" onClick={handleCancel} disabled={purchasing === 'cancel'}>
-                {purchasing === 'cancel' ? <Loader2 size={16} className="spin" /> : <X size={16} />}
+                {purchasing === 'cancel' ? <Spinner size={16} /> : <X size={16} />}
               </button>
             </div>
           </div>
@@ -226,8 +227,6 @@ export default function SubscriptionPage() {
           .cancel-btn:hover:not(:disabled) { background: #fee2e2; }
           .cancel-btn:disabled { opacity: 0.5; }
           .sub-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 80px 20px; color: #71717a; }
-          .spin { animation: spin 1s linear infinite; }
-          @keyframes spin { to { transform: rotate(360deg); } }
           @media (max-width: 700px) { .plans-grid { grid-template-columns: 1fr; } }
         `}</style>
       </div>

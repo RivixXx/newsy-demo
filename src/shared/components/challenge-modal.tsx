@@ -4,8 +4,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   X, MapPin, Users, Calendar, Clock, Upload, Camera,
   Navigation, MessageSquare, Send, Trophy, Gift, ChevronDown,
-  AlertTriangle, CheckCircle2, Loader2
+  AlertTriangle, CheckCircle2
 } from 'lucide-react';
+import { Spinner } from '@/shared/components/spinner';
 import { ShareButtons } from '@/shared/components/share-buttons';
 import { useSession } from '@/shared/components/session-provider';
 import { useToast } from '@/shared/components/toast';
@@ -241,7 +242,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               <div className="stages-list">
                 {loadingDetail ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 40 }}>
-                    <div className="mini-spinner" />
+                    <Spinner size={32} />
                     <span style={{ fontSize: 13, color: '#aaa' }}>Загрузка этапов...</span>
                   </div>
                 ) : stages.length === 0 ? (
@@ -262,7 +263,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                         {stage.status === 'completed'
                           ? <CheckCircle2 size={14} color="white" />
                           : stage.status === 'active'
-                            ? <Loader2 size={14} color="white" className="spin" />
+                            ? <Spinner size={14} />
                             : <span>{idx + 1}</span>
                         }
                       </div>
@@ -987,16 +988,10 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           animation: spin 1s linear infinite;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(30px) scale(0.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .mini-spinner {
-          width: 32px; height: 32px; border-radius: 50%;
-          border: 3px solid #f0f0f0; border-top-color: #FF385C;
-          animation: spin 0.8s linear infinite;
         }
 
         @media (max-width: 768px) {

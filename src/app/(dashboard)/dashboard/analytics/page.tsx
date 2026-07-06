@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, TrendingUp, Users, Trophy, DollarSign, BarChart3, Activity, Zap } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { PageSpinner } from '@/shared/components/spinner';
 import { useSession } from '@/shared/components/session-provider';
 
 interface AnalyticsData {
@@ -33,7 +34,7 @@ export default function AnalyticsPage() {
     return (
       <PageShell>
         <div className="analytics-page">
-          <div className="analytics-loading">Загрузка аналитики...</div>
+          <PageSpinner text="Загрузка аналитики..." />
         </div>
       </PageShell>
     );

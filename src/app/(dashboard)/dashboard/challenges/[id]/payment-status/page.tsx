@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import { CheckCircle, XCircle, ChevronLeft, Sparkles, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronLeft, Sparkles } from 'lucide-react';
+import { Spinner } from '@/shared/components/spinner';
 
 export default function PaymentStatusPage() {
   const params = useParams<{ id: string }>();
@@ -39,7 +40,7 @@ export default function PaymentStatusPage() {
         {status === 'loading' && (
           <>
             <div className="icon-container loading">
-              <Loader2 size={64} className="spin" />
+              <Spinner size={64} />
             </div>
             <h1>Проверяем оплату...</h1>
             <p>Пожалуйста, подождите</p>
@@ -126,8 +127,6 @@ export default function PaymentStatusPage() {
         .icon-container.success { background: #f0fdf4; color: #22c55e; }
         .icon-container.error { background: #fef2f2; color: #ef4444; }
         .icon-container.loading { background: #f0f9ff; color: #3b82f6; }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         h1 { font-size: 24px; font-weight: 800; margin: 0 0 16px; color: #111; }
         p { color: #71717a; line-height: 1.6; margin-bottom: 32px; }
         .stats-preview {

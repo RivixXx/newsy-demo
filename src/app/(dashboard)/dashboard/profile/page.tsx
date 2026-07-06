@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
+import { PageSpinner } from '@/shared/components/spinner';
 import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3 } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
@@ -86,10 +87,7 @@ export default function ProfilePage() {
     return (
       <PageShell>
         <div className="profile-page">
-          <div className="profile-loading">
-            <div className="profile-spinner" />
-            <p>Загружаем профиль...</p>
-          </div>
+          <PageSpinner text="Загружаем профиль..." />
         </div>
       </PageShell>
     );
@@ -221,7 +219,6 @@ export default function ProfilePage() {
         .bio-edit-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
         .bio-edit-btn:hover { border-color: #FF385C; color: #FF385C; background: #fff5f7; }
         .profile-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
-        .profile-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #f0f0f0; border-top-color: #FF385C; animation: spin 0.8s linear infinite; }
         .profile-loading p { font-size: 14px; color: #888; margin: 0; }
         .tabs-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 0; }
         .tab-btn { display: flex; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
@@ -229,7 +226,6 @@ export default function ProfilePage() {
         .tab-btn:not(.active):hover { border-color: #FF385C; color: #FF385C; }
         .tab-content { animation: fadeSlideUp 0.35s ease both; }
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .content-left, .content-right { display: flex; flex-direction: column; gap: 20px; }
         .settings-grid { display: flex; flex-direction: column; gap: 10px; }

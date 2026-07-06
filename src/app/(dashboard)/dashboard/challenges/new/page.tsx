@@ -9,6 +9,7 @@ import {
   Check, ArrowRight, Award, Settings2, Smartphone, Tablet, Monitor
 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { Spinner } from '@/shared/components/spinner';
 import { createChallengeAction } from '@/modules/challenges/actions/create';
 import { FileUpload } from '@/shared/components/file-upload';
 
@@ -208,7 +209,7 @@ export default function NewChallengePage() {
               {step < 4 ? (
                 <button className="cc-btn cc-btn--next" disabled={!canNext} onClick={() => go(step + 1)}>Далее <ArrowRight size={15} /></button>
               ) : (
-                <button className="cc-btn cc-btn--pub" onClick={handlePublish} disabled={publishing}>{publishing ? <span className="cc-spinner" /> : <><Zap size={15} /> Опубликовать</>}</button>
+                <button className="cc-btn cc-btn--pub" onClick={handlePublish} disabled={publishing}>{publishing ? <Spinner size={14} /> : <><Zap size={15} /> Опубликовать</>}</button>
               )}
             </div>
           </main>
@@ -413,8 +414,6 @@ export default function NewChallengePage() {
         .cc-btn--pub { background: #FF385C; color: #fff; box-shadow: 0 2px 8px rgba(255,56,92,0.25); }
         .cc-btn--pub:hover { background: #E31C5F; transform: translateY(-1px); }
         .cc-btn--pub:disabled { opacity: 0.5; cursor: default; transform: none; }
-        .cc-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.5s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Preview aside */
         .cc-aside { width: 380px; flex-shrink: 0; padding: 16px 16px 100px 0; position: sticky; top: 52px; height: fit-content; max-height: calc(100vh - 60px); overflow-y: auto; }

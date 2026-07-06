@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Upload, X, Image, FileText, Loader2 } from 'lucide-react';
+import { Upload, X, Image, FileText } from 'lucide-react';
+import { Spinner } from '@/shared/components/spinner';
 import { useToast } from '@/shared/components/toast';
 
 interface FileUploadProps {
@@ -117,7 +118,7 @@ export function FileUpload({
           disabled={uploading}
         >
           {uploading ? (
-            <Loader2 size={24} className="fu-spin" />
+            <Spinner size={24} />
           ) : (
             <Upload size={24} color="#aaa" />
           )}
@@ -146,8 +147,6 @@ export function FileUpload({
         .fu-file { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #f9fafb; border-radius: 10px; border: 1px solid #f0f0f0; }
         .fu-file-name { flex: 1; font-size: 13px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .fu-file-remove { width: 24px; height: 24px; border-radius: 6px; border: none; background: #fee2e2; color: #dc2626; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
-        .fu-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

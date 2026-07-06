@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trophy, Star, Zap, Shield, Target, Flame, ChevronRight, Lock } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { PageSpinner } from '@/shared/components/spinner';
 import { useSession } from '@/shared/components/session-provider';
 
 interface Achievement {
@@ -69,7 +70,7 @@ export default function AchievementsPage() {
         )}
 
         {loading ? (
-          <div className="ach-loading">Загрузка...</div>
+          <PageSpinner text="Загрузка..." />
         ) : (
           <>
             {earned.length > 0 && (

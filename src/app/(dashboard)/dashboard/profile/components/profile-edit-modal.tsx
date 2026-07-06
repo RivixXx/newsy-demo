@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, Check, Loader2, Trash2 } from 'lucide-react';
+import { X, Camera, Upload, Check, Trash2 } from 'lucide-react';
+import { Spinner } from '@/shared/components/spinner';
 import { useToast } from '@/shared/components/toast';
 
 interface ProfileEditModalProps {
@@ -215,7 +216,7 @@ export function ProfileEditModal({ isOpen, onClose, initialData, onSave }: Profi
         <div className="edit-footer">
           <button className="edit-cancel" onClick={onClose}>Отмена</button>
           <button className="edit-save" onClick={handleSave} disabled={saving || uploading}>
-            {saving ? <><Loader2 size={16} className="spin" /> Сохранение...</> : <><Check size={16} /> Сохранить</>}
+            {saving ? <><Spinner size={16} /> Сохранение...</> : <><Check size={16} /> Сохранить</>}
           </button>
         </div>
       </div>
@@ -281,8 +282,6 @@ export function ProfileEditModal({ isOpen, onClose, initialData, onSave }: Profi
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .spin { animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 600px) { .edit-modal { max-height: 95vh; } .edit-row { grid-template-columns: 1fr; } }
       `}</style>
     </div>

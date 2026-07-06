@@ -160,3 +160,7 @@ img, video {
   font-size: 16px !important;
   color: #888 !important;
 }
+
+/* ── Spinner keyframes (global) ── */
+@keyframes spinner-spin { to { transform: rotate(360deg); } }
+@keyframes spinner-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }

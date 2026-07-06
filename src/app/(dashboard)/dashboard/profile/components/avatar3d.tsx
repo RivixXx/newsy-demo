@@ -50,8 +50,7 @@ function Loader() {
       position: 'absolute', inset: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <div className="avatar3d-spinner" />
-      <style>{`.avatar3d-spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid #f0f0f0; border-top-color: #FF385C; animation: spin 0.8s linear infinite; }`}</style>
+      <div className="n-spinner" style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #f0f0f0', borderTopColor: '#FF385C', animation: 'spinner-spin 0.8s linear infinite' }} />
     </div>
   );
 }

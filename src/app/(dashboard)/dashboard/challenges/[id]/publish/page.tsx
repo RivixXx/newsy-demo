@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ChevronLeft, Check, Zap, Crown, Star, Loader2 } from 'lucide-react';
+import { ChevronLeft, Check, Zap, Crown, Star } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { Spinner } from '@/shared/components/spinner';
 import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
 import { useToast } from '@/shared/components/toast';
 
@@ -124,7 +125,7 @@ export default function PublishPage() {
 
             <div className="pub-actions">
               <button className="pub-btn" onClick={handlePublish} disabled={loading || !selected}>
-                {loading ? <Loader2 size={18} className="spin" /> : <>Отправить на модерацию</>}
+                {loading ? <Spinner size={18} /> : <>Отправить на модерацию</>}
               </button>
             </div>
           </>
@@ -193,8 +194,6 @@ export default function PublishPage() {
           }
           .pub-btn:hover:not(:disabled) { background: #E31C5F; transform: translateY(-1px); }
           .pub-btn:disabled { opacity: 0.5; cursor: default; }
-          .spin { animation: spin 1s linear infinite; }
-          @keyframes spin { to { transform: rotate(360deg); } }
 
           @media (max-width: 700px) { .tariffs-grid { grid-template-columns: 1fr; } }
         `}</style>
