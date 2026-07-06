@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { Resend } from 'resend';
 
 export interface EmailService {
   sendVerificationEmail(to: string, token: string, baseUrl: string): Promise<void>;
@@ -17,31 +18,24 @@ export function generateVerificationToken(): string {
  */
 export const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * Заглушка email-сервиса.
- * Заменить на реальную интеграцию с Resend / Brevo / SendGrid
- * после настройки SMTP-сервиса.
- *
- * В development логирует письмо в консоль.
- */
 export function createEmailService(): EmailService {
-  const apiKey = process.env.RESEND_API_KEY || process.env.BREVO_API_KEY;
-  const from = process.env.EMAIL_FROM || 'noreply@chillenge-russia.ru';
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const resend = apiKey ? new Resend(apiKey) : null;
 
   async function send(to: string, subject: string, html: string) {
-    if (!apiKey) {
-      console.log(`[email-service] No API key configured. Would send to ${to}:`);
+    if (!resend) {
+      console.log(`[email-service] No RESEND_API_KEY configured. Would send to ${to}:`);
       console.log(`  Subject: ${subject}`);
       console.log(`  Body preview: ${html.replace(/<[^>]+>/g, '').slice(0, 200)}...`);
       return;
     }
 
-    // TODO: Replace with actual Resend / Brevo SDK call
-    // Example for Resend:
-    // import { Resend } from 'resend';
-    // const resend = new Resend(apiKey);
-    // await resend.emails.send({ from, to, subject, html });
-
+    const { error } = await resend.emails.send({ from, to, subject, html });
+    if (error) {
+      console.error(`[email-service] Resend error:`, error);
+      throw new Error(`Email send failed: ${error.message}`);
+    }
     console.log(`[email-service] Email sent to ${to}: ${subject}`);
   }
 
