@@ -40,6 +40,40 @@ enum ChallengeStatus {
   ARCHIVED
 }
 
+enum ChallengeFormat {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum OrganizerMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum OrganizerMemberStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  REMOVED
+}
+
+enum UserProgressStatus {
+  JOINED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  WITHDRAWN
+}
+
+enum StepProgressStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
 enum OwnershipType {
   USER
   ORGANIZER
@@ -189,13 +223,13 @@ model Organizer {
 }
 
 model OrganizerMember {
-  id                 String        @id @default(uuid())
+  id                 String                @id @default(uuid())
   organizerId        String
   userId             String
-  roleInOrganizer    String
-  status             String
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  roleInOrganizer    OrganizerMemberRole   @default(MEMBER)
+  status             OrganizerMemberStatus @default(ACTIVE)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
   deletedAt          DateTime?
 
   organizer          Organizer     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
@@ -214,11 +248,14 @@ model Challenge {
   title           String
   description     String?
   category        String?
+  format          ChallengeFormat        @default(ONLINE)
+  address         String?                // Адрес места проведения (для OFFLINE/HYBRID)
+  maxParticipants Int?                   // null = без ограничений
   isCooperative   Boolean                @default(false)
   startDate       DateTime?
   endDate         DateTime?
   entryFee        Float                  @default(0)
-  publishPrice    Float?               @default(1000.00)
+  publishPrice    Float?                 @default(1000.00)
   rejectionReason String?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
@@ -288,14 +325,14 @@ model ChallengePartner {
 }
 
 model UserProgress {
-  id              String           @id @default(uuid())
+  id              String              @id @default(uuid())
   userId          String
   challengeId     String
-  status          String           // E.g., "JOINED", "IN_PROGRESS", "COMPLETED", "FAILED"
-  startedAt       DateTime         @default(now())
+  status          UserProgressStatus  @default(JOINED)
+  startedAt       DateTime            @default(now())
   completedAt     DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   challenge       Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
@@ -308,15 +345,17 @@ model UserProgress {
 }
 
 model StepProgress {
-  id              String           @id @default(uuid())
+  id              String              @id @default(uuid())
   userProgressId  String
   stepId          String
-  status          String           // E.g., "PENDING", "COMPLETED", "FAILED"
-  submission      Json?            // The user's answer, photo link, etc.
-  pointsEarned    Int              @default(0)
+  status          StepProgressStatus  @default(PENDING)
+  submission      Json?               // Ответ пользователя: текст, ссылка на фото, координаты и т.д.
+  pointsEarned    Int                 @default(0)
   completedAt     DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  reviewedAt      DateTime?           // Когда организатор проверил
+  reviewNote      String?             // Комментарий при отклонении
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   userProgress    UserProgress     @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
   step            Step             @relation(fields: [stepId], references: [id], onDelete: Restrict)
@@ -324,6 +363,7 @@ model StepProgress {
   @@unique([userProgressId, stepId])
   @@index([userProgressId])
   @@index([stepId])
+  @@index([status])
 }
 
 model Achievement {

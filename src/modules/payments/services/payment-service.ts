@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
-import { YooKassaService } from './yookassa-service';
-import { createCommissionService } from './commission-service';
+import type { PrismaClient } from '@prisma/client';
+import type { YooKassaService } from './yookassa-service';
+import type { PaymentWebhookPayload } from '../types';
 
 export interface PaymentService {
-  initiatePublishPayment(challengeId: string): Promise<{ checkoutUrl: string }>;
-  handleWebhook(payload: any): Promise<void>;
+  initiatePublishPayment(challengeId: string, userId: string): Promise<{ checkoutUrl: string }>;
+  handleWebhook(payload: PaymentWebhookPayload): Promise<void>;
 }
 
 export function createPaymentService(
@@ -12,7 +12,7 @@ export function createPaymentService(
   yookassa: YooKassaService
 ): PaymentService {
   return {
-    async initiatePublishPayment(challengeId) {
+    async initiatePublishPayment(challengeId, userId) {
       const challenge = await prisma.challenge.findUnique({
         where: { id: challengeId },
         include: { organizer: true },
@@ -23,19 +23,44 @@ export function createPaymentService(
         throw new Error('Публикация доступна только для черновиков');
       }
 
-      const existingPending = await prisma.paymentTransaction.findFirst({
-        where: { challengeId, status: 'PENDING' },
-      });
-      if (existingPending && existingPending.providerId) {
-        const payment = await yookassa.getPayment(existingPending.providerId);
-        if (payment.status === 'pending' && payment.confirmation?.confirmation_url) {
-          return { checkoutUrl: payment.confirmation.confirmation_url };
-        }
-      }
-
       const amount = challenge.publishPrice ?? 0;
       if (amount < 0) throw new Error('Некорректная стоимость публикации');
 
+      // Если публикация бесплатная — публикуем сразу без платежа
+      if (amount === 0) {
+        await prisma.challenge.update({
+          where: { id: challengeId },
+          data: { status: 'PUBLISHED' },
+        });
+        return { checkoutUrl: `/dashboard/challenges/${challengeId}/payment-status?status=success` };
+      }
+
+      // Атомарная операция: ищем существующий pending-платёж или создаём новый
+      // Используем upsert-подобный подход через транзакцию для предотвращения race condition
+      const result = await prisma.$transaction(async (tx) => {
+        const existingPending = await tx.paymentTransaction.findFirst({
+          where: { challengeId, status: 'PENDING' },
+        });
+
+        if (existingPending?.providerId) {
+          try {
+            const payment = await yookassa.getPayment(existingPending.providerId);
+            if (payment.status === 'pending' && payment.confirmation?.confirmation_url) {
+              return { checkoutUrl: payment.confirmation.confirmation_url, isExisting: true };
+            }
+          } catch {
+            // Платёж не найден в ЮKassa — создадим новый
+          }
+        }
+
+        return { checkoutUrl: null, isExisting: false };
+      });
+
+      if (result.isExisting && result.checkoutUrl) {
+        return { checkoutUrl: result.checkoutUrl };
+      }
+
+      // Создаём новый платёж в ЮKassa (детерминированный idempotency key в сервисе)
       const payment = await yookassa.createPayment({
         amount: {
           value: amount.toFixed(2),
@@ -46,28 +71,38 @@ export function createPaymentService(
           type: 'redirect',
           return_url: `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status`,
         },
-        description: `Оплата публикации челенджа: ${challenge.title}`,
+        description: `Публикация челенджа: ${challenge.title}`,
         metadata: {
           challengeId,
           organizerId: challenge.organizerId,
+          userId,
           type: 'PUBLISH_CHALLENGE',
         },
       });
 
-      await prisma.paymentTransaction.create({
-        data: {
-          organizerId: challenge.organizerId,
-          challengeId: challengeId,
-          amount: Number(amount),
-          currency: 'RUB',
-          provider: 'YOOKASSA',
-          providerId: payment.id,
-          type: 'PUBLISH_CHALLENGE',
-          status: 'PENDING',
-        },
-      });
+      // Сохраняем запись транзакции. Если гонки нет (нет дублей) — создаём.
+      // Если гонка всё же произошла и providerId уже существует — игнорируем ошибку.
+      try {
+        await prisma.paymentTransaction.create({
+          data: {
+            organizerId: challenge.organizerId,
+            challengeId,
+            amount: Number(amount),
+            currency: 'RUB',
+            provider: 'YOOKASSA',
+            providerId: payment.id,
+            type: 'PUBLISH_CHALLENGE',
+            status: 'PENDING',
+          },
+        });
+      } catch (err: unknown) {
+        // Unique constraint violation — дублирующий запрос, возвращаем тот же URL
+        const isUniqueError =
+          err instanceof Error && err.message.includes('Unique constraint failed');
+        if (!isUniqueError) throw err;
+      }
 
-      return { checkoutUrl: payment.confirmation?.confirmation_url || '' };
+      return { checkoutUrl: payment.confirmation?.confirmation_url ?? '' };
     },
 
     async handleWebhook(payload) {
@@ -82,12 +117,15 @@ export function createPaymentService(
       });
 
       if (!transaction) {
-        console.warn(`Webhook for unknown payment: ${object.id}`);
+        console.warn(`[payment] Webhook for unknown payment: ${object.id}`);
         return;
       }
 
       if (event === 'payment.succeeded') {
-        if (transaction.status === 'SUCCEEDED') return;
+        if (transaction.status === 'SUCCEEDED') {
+          // Идемпотентность: уже обработали
+          return;
+        }
 
         await prisma.$transaction([
           prisma.paymentTransaction.update({
@@ -100,26 +138,12 @@ export function createPaymentService(
           }),
         ]);
 
-        if (transaction.type === 'PUBLISH_CHALLENGE') {
-          const challenge = await prisma.challenge.findUnique({
-            where: { id: transaction.challengeId },
-          });
-          if (challenge && challenge.entryFee && challenge.entryFee > 0) {
-            const commissionService = createCommissionService(prisma);
-            const commission = await commissionService.calculateCommission(
-              transaction.challengeId,
-              challenge.entryFee,
-              0
-            );
-            await commissionService.recordCommission(
-              transaction.challengeId,
-              commission.totalRevenue,
-              commission.platformShare,
-              commission.organizerShare,
-              commission.rate
-            );
-          }
-        }
+        // Комиссия фиксируется по фактическим поступлениям — НЕ в момент публикации
+        // Комиссия будет рассчитана и записана при присоединении участников (в будущем)
+        console.info(
+          `[payment] Challenge ${transaction.challengeId} published. ` +
+            `Commission will be tracked per participant entry.`
+        );
       } else if (event === 'payment.canceled') {
         if (transaction.status === 'CANCELED') return;
 

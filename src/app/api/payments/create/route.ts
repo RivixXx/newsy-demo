@@ -11,10 +11,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const { challengeId } = await req.json();
+    const body = await req.json() as { challengeId?: unknown };
+    const { challengeId } = body;
 
-    if (!challengeId) {
-      return NextResponse.json({ error: 'challengeId is required' }, { status: 400 });
+    if (!challengeId || typeof challengeId !== 'string') {
+      return NextResponse.json({ error: 'challengeId is required and must be a string' }, { status: 400 });
     }
 
     const challenge = await prisma.challenge.findUnique({
@@ -26,18 +27,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Челлендж не найден' }, { status: 404 });
     }
 
-    const isMember = challenge.organizer.members.some(m => m.userId === session.user.id);
+    const isMember = challenge.organizer.members.some((m) => m.userId === session.user.id);
     if (!isMember) {
       return NextResponse.json({ error: 'Нет доступа к этому челленджу' }, { status: 403 });
     }
 
     const yookassa = createYooKassaService();
     const paymentService = createPaymentService(prisma, yookassa);
-    const { checkoutUrl } = await paymentService.initiatePublishPayment(challengeId);
+    const { checkoutUrl } = await paymentService.initiatePublishPayment(challengeId, session.user.id);
 
     return NextResponse.json({ checkoutUrl });
-  } catch (error: any) {
-    console.error('Payment creation error:', error);
-    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('[payments/create] Error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message },
+      { status: 500 }
+    );
   }
 }
+

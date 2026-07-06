@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services/access-context';
+import { isAdmin } from '@/modules/access-control/services/permission-service';
 
 export async function GET() {
   try {
@@ -9,7 +11,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    if (!session.user.roles?.includes('admin')) {
+    // Используем RBAC-систему вместо string-сравнения roles
+    const accessCtx = await buildAccessContext(prisma, session.user.id);
+    if (!isAdmin(accessCtx.permissionSet)) {
       return NextResponse.json({ error: 'Доступ запрещён' }, { status: 403 });
     }
 
@@ -25,8 +29,12 @@ export async function GET() {
     });
 
     return NextResponse.json({ challenges });
-  } catch (error: any) {
-    console.error('Pending challenges error:', error);
-    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('[admin/challenges/pending] Error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message },
+      { status: 500 }
+    );
   }
 }

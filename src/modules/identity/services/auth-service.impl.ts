@@ -19,7 +19,15 @@ export function createAuthService(prisma: PrismaClient) {
         throw new Error('Invalid credentials');
       }
 
-      if (!verifyPassword(credentials.password, user.passwordHash)) {
+      if (user.status === 'SUSPENDED') {
+        throw new Error('Аккаунт заблокирован. Обратитесь в поддержку.');
+      }
+
+      if (user.status === 'PENDING') {
+        throw new Error('Аккаунт ожидает подтверждения email. Проверьте почту.');
+      }
+
+      if (!(await verifyPassword(credentials.password, user.passwordHash))) {
         throw new Error('Invalid credentials');
       }
 

@@ -76,11 +76,35 @@ export async function registerAction(
   if (!firstName || !lastName || !email || !password) {
     return { error: 'Заполните все поля.' };
   }
+  if (firstName.length > 100 || lastName.length > 100) {
+    return { error: 'Имя или фамилия слишком длинные.' };
+  }
   if (password.length < 8) {
     return { error: 'Пароль должен быть не менее 8 символов.' };
   }
   if (password !== confirm) {
     return { error: 'Пароли не совпадают.' };
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { error: 'Введите корректный email-адрес.' };
+  }
+
+  // Validate birthDate if provided
+  if (birthDate) {
+    const parsed = new Date(birthDate);
+    if (isNaN(parsed.getTime())) {
+      return { error: 'Некорректная дата рождения.' };
+    }
+    if (parsed > new Date()) {
+      return { error: 'Дата рождения не может быть в будущем.' };
+    }
+    const minYear = 1900;
+    if (parsed.getFullYear() < minYear) {
+      return { error: 'Дата рождения некорректна.' };
+    }
   }
 
   const rl = rateLimit(`register:${email}`, { windowMs: 600_000, max: 3 });
@@ -99,8 +123,9 @@ export async function registerAction(
         email,
         firstName,
         lastName,
-        passwordHash: hashPassword(password),
-        status: 'ACTIVE',
+        passwordHash: await hashPassword(password),
+        // PENDING — пользователь должен подтвердить email перед входом
+        status: 'PENDING',
         referredBy: referralCode,
         gender,
         birthDate: birthDate ? new Date(birthDate) : null,
@@ -112,10 +137,10 @@ export async function registerAction(
       }
     });
 
-    const authService = createAuthService(prisma);
-    const session = await authService.login({ identifier: email, password, provider: 'email' });
-    await setAuthSession(session);
-    redirect('/');
+    // TODO: отправить письмо с подтверждением email
+    // await emailService.sendVerificationEmail(email, token);
+
+    return { success: 'Регистрация прошла успешно! Проверьте почту для подтверждения аккаунта.' };
   } catch (error) {
     if (isRedirect(error)) throw error;
     return { error: error instanceof Error ? error.message : 'Ошибка регистрации.' };

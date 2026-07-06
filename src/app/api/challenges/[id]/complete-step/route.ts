@@ -49,14 +49,14 @@ export async function POST(
       where: { userProgressId_stepId: { userProgressId: progress.id, stepId } },
     });
 
-    if (existingProgress && existingProgress.status === 'COMPLETED') {
+    if (existingProgress && existingProgress.status === 'APPROVED') {
       return NextResponse.json({ success: true, message: 'Этап уже завершён' });
     }
 
     await prisma.stepProgress.upsert({
       where: { userProgressId_stepId: { userProgressId: progress.id, stepId } },
-      update: { status: 'COMPLETED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
-      create: { userProgressId: progress.id, stepId, status: 'COMPLETED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
+      update: { status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
+      create: { userProgressId: progress.id, stepId, status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
     });
 
     await prisma.user.update({
@@ -66,7 +66,7 @@ export async function POST(
 
     const allSteps = await prisma.step.findMany({ where: { challengeId: id }, orderBy: { order: 'asc' } });
     const completedSteps = await prisma.stepProgress.count({
-      where: { userProgressId: progress.id, status: 'COMPLETED' },
+      where: { userProgressId: progress.id, status: 'APPROVED' },
     });
 
     if (completedSteps >= allSteps.length) {

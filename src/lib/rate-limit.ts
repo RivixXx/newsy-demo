@@ -1,3 +1,24 @@
+/**
+ * In-memory rate limiter.
+ *
+ * ⚠️ ВАЖНО: В serverless/multi-instance окружении (Vercel, Railway и т.д.)
+ * каждый инстанс имеет отдельную Map, поэтому ограничения не работают глобально.
+ *
+ * Для production необходимо заменить на Redis/Upstash:
+ * @see https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
+ *
+ * Пример замены:
+ * ```ts
+ * import { Ratelimit } from '@upstash/ratelimit';
+ * import { Redis } from '@upstash/redis';
+ *
+ * const ratelimit = new Ratelimit({
+ *   redis: Redis.fromEnv(),
+ *   limiter: Ratelimit.slidingWindow(10, '10 s'),
+ * });
+ * ```
+ */
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
@@ -12,7 +33,17 @@ function cleanup() {
   }
 }
 
+// Очищаем устаревшие записи каждую минуту
 setInterval(cleanup, 60_000).unref?.();
+
+// Предупреждаем в production о ненадёжности in-memory rate limiter
+if (process.env.NODE_ENV === 'production' && !process.env.UPSTASH_REDIS_REST_URL) {
+  console.warn(
+    '[rate-limit] WARNING: Using in-memory rate limiter in production. ' +
+      'This does NOT work correctly in serverless/multi-instance environments. ' +
+      'Please configure UPSTASH_REDIS_REST_URL for distributed rate limiting.'
+  );
+}
 
 export interface RateLimitConfig {
   windowMs: number;

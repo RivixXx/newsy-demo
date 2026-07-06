@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services/access-context';
+import { isAdmin } from '@/modules/access-control/services/permission-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,12 +11,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    if (!session.user.roles?.includes('admin')) {
+    const accessCtx = await buildAccessContext(prisma, session.user.id);
+    if (!isAdmin(accessCtx.permissionSet)) {
       return NextResponse.json({ error: 'Доступ запрещён' }, { status: 403 });
     }
 
-    const { userId } = await req.json();
-    if (!userId) {
+    const body = await req.json() as { userId?: unknown };
+    const { userId } = body;
+    if (!userId || typeof userId !== 'string') {
       return NextResponse.json({ error: 'userId обязателен' }, { status: 400 });
     }
 
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
       data: {
         organizerId: organizer.id,
         userId,
-        roleInOrganizer: 'member',
+        roleInOrganizer: 'MEMBER',   // Prisma enum value
         status: 'ACTIVE',
       },
     });
@@ -49,8 +53,13 @@ export async function POST(req: NextRequest) {
       success: true,
       message: `${user.firstName} ${user.lastName} добавлен в организацию NEWSY`,
     });
-  } catch (error: any) {
-    console.error('Add member error:', error);
-    return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('[admin/add-member] Error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message },
+      { status: 500 }
+    );
   }
 }
+

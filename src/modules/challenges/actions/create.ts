@@ -8,10 +8,12 @@ export interface CreateChallengeInput {
   title: string;
   description: string;
   category: string;
+  format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  address?: string;
   coverImage: string;
   startDate: string;
   endDate: string;
-  maxParticipants: number;
+  maxParticipants?: number | null;
   entryFee: number;
   isCooperative: boolean;
   rewardTitle: string;
@@ -61,6 +63,9 @@ export async function createChallengeAction(input: CreateChallengeInput) {
         title: input.title.trim(),
         description: input.description?.trim() || null,
         category: input.category || null,
+        format: input.format ?? 'ONLINE',
+        address: input.address?.trim() || null,
+        maxParticipants: input.maxParticipants ?? null,
         isCooperative: input.isCooperative,
         entryFee: input.entryFee || 0,
         startDate: input.startDate ? new Date(input.startDate) : null,
@@ -74,16 +79,22 @@ export async function createChallengeAction(input: CreateChallengeInput) {
             order: i,
             type: s.type,
             rewardPoints: s.points || 0,
-            ...(s.options ? { config: { options: s.options, correctIndex: s.correctIndex } } : s.location ? { config: { location: s.location } } : {}),
+            ...(s.options
+              ? { config: { options: s.options, correctIndex: s.correctIndex } }
+              : s.location
+              ? { config: { location: s.location } }
+              : {}),
           })),
         },
-        media: input.coverImage ? {
-          create: {
-            type: 'IMAGE',
-            url: input.coverImage,
-            sortOrder: 0,
-          },
-        } : undefined,
+        media: input.coverImage
+          ? {
+              create: {
+                type: 'IMAGE',
+                url: input.coverImage,
+                sortOrder: 0,
+              },
+            }
+          : undefined,
       },
       include: { steps: true },
     });

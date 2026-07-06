@@ -103,7 +103,7 @@ async function main() {
       create: {
         organizerId: existingOrganizer.id,
         userId: admin.id,
-        roleInOrganizer: 'admin',
+        roleInOrganizer: 'ADMIN',
         status: 'ACTIVE',
       },
     });
@@ -117,7 +117,7 @@ async function main() {
       create: {
         organizerId: existingOrganizer.id,
         userId: regularUser.id,
-        roleInOrganizer: 'member',
+        roleInOrganizer: 'MEMBER',
         status: 'ACTIVE',
       },
     });

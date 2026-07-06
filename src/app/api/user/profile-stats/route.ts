@@ -68,7 +68,7 @@ export async function GET() {
     });
 
     const activity = recentActivity.map(p => {
-      const completedSteps = p.stepProgress.filter(sp => sp.status === 'COMPLETED');
+      const completedSteps = p.stepProgress.filter(sp => sp.status === 'APPROVED');
       const lastStep = completedSteps[completedSteps.length - 1];
       const points = completedSteps.reduce((sum, sp) => sum + (sp.pointsEarned || 0), 0);
 
@@ -100,7 +100,7 @@ export async function GET() {
     const completions = await prisma.stepProgress.findMany({
       where: {
         userProgress: { userId },
-        status: 'COMPLETED',
+        status: 'APPROVED',
         completedAt: { gte: thirtyDaysAgo },
       },
       select: { completedAt: true },
@@ -147,7 +147,7 @@ export async function GET() {
 
 async function calculateStreak(userId: string): Promise<number> {
   const completions = await prisma.stepProgress.findMany({
-    where: { userProgress: { userId }, status: 'COMPLETED', completedAt: { not: null } },
+    where: { userProgress: { userId }, status: 'APPROVED', completedAt: { not: null } },
     select: { completedAt: true },
     orderBy: { completedAt: 'desc' },
     take: 60,

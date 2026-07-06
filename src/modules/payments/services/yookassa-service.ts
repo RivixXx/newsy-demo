@@ -1,4 +1,5 @@
-import { CreatePaymentRequest, PaymentResponse } from '../types';
+import { createHash } from 'node:crypto';
+import type { CreatePaymentRequest, PaymentResponse } from '../types';
 
 export interface YooKassaService {
   createPayment(request: CreatePaymentRequest): Promise<PaymentResponse>;
@@ -9,19 +10,35 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
 
 async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Генерирует детерминированный idempotency key на основе данных запроса.
+ * Это гарантирует, что повторный вызов с теми же параметрами вернёт тот же платёж.
+ */
+function buildIdempotencyKey(data: string): string {
+  return createHash('sha256').update(data).digest('hex').slice(0, 32);
 }
 
 export function createYooKassaService(): YooKassaService {
   const shopId = process.env.YOOKASSA_SHOP_ID;
   const secretKey = process.env.YOOKASSA_SECRET_KEY;
   const baseUrl = 'https://api.yookassa.ru/v3/payments';
+
+  // В production пропущенные ключи — критическая ошибка, не тихий mock
   const isMock = !shopId || !secretKey;
+  if (isMock && process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'YOOKASSA_SHOP_ID and YOOKASSA_SECRET_KEY must be set in production. ' +
+        'Do not use mock payment mode in production.'
+    );
+  }
 
   const getHeaders = (idempotencyKey: string) => {
     const auth = Buffer.from(`${shopId}:${secretKey}`).toString('base64');
     return {
-      'Authorization': `Basic ${auth}`,
+      Authorization: `Basic ${auth}`,
       'Content-Type': 'application/json',
       'Idempotence-Key': idempotencyKey,
     };
@@ -33,6 +50,10 @@ export function createYooKassaService(): YooKassaService {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         const response = await fetch(url, options);
+        // Не ретраим 4xx — это клиентские ошибки
+        if (response.status >= 400 && response.status < 500) {
+          return response;
+        }
         return response;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -42,13 +63,13 @@ export function createYooKassaService(): YooKassaService {
       }
     }
 
-    throw lastError || new Error('Request failed after retries');
+    throw lastError ?? new Error('Request failed after retries');
   }
 
   return {
     async createPayment(request) {
       if (isMock) {
-        console.warn('YooKassa credentials missing. Returning mock payment.');
+        console.warn('[YooKassa] Credentials missing. Returning mock payment (dev only).');
         return {
           id: `mock_pay_${Date.now()}`,
           status: 'pending',
@@ -62,7 +83,14 @@ export function createYooKassaService(): YooKassaService {
         };
       }
 
-      const idempotencyKey = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      // Детерминированный ключ идемпотентности на основе параметров платежа
+      const idempotencyKey = buildIdempotencyKey(
+        JSON.stringify({
+          metadata: request.metadata,
+          amount: request.amount,
+          ts: Math.floor(Date.now() / 60_000), // "окно" — 1 минута для повторных попыток
+        })
+      );
 
       const response = await fetchWithRetry(baseUrl, {
         method: 'POST',
@@ -72,11 +100,13 @@ export function createYooKassaService(): YooKassaService {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        const message = error?.error?.description || `YooKassa API Error: ${response.status}`;
+        const message =
+          (error as { description?: string })?.description ??
+          `YooKassa API Error: ${response.status}`;
         throw new Error(message);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as PaymentResponse;
 
       if (!data.id || !data.status || !data.confirmation?.confirmation_url) {
         throw new Error('Invalid YooKassa response: missing required fields');
@@ -97,16 +127,18 @@ export function createYooKassaService(): YooKassaService {
 
       const response = await fetchWithRetry(`${baseUrl}/${id}`, {
         method: 'GET',
-        headers: getHeaders(`get_${id}`),
+        headers: getHeaders(buildIdempotencyKey(`get_${id}`)),
       });
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        const message = error?.error?.description || `YooKassa API Error: ${response.status}`;
+        const message =
+          (error as { description?: string })?.description ??
+          `YooKassa API Error: ${response.status}`;
         throw new Error(message);
       }
 
-      return response.json();
+      return response.json() as Promise<PaymentResponse>;
     },
   };
 }

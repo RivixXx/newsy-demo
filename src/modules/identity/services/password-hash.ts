@@ -1,16 +1,19 @@
-import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { pbkdf2, randomBytes, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
+
+const pbkdf2Async = promisify(pbkdf2);
 
 const ITERATIONS = 210_000;
 const KEY_LENGTH = 64;
 const DIGEST = 'sha512';
 
-export function hashPassword(password: string): string {
+export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
-  const hash = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-  return `${ITERATIONS}:${salt}:${hash}`;
+  const hash = await pbkdf2Async(password, salt, ITERATIONS, KEY_LENGTH, DIGEST);
+  return `${ITERATIONS}:${salt}:${hash.toString('hex')}`;
 }
 
-export function verifyPassword(password: string, storedHash: string): boolean {
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   const [iterationsRaw, salt, expectedHash] = storedHash.split(':');
 
   if (!iterationsRaw || !salt || !expectedHash) {
@@ -22,7 +25,7 @@ export function verifyPassword(password: string, storedHash: string): boolean {
     return false;
   }
 
-  const actualHash = pbkdf2Sync(password, salt, iterations, expectedHash.length / 2, DIGEST);
+  const actualHash = await pbkdf2Async(password, salt, iterations, expectedHash.length / 2, DIGEST);
   const expectedBuffer = Buffer.from(expectedHash, 'hex');
 
   if (expectedBuffer.length !== actualHash.length) {
