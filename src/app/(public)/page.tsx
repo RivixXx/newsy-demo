@@ -555,6 +555,8 @@ export default function PublicHomePage() {
           overflow-x: auto;
           padding-bottom: 4px;
           scrollbar-width: none;
+          justify-content: center;
+          flex-wrap: wrap;
         }
 
         .categories-scroll::-webkit-scrollbar { display: none; }

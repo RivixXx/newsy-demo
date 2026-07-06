@@ -15,12 +15,15 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
     title,
     organizer,
     category,
-    pointsReward,
     imageUrl,
     participantsCount,
     isJoined,
     progress,
     badges,
+    achievement,
+    reward,
+    maxParticipants = 100,
+    endDate,
   } = challenge;
 
   // Функция перевода категорий для интерфейса
@@ -41,10 +44,6 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
         <div className="card-image-container">
           <img src={imageUrl} alt={title} className="card-image" />
           <div className="category-badge">{translateCategory(category)}</div>
-          <div className="points-badge">
-            <Zap size={14} fill="currentColor" />
-            <span>{pointsReward} баллов</span>
-          </div>
         </div>
 
         <div className="card-content">
@@ -53,20 +52,30 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
             <h3 className="challenge-title">{title}</h3>
           </div>
 
+          <div className="card-tags">
+            {achievement && <span className="card-tag achievement" title="Достижение за выполнение">🏆 {achievement}</span>}
+            {reward && <span className="card-tag reward" title="Награда за выполнение">🎁 {reward}</span>}
+          </div>
+
           <div className="social-proof">
             <div className="participants">
               <Users size={16} />
               <span>{participantsCount.toLocaleString()} участников</span>
             </div>
-            {badges && badges.length > 0 && (
+            {badges && badges.filter(b => b !== 'cooperative').length > 0 && (
               <div className="badges-row">
-                {badges.map((badge, index) => (
-                  <span key={index} className="badge-icon" title={badge === 'cooperative' ? 'Командный' : 'Горячий'}>
-                    {badge === 'cooperative' ? '🤝' : '🔥'}
+                {badges.filter(b => b !== 'cooperative').map((badge, index) => (
+                  <span key={index} className="badge-icon" title="Горячий">
+                    🔥
                   </span>
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="card-footer-row">
+            <span className="card-slots">{maxParticipants - participantsCount} мест</span>
+            {endDate && <span className="card-date">до {endDate}</span>}
           </div>
 
           {isJoined && progress !== undefined && (
@@ -76,8 +85,8 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
                 <span className="progress-value">{progress}%</span>
               </div>
               <div className="progress-bar-bg">
-                <div 
-                  className="progress-bar-fill" 
+                <div
+                  className="progress-bar-fill"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -167,6 +176,43 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
           display: flex;
           flex-direction: column;
           flex-grow: 1;
+        }
+
+        .card-tags {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
+        }
+
+        .card-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .card-tag.achievement {
+          background: #f5f3ff;
+          color: #7c3aed;
+        }
+
+        .card-tag.reward {
+          background: #fff7ed;
+          color: #d97706;
+        }
+
+        .card-footer-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          font-size: 12px;
+          color: #888;
+          font-weight: 600;
         }
 
         .organizer-text {

@@ -30,4 +30,8 @@ export interface Challenge {
   isCooperative?: boolean;
   partnerBrands?: string[];
   isRecommended?: boolean;
+  achievement?: string;
+  reward?: string;
+  maxParticipants?: number;
+  endDate?: string;
 }

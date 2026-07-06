@@ -41,7 +41,7 @@ export function StatsGrid({ activeChallenges, completedChallenges, achievements,
     { icon: <Flame size={20} />, value: activeChallenges, label: 'Активных', color: '#f59e0b', bg: '#fff7ed' },
     { icon: <CheckCircle2 size={20} />, value: completedChallenges, label: 'Завершено', color: '#16a34a', bg: '#f0fdf4' },
     { icon: <Trophy size={20} />, value: achievements, label: 'Достижений', color: '#8b5cf6', bg: '#f5f3ff' },
-    { icon: <Zap size={20} />, value: points, label: 'Баллов', color: '#FF385C', bg: '#fff5f7' },
+    // Баллы скрыты по решению заказчика — вернуть после утверждения механики
   ];
 
   return (

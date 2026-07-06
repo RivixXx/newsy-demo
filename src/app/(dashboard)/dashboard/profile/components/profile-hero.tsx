@@ -50,9 +50,6 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
           <div className="hero-3d-wrapper">
             <Avatar3D gender={gender ?? null} className="hero-3d" />
           </div>
-          <div className="level-badge-3d" style={{ background: level.color }}>
-            Ур. {level.level}
-          </div>
         </div>
 
         {/* Right: info */}
@@ -63,7 +60,6 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
                 src={avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=b6e3f4`}
                 alt={name}
               />
-              <div className="photo-level" style={{ background: level.color }}>{level.level}</div>
             </div>
             <div className="hero-text">
               <div className="name-row">
@@ -74,20 +70,37 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
             </div>
           </div>
 
-          <div className="hero-details">
-            <div className="detail-row">
-              <span className="detail-label">Уровень</span>
-              <span className="detail-value" style={{ color: level.color }}>{level.name}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Опы</span>
-              <span className="detail-value">{level.xpInLevel} / {level.xpNeeded} XP</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Баллы</span>
-              <span className="detail-value">{points}</span>
-            </div>
-          </div>
+          {/* Геймификация скрыта по решению заказчика — не удалять, вернуть после утверждения механики */}
+          {false && (
+            <>
+              <div className="hero-details">
+                <div className="detail-row">
+                  <span className="detail-label">Уровень</span>
+                  <span className="detail-value" style={{ color: level.color }}>{level.name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Опыт</span>
+                  <span className="detail-value">{level.xpInLevel} / {level.xpNeeded} XP</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Баллы</span>
+                  <span className="detail-value">{points}</span>
+                </div>
+              </div>
+
+              {/* XP bar */}
+              <div className="xp-bar-wrap">
+                <div className="xp-bar">
+                  <div className="xp-fill" style={{ width: `${level.progress}%`, background: level.color }} />
+                </div>
+                <div className="xp-labels">
+                  <span>Ур. {level.level}</span>
+                  <span>{Math.round(level.progress)}%</span>
+                  <span>Ур. {level.level + 1}</span>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="hero-tags">
             {genderLabel && <span className="tag">{genderLabel}</span>}
@@ -100,19 +113,6 @@ export function ProfileHero({ name, email, level, points, streak, isOrganizer, g
           </div>
         </div>
       </div>
-
-      {/* XP bar */}
-      <div className="xp-bar-wrap">
-        <div className="xp-bar">
-          <div className="xp-fill" style={{ width: `${level.progress}%`, background: level.color }} />
-        </div>
-        <div className="xp-labels">
-          <span>Ур. {level.level}</span>
-          <span>{Math.round(level.progress)}%</span>
-          <span>Ур. {level.level + 1}</span>
-        </div>
-      </div>
-
       <style>{`
         .hero-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
         .hero-layout { display: flex; min-height: 280px; }

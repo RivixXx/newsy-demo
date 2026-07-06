@@ -125,6 +125,7 @@ model User {
   rating         Float           @default(0)
   lastLoginAt    DateTime?
   referredBy     String?
+  referralCode   String?         @unique
   gender         String?
   birthDate      DateTime?
   bio            String?
@@ -144,6 +145,9 @@ model User {
   auditLogs             AuditLog[]
   subscriptions         UserSubscription[]
   chatMessages          ChatMessage[]
+  emailVerificationTokens EmailVerificationToken[]
+  referredByUser          ReferralEvent[] @relation("ReferralEventsAsReferrer")
+  referredUser            ReferralEvent[] @relation("ReferralEventsAsReferred")
 
   @@index([status])
   @@index([deletedAt])
@@ -205,8 +209,14 @@ model Organizer {
   type        OrganizerType
   name        String
   legalName   String?
+  inn         String?              @unique
+  kpp         String?
+  ogrn        String?
+  legalAddress String?
   taxId       String?              @unique
   description String?
+  contactEmail String?
+  contactPhone String?
   status      OrganizerStatus      @default(PENDING)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
@@ -216,6 +226,7 @@ model Organizer {
   challenges  Challenge[]
   payments    PaymentTransaction[]
   payouts     CommissionPayout[]
+  coOrganizedChallenge ChallengeOrganizer[]
 
   @@index([type])
   @@index([status])
@@ -270,6 +281,8 @@ model Challenge {
   payments        PaymentTransaction[]
   commission      CommissionConfig?
   chatMessages    ChatMessage[]
+  coOrganizers    ChallengeOrganizer[]
+  rewards         ChallengeReward[]
 
   @@index([organizerId])
   @@index([status])
@@ -377,6 +390,22 @@ model Achievement {
   updatedAt       DateTime         @updatedAt
 
   users           UserAchievement[]
+  challengeRewards ChallengeReward[]
+}
+
+model ChallengeReward {
+  id              String           @id @default(uuid())
+  challengeId     String
+  achievementId   String?
+  rewardName      String?
+  rewardDescription String?
+  createdAt       DateTime         @default(now())
+
+  challenge       Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  achievement     Achievement?     @relation(fields: [achievementId], references: [id], onDelete: SetNull)
+
+  @@index([challengeId])
+  @@index([achievementId])
 }
 
 model UserAchievement {
@@ -589,4 +618,58 @@ model ChatMessage {
   @@index([challengeId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model ChallengeOrganizer {
+  id            String    @id @default(uuid())
+  challengeId   String
+  organizerId   String
+  sharePercent  Float     @default(0)
+  createdAt     DateTime  @default(now())
+
+  challenge     Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  organizer     Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, organizerId])
+  @@index([challengeId])
+  @@index([organizerId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([email])
+}
+
+enum ReferralEventType {
+  REGISTRATION
+  FIRST_CHALLENGE
+  PAYMENT
+}
+
+model ReferralEvent {
+  id            String              @id @default(uuid())
+  referrerId    String
+  referredId    String
+  eventType     ReferralEventType
+  rewardAmount  Float               @default(0)
+  createdAt     DateTime            @default(now())
+
+  referrer      User                @relation("ReferralEventsAsReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred      User                @relation("ReferralEventsAsReferred", fields: [referredId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, referredId, eventType])
+  @@index([referrerId])
+  @@index([referredId])
+  @@index([eventType])
 }

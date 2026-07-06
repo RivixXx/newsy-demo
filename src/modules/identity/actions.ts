@@ -9,6 +9,8 @@ import { rateLimit } from '@/lib/rate-limit';
 import { createAuthService } from './services';
 import { hashPassword } from './services/password-hash';
 import { loginCredentialsSchema } from './validators';
+import { createEmailService, generateVerificationToken, TOKEN_EXPIRY_MS } from './services/email-service';
+import { randomBytes } from 'node:crypto';
 
 
 function isRedirect(err: unknown): boolean {
@@ -118,7 +120,7 @@ export async function registerAction(
       return { error: 'Этот email уже зарегистрирован.' };
     }
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         firstName,
@@ -127,6 +129,7 @@ export async function registerAction(
         // PENDING — пользователь должен подтвердить email перед входом
         status: 'PENDING',
         referredBy: referralCode,
+        referralCode: randomBytes(4).toString('hex'),
         gender,
         birthDate: birthDate ? new Date(birthDate) : null,
         roles: {
@@ -137,8 +140,24 @@ export async function registerAction(
       }
     });
 
-    // TODO: отправить письмо с подтверждением email
-    // await emailService.sendVerificationEmail(email, token);
+    // Генерируем токен верификации и отправляем письмо
+    try {
+      const token = generateVerificationToken();
+      await prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          token,
+          email,
+          expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS),
+        },
+      });
+
+      const emailService = createEmailService();
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      await emailService.sendVerificationEmail(email, token, baseUrl);
+    } catch (emailErr) {
+      console.error('[register] Failed to send verification email:', emailErr);
+    }
 
     return { success: 'Регистрация прошла успешно! Проверьте почту для подтверждения аккаунта.' };
   } catch (error) {

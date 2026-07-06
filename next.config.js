@@ -40,13 +40,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // Placeholder features — страницы в разработке
-      { source: '/favorites', destination: '/404', permanent: false },
-      { source: '/finance', destination: '/404', permanent: false },
-      { source: '/help', destination: '/404', permanent: false },
-      { source: '/brand-profile', destination: '/404', permanent: false },
-      { source: '/analytics', destination: '/404', permanent: false },
-      { source: '/api-docs', destination: '/404', permanent: false },
       // /rules — алиас для /terms
       { source: '/rules', destination: '/terms', permanent: true },
     ];

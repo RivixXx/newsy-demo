@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, User, Search, UserCircle, LayoutDashboard, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X } from 'lucide-react';
+import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 
@@ -160,7 +160,6 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                   {session ? (
                     <>
                       <DDItem href="/dashboard/profile" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
-                      <DDItem href="/dashboard" icon={<LayoutDashboard size={18} />} label="Кабинет" bold onClick={close} />
                       <div className="dd-divider" />
                       <DDItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
                       {session.user?.roles?.includes('admin') && (

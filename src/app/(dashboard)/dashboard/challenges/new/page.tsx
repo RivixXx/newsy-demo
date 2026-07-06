@@ -117,9 +117,9 @@ export default function NewChallengePage() {
                       onUpload={(url) => update({ coverImage: url })}
                       bucket="challenges"
                       folder="covers"
-                      accept="image/jpeg,image/png,image/webp"
-                      maxSize={10}
-                      label="Загрузить обложку (1200×800 px)"
+                      accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+                      maxSize={50}
+                      label="Загрузить обложку (фото или видео до 50 МБ)"
                     />
                   </div>
                 </section>
@@ -127,7 +127,7 @@ export default function NewChallengePage() {
 
               {step === 1 && (
                 <section className="cc-section">
-                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#16a34a' }}><Target size={18} color="#fff" /></div><div><h2>Этапы</h2><p>{data.steps.length} этапов · {totalPts} баллов</p></div></div>
+                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#16a34a' }}><Target size={18} color="#fff" /></div><div><h2>Этапы</h2><p>{data.steps.length} этапов</p></div></div>
                   <div className="cc-types">{STEP_TYPES.map(t => (
                     <button key={t.key} className="cc-type" onClick={() => addStep(t.key)}>
                       <div className="cc-type-icon" style={{ background: t.color, color: '#fff' }}>{t.icon}</div>
@@ -147,7 +147,10 @@ export default function NewChallengePage() {
                             <input className="cc-card-title" placeholder="Название этапа..." value={s.title} onChange={e => updateStep(s.id, { title: e.target.value })} />
                             <textarea className="cc-card-desc" rows={1} placeholder="Инструкция..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
                             <div className="cc-card-foot">
-                              <div className="cc-card-pts"><Zap size={11} /><input type="number" value={s.points} onChange={e => updateStep(s.id, { points: parseInt(e.target.value) || 0 })} /><span>баллов</span></div>
+                              {/* Баллы скрыты по решению заказчика — вернуть после утверждения механики */}
+                              {false && (
+                                <div className="cc-card-pts"><Zap size={11} /><input type="number" value={s.points} onChange={e => updateStep(s.id, { points: parseInt(e.target.value) || 0 })} /><span>баллов</span></div>
+                              )}
                               {s.type === 'question' && <div className="cc-opts">{(s.options || []).map((o, oi) => (<div key={oi} className="cc-opt"><button className={`cc-opt-r ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={9} /></button><input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />{(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}</div>))}<button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button></div>}
                               {s.type === 'geo' && <input className="cc-card-geo" placeholder="Локация..." value={s.location || ''} onChange={e => updateStep(s.id, { location: e.target.value })} />}
                             </div>
@@ -168,14 +171,17 @@ export default function NewChallengePage() {
                     <div className="cc-set"><div className="cc-set-i" style={{ background: '#16a34a12', color: '#16a34a' }}><Users size={16} /></div><div className="cc-set-b"><label>Макс. участников</label><input type="number" value={data.maxParticipants} onChange={e => update({ maxParticipants: parseInt(e.target.value) || 0 })} /></div></div>
                     <div className="cc-set"><div className="cc-set-i" style={{ background: '#d9770612', color: '#d97706' }}><DollarSign size={16} /></div><div className="cc-set-b"><label>Взнос (₽)</label><input type="number" value={data.entryFee} onChange={e => update({ entryFee: parseInt(e.target.value) || 0 })} /></div></div>
                   </div>
-                  <div className="cc-toggle-row"><div className="cc-toggle-info"><Users size={16} /><div><strong>Кооперативный</strong><span>Командное участие</span></div></div><button className={`cc-toggle ${data.isCooperative ? 'on' : ''}`} onClick={() => update({ isCooperative: !data.isCooperative })}><div className="cc-toggle-knob" /></button></div>
+                  {/* Кооперативный скрыт по решению заказчика — вернуть после реализации механики */}
+                  {false && (
+                    <div className="cc-toggle-row"><div className="cc-toggle-info"><Users size={16} /><div><strong>Кооперативный</strong><span>Командное участие</span></div></div><button className={`cc-toggle ${data.isCooperative ? 'on' : ''}`} onClick={() => update({ isCooperative: !data.isCooperative })}><div className="cc-toggle-knob" /></button></div>
+                  )}
                 </section>
               )}
 
               {step === 3 && (
                 <section className="cc-section">
                   <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#d97706' }}><Award size={18} color="#fff" /></div><div><h2>Награда</h2><p>Что получат победители</p></div></div>
-                  <div className="cc-reward-banner"><div className="cc-reward-badge"><Trophy size={24} /></div><div><div className="cc-reward-pts">+{totalPts} баллов</div><div className="cc-reward-sub">суммарно за все этапы</div></div></div>
+                  {/* Баннер баллов скрыт по решению заказчика */}
                   <div className="cc-f"><label>Название награды</label><input className="cc-in" placeholder="Кроссовки Nike Air Max" value={data.rewardTitle} onChange={e => update({ rewardTitle: e.target.value })} /></div>
                   <div className="cc-f"><label>Описание</label><textarea className="cc-ta" rows={2} placeholder="Что получит победитель..." value={data.rewardDescription} onChange={e => update({ rewardDescription: e.target.value })} /></div>
                 </section>
@@ -186,8 +192,8 @@ export default function NewChallengePage() {
                   <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#7c3aed' }}><Eye size={18} color="#fff" /></div><div><h2>Обзор</h2><p>Проверь перед публикацией</p></div></div>
                   <div className="cc-rv">
                     <div className="cc-rv-head"><img src={data.coverImage || PLACEHOLDER} alt="" /><div><span>{catObj?.label || 'Без категории'}</span><h3>{data.title || 'Без названия'}</h3><p>{data.description || 'Без описания'}</p></div></div>
-                    <div className="cc-rv-stats">{[{ v: data.steps.length, l: 'этапов' }, { v: totalPts, l: 'баллов' }, { v: data.maxParticipants, l: 'мест' }, { v: data.entryFee ? `${data.entryFee}₽` : '0₽', l: 'взнос' }].map((s, i) => (<div key={i} className="cc-rv-s"><strong>{s.v}</strong><span>{s.l}</span></div>))}</div>
-                    {data.steps.length > 0 && <div className="cc-rv-list">{data.steps.map((s, i) => { const st = STEP_TYPES.find(t => t.key === s.type)!; return <div key={s.id} className="cc-rv-step"><div className="cc-rv-step-n" style={{ background: st.color }}>{i + 1}</div><div><strong>{s.title || 'Без названия'}</strong><span>{st.label} · {s.points} баллов</span></div></div>; })}</div>}
+                    <div className="cc-rv-stats">{[{ v: data.steps.length, l: 'этапов' }, { v: data.maxParticipants, l: 'мест' }, { v: data.entryFee ? `${data.entryFee}₽` : '0₽', l: 'взнос' }].map((s, i) => (<div key={i} className="cc-rv-s"><strong>{s.v}</strong><span>{s.l}</span></div>))}</div>
+                    {data.steps.length > 0 && <div className="cc-rv-list">{data.steps.map((s, i) => { const st = STEP_TYPES.find(t => t.key === s.type)!; return <div key={s.id} className="cc-rv-step"><div className="cc-rv-step-n" style={{ background: st.color }}>{i + 1}</div><div><strong>{s.title || 'Без названия'}</strong><span>{st.label}</span></div></div>; })}</div>}
                     {data.rewardTitle && <div className="cc-rv-reward"><Award size={16} /><div><strong>{data.rewardTitle}</strong><span>{data.rewardDescription}</span></div></div>}
                   </div>
                   {error && <div className="cc-error">{error}</div>}
@@ -226,7 +232,7 @@ export default function NewChallengePage() {
                       <span className="cc-pv-cat">{catObj?.label || 'Категория'}</span>
                       <h4>{data.title || 'Название челенджа'}</h4>
                       <p>{data.description || 'Описание...'}</p>
-                      <div className="cc-pv-meta"><span><Zap size={10} /> {totalPts} баллов</span><span><Target size={10} /> {data.steps.length} этапов</span></div>
+                      <div className="cc-pv-meta"><span><Target size={10} /> {data.steps.length} этапов</span></div>
                       {data.steps.length > 0 && <div className="cc-pv-steps">{data.steps.slice(0, 3).map((s, i) => <div key={s.id} className="cc-pv-step"><div className="cc-pv-step-n">{i + 1}</div><span>{s.title || `Этап ${i + 1}`}</span></div>)}{data.steps.length > 3 && <span className="cc-pv-more">+{data.steps.length - 3} ещё</span>}</div>}
                       {data.rewardTitle && <div className="cc-pv-reward"><Trophy size={12} /> {data.rewardTitle}</div>}
                       <button className="cc-pv-btn">Участвовать</button>

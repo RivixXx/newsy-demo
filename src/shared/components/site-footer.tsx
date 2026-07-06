@@ -61,32 +61,18 @@ export function SiteFooter() {
 
           <div className="footer-cols">
             <div className="footer-col">
-              <h4 className="footer-col-title">Платформа</h4>
-              <Link href="/" className="footer-link">Главная <ArrowUpRight size={12} /></Link>
-              <Link href="/search" className="footer-link">Каталог челенджей <ArrowUpRight size={12} /></Link>
-              <Link href="/dashboard/challenges/new" className="footer-link">Создать челендж <ArrowUpRight size={12} /></Link>
-              <Link href="/dashboard" className="footer-link">Личный кабинет <ArrowUpRight size={12} /></Link>
-            </div>
-            <div className="footer-col">
-              <h4 className="footer-col-title">Участникам</h4>
-              <Link href="/dashboard/profile" className="footer-link">Мой профиль</Link>
-              <Link href="/achievements" className="footer-link">Достижения</Link>
-              <Link href="/rewards" className="footer-link">Награды</Link>
+              <h4 className="footer-col-title">Для участников</h4>
               <Link href="/referral" className="footer-link">Реферальная программа</Link>
-            </div>
-            <div className="footer-col">
-              <h4 className="footer-col-title">Организаторам</h4>
-              <Link href="/dashboard/challenges/new" className="footer-link">Как создать ЧЕ</Link>
+              <Link href="/dashboard/challenges/new" className="footer-link">Как создать ЧИ</Link>
               <Link href="/dashboard/subscription" className="footer-link">Тарифы</Link>
-              <Link href="/dashboard/analytics" className="footer-link">Аналитика</Link>
               <Link href="/api-docs" className="footer-link">API</Link>
             </div>
             <div className="footer-col">
               <h4 className="footer-col-title">Поддержка</h4>
               <Link href="/help" className="footer-link">Центр помощи</Link>
-              <Link href="/rules" className="footer-link">Правила сервиса</Link>
+              <Link href="/terms" className="footer-link">Правила сервиса</Link>
               <Link href="/privacy" className="footer-link">Конфиденциальность</Link>
-              <Link href="/help" className="footer-link">Контакты</Link>
+              <a href="mailto:support@chillenge-russia.ru" className="footer-link">Контакты</a>
             </div>
           </div>
         </div>
@@ -227,7 +213,7 @@ export function SiteFooter() {
         .footer-cols {
           flex: 1;
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: 32px;
         }
         .footer-col { display: flex; flex-direction: column; gap: 10px; }
