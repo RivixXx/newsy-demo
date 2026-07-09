@@ -75,6 +75,20 @@ export async function registerAction(
   const gender    = (formData.get('gender') as string) || null;
   const birthDate = (formData.get('birthDate') as string) || null;
 
+  // Business fields
+  const accountTypeRaw = (formData.get('accountType') as string) || 'individual';
+  const ACCOUNT_TYPE_MAP: Record<string, string> = {
+    individual: 'INDIVIDUAL', ip: 'IP', ooo: 'OOO', ao: 'AO', self_employed: 'SELF_EMPLOYED',
+  };
+  const accountType = ACCOUNT_TYPE_MAP[accountTypeRaw] || 'INDIVIDUAL';
+  const companyName    = (formData.get('companyName') as string)?.trim() || null;
+  const inn            = (formData.get('inn') as string)?.trim() || null;
+  const companySize    = (formData.get('companySize') as string) || null;
+  const employeeCountRaw = (formData.get('employeeCount') as string);
+  const employeeCount  = employeeCountRaw ? parseInt(employeeCountRaw, 10) : null;
+  const companyAddress = (formData.get('companyAddress') as string)?.trim() || null;
+  const platformName   = (formData.get('platformName') as string)?.trim() || null;
+
   if (!firstName || !lastName || !email || !password) {
     return { error: 'Заполните все поля.' };
   }
@@ -88,7 +102,6 @@ export async function registerAction(
     return { error: 'Пароли не совпадают.' };
   }
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return { error: 'Введите корректный email-адрес.' };
@@ -103,9 +116,21 @@ export async function registerAction(
     if (parsed > new Date()) {
       return { error: 'Дата рождения не может быть в будущем.' };
     }
-    const minYear = 1900;
-    if (parsed.getFullYear() < minYear) {
+    if (parsed.getFullYear() < 1900) {
       return { error: 'Дата рождения некорректна.' };
+    }
+  }
+
+  // Business validation
+  if (accountType !== 'INDIVIDUAL') {
+    if (!companyName) {
+      return { error: 'Введите наименование компании.' };
+    }
+    if (inn && !/^\d{10,12}$/.test(inn)) {
+      return { error: 'ИНН должен содержать 10 или 12 цифр.' };
+    }
+    if (employeeCount !== null && (isNaN(employeeCount) || employeeCount < 0)) {
+      return { error: 'Некорректное число работников.' };
     }
   }
 
@@ -120,25 +145,35 @@ export async function registerAction(
       return { error: 'Этот email уже зарегистрирован.' };
     }
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        firstName,
-        lastName,
-        passwordHash: await hashPassword(password),
-        // PENDING — пользователь должен подтвердить email перед входом
-        status: 'PENDING',
-        referredBy: referralCode,
-        referralCode: randomBytes(4).toString('hex'),
-        gender,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        roles: {
-          create: {
-            role: { connect: { key: 'user' } },
-          },
+    const userData: Record<string, unknown> = {
+      email,
+      firstName,
+      lastName,
+      passwordHash: await hashPassword(password),
+      status: 'PENDING',
+      referredBy: referralCode,
+      referralCode: randomBytes(4).toString('hex'),
+      gender,
+      birthDate: birthDate ? new Date(birthDate) : null,
+      accountType: accountType as 'INDIVIDUAL' | 'IP' | 'OOO' | 'AO' | 'SELF_EMPLOYED',
+      roles: {
+        create: {
+          role: { connect: { key: 'user' } },
         },
-      }
-    });
+      },
+    };
+
+    // Attach business fields only for non-individual accounts
+    if (accountType !== 'INDIVIDUAL') {
+      userData.companyName = companyName;
+      userData.inn = inn;
+      userData.companySize = companySize;
+      userData.employeeCount = employeeCount;
+      userData.companyAddress = companyAddress;
+      userData.platformName = platformName;
+    }
+
+    const user = await prisma.user.create({ data: userData as any });
 
     // Генерируем токен верификации и отправляем письмо
     try {

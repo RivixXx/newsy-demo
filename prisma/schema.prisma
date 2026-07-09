@@ -113,6 +113,14 @@ enum SubscriptionInterval {
   YEARLY
 }
 
+enum AccountType {
+  INDIVIDUAL
+  IP
+  OOO
+  AO
+  SELF_EMPLOYED
+}
+
 model User {
   id             String          @id @default(uuid())
   email          String?         @unique
@@ -130,6 +138,13 @@ model User {
   birthDate      DateTime?
   bio            String?
   avatarUrl      String?
+  accountType    AccountType     @default(INDIVIDUAL)
+  companyName    String?
+  inn            String?
+  companySize    String?
+  employeeCount  Int?
+  companyAddress String?
+  platformName   String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   deletedAt      DateTime?
