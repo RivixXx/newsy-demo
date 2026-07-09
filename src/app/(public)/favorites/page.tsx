@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
-import { Heart, Trash2, ArrowRight, MapPin } from 'lucide-react';
+import { Heart, Trash2, ArrowRight } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
+import { PageSpinner } from '@/shared/components/spinner';
 import { useFavorites } from '@/shared/hooks/use-favorites';
 import { useSession } from '@/shared/components/session-provider';
-import { useRouter } from 'next/navigation';
+import { type ModalChallenge } from '@/shared/components/challenge-modal';
+
+const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
 
 interface FavChallenge {
   id: string;
@@ -25,10 +28,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function FavoritesPage() {
   const session = useSession();
-  const router = useRouter();
   const { isFavorite, toggleFavorite, favoritesCount } = useFavorites();
   const [favorites, setFavorites] = useState<FavChallenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedChallenge, setSelectedChallenge] = useState<ModalChallenge | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) {
@@ -49,6 +53,38 @@ export default function FavoritesPage() {
     await toggleFavorite(challengeId);
   };
 
+  const handleOpen = async (fav: FavChallenge) => {
+    setOpeningId(fav.id);
+    try {
+      const res = await fetch(`/api/challenges/${fav.id}`);
+      if (!res.ok) {
+        setOpeningId(null);
+        return;
+      }
+      const data = await res.json();
+      const modal: ModalChallenge = {
+        id: data.id,
+        title: data.title,
+        organizer: data.organizer,
+        category: data.category || 'Другое',
+        imageUrl: data.imageUrl || '',
+        participantsCount: data.participantsCount,
+        maxParticipants: data.maxParticipants || 100,
+        endDate: data.endDate || '',
+        location: data.location || 'Онлайн',
+        achievement: data.achievement || '',
+        reward: data.reward || '',
+        description: data.description || '',
+        requirements: data.requirements || '',
+        refundPolicy: data.refundPolicy || '',
+        stages: data.stages || [],
+        isJoined: data.isJoined,
+      };
+      setSelectedChallenge(modal);
+    } catch {}
+    setOpeningId(null);
+  };
+
   if (!session) {
     return (
       <PageShell variant="public">
@@ -66,6 +102,13 @@ export default function FavoritesPage() {
 
   return (
     <PageShell variant="public">
+      {/* Модалка ЧИ */}
+      {selectedChallenge && (
+        <Suspense fallback={null}>
+          <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
+        </Suspense>
+      )}
+
       <div className="fav-page">
         <div className="fav-header">
           <div>
@@ -129,9 +172,13 @@ export default function FavoritesPage() {
                       <button className="fav-remove" onClick={() => handleRemove(fav.id)} title="Убрать из избранного">
                         <Trash2 size={14} />
                       </button>
-                      <Link href={`/?challenge=${fav.id}`} className="fav-go">
-                        Открыть <ArrowRight size={14} />
-                      </Link>
+                      <button
+                        className="fav-go"
+                        onClick={() => handleOpen(fav)}
+                        disabled={openingId === fav.id}
+                      >
+                        {openingId === fav.id ? 'Загрузка...' : <>Открыть <ArrowRight size={14} /></>}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -146,18 +193,14 @@ export default function FavoritesPage() {
         .fav-header { margin-bottom: 32px; }
         .fav-title { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: 900; margin: 0; color: #111; }
         .fav-subtitle { font-size: 14px; color: #888; margin: 6px 0 0; }
-        .fav-empty {
-          display: flex; flex-direction: column; align-items: center;
-          gap: 16px; padding: 80px 20px; text-align: center;
-        }
+        .fav-empty { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 80px 20px; text-align: center; }
         .fav-empty h2 { font-size: 22px; font-weight: 900; margin: 0; color: #111; }
         .fav-empty p { font-size: 14px; color: #888; margin: 0; max-width: 320px; }
         .fav-btn {
-          display: inline-flex; align-items: center; gap: 8px;
-          padding: 12px 24px; border-radius: 12px;
-          background: linear-gradient(135deg, #FF385C, #E31C5F);
-          color: white; font-size: 14px; font-weight: 800;
-          text-decoration: none; transition: transform 0.15s, box-shadow 0.15s;
+          display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px;
+          border-radius: 12px; background: linear-gradient(135deg, #FF385C, #E31C5F);
+          color: white; font-size: 14px; font-weight: 800; text-decoration: none;
+          transition: transform 0.15s, box-shadow 0.15s;
           box-shadow: 0 4px 16px rgba(255,56,92,0.3);
         }
         .fav-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,56,92,0.4); }
@@ -170,20 +213,15 @@ export default function FavoritesPage() {
           animation: favFadeIn 0.3s ease;
         }
         .fav-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
-        .fav-card-img {
-          height: 160px; position: relative; overflow: hidden;
-        }
+        .fav-card-img { height: 160px; position: relative; overflow: hidden; }
         .fav-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
         .fav-card:hover .fav-card-img img { transform: scale(1.05); }
-        .fav-card-placeholder {
-          width: 100%; height: 100%; background: #f5f5f5;
-          display: grid; place-items: center;
-        }
+        .fav-card-placeholder { width: 100%; height: 100%; background: #f5f5f5; display: grid; place-items: center; }
         .fav-card-cat {
           position: absolute; bottom: 10px; left: 10px;
           padding: 4px 10px; border-radius: 99px;
-          background: rgba(255,255,255,0.92);
-          font-size: 11px; font-weight: 700; backdrop-filter: blur(4px);
+          background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700;
+          backdrop-filter: blur(4px);
         }
         .fav-card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .fav-card-top { display: flex; flex-direction: column; gap: 4px; }
@@ -202,19 +240,17 @@ export default function FavoritesPage() {
         .fav-go {
           display: flex; align-items: center; gap: 4px;
           padding: 6px 12px; border-radius: 8px;
-          background: #f5f5f5; font-size: 12px; font-weight: 700;
-          color: #333; text-decoration: none;
-          transition: background 0.15s;
+          background: #f5f5f5; border: none;
+          font-size: 12px; font-weight: 700; color: #333;
+          cursor: pointer; transition: background 0.15s;
         }
         .fav-go:hover { background: #eee; }
-
-        /* Skeleton */
+        .fav-go:disabled { opacity: 0.6; cursor: wait; }
         .fav-skeleton { pointer-events: none; }
         .fav-skel-img { height: 160px; background: #f0f0f0; animation: favPulse 1.5s infinite; }
         .fav-skel-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
         .fav-skel-title { height: 16px; width: 70%; background: #f0f0f0; border-radius: 6px; animation: favPulse 1.5s infinite; }
         .fav-skel-text { height: 12px; width: 40%; background: #f0f0f0; border-radius: 6px; animation: favPulse 1.5s infinite; }
-
         @keyframes favFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes favPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
         @media (max-width: 640px) { .fav-grid { grid-template-columns: 1fr; } .fav-title { font-size: 22px; } }
