@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useActionState } from 'react';
 import {
@@ -126,12 +126,38 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [accountType, setAccountType] = useState('individual');
+  const [formHeight, setFormHeight] = useState<number | 'auto'>('auto');
 
-  const goNext = useCallback(() => { setDirection('forward'); setStep(s => s + 1); }, []);
-  const goBack = useCallback(() => { setDirection('back'); setStep(s => s - 1); }, []);
+  const step0Ref = useRef<HTMLDivElement>(null);
+  const step1Ref = useRef<HTMLDivElement>(null);
+  const step2Ref = useRef<HTMLDivElement>(null);
+  const stepFinalRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const isBusiness = IS_BUSINESS(accountType);
   const maxStep = isBusiness ? 3 : 2;
+
+  const getStepRef = useCallback((idx: number) => {
+    if (idx === 0) return step0Ref;
+    if (idx === 1) return step1Ref;
+    if (idx === 2 && isBusiness) return step2Ref;
+    return stepFinalRef;
+  }, [isBusiness]);
+
+  // Measure active step height on step change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const ref = getStepRef(step);
+      if (ref.current) {
+        const h = ref.current.scrollHeight;
+        setFormHeight(h + 24); // +24 for padding
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [step, getStepRef]);
+
+  const goNext = useCallback(() => { setDirection('forward'); setStep(s => s + 1); }, []);
+  const goBack = useCallback(() => { setDirection('back'); setStep(s => s - 1); }, []);
 
   const progressPct = Math.round(((step + 1) / (maxStep + 1)) * 100);
 
@@ -142,60 +168,37 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
 
       {/* Progress bar */}
       <div style={s.progressTrack}>
-        <div
-          style={{
-            ...s.progressFill,
-            width: `${progressPct}%`,
-          }}
-        />
+        <div style={{ ...s.progressFill, width: `${progressPct}%` }} />
       </div>
 
       {/* Step indicators */}
       <div style={s.stepIndicators}>
         {Array.from({ length: maxStep + 1 }, (_, i) => (
-          <div
-            key={i}
-            style={{
-              ...s.stepDot,
-              background: i <= step ? '#FF385C' : '#e5e7eb',
-              transform: i === step ? 'scale(1.3)' : 'scale(1)',
-            }}
-          />
+          <div key={i} style={{
+            ...s.stepDot,
+            background: i <= step ? '#FF385C' : '#e5e7eb',
+            transform: i === step ? 'scale(1.3)' : 'scale(1)',
+          }} />
         ))}
       </div>
 
-      <form action={formAction} style={s.form} onSubmit={(e) => {
-        if (step < maxStep) {
-          e.preventDefault();
-          goNext();
-        }
+      <form ref={formRef} action={formAction} style={{ ...s.form, height: formHeight }} onSubmit={(e) => {
+        if (step < maxStep) { e.preventDefault(); goNext(); }
       }}>
-        {/* Hidden fields always submitted */}
         <input type="hidden" name="accountType" value={accountType} />
 
         {/* ─── STEP 0: Account Type ─── */}
-        <div
-          style={{
-            ...s.stepPane,
-            opacity: step === 0 ? 1 : 0,
-            transform: step === 0
-              ? 'translateX(0) scale(1)'
-              : direction === 'forward' ? 'translateX(-30px) scale(0.97)' : 'translateX(30px) scale(0.97)',
-            pointerEvents: step === 0 ? 'auto' : 'none',
-          }}
-        >
+        <div ref={step0Ref} style={{
+          ...s.stepPane,
+          opacity: step === 0 ? 1 : 0,
+          transform: step === 0 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? -30 : 30}px) scale(0.97)`,
+          pointerEvents: step === 0 ? 'auto' : 'none',
+        }}>
           <label style={{ ...s.label, marginBottom: 8 }}>Тип аккаунта</label>
           <div style={s.accountTypeGrid}>
             {ACCOUNT_TYPES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setAccountType(t.id)}
-                style={{
-                  ...s.accountTypeCard,
-                  ...(accountType === t.id ? s.accountTypeCardActive : {}),
-                }}
-              >
+              <button key={t.id} type="button" onClick={() => setAccountType(t.id)}
+                style={{ ...s.accountTypeCard, ...(accountType === t.id ? s.accountTypeCardActive : {}) }}>
                 <span style={{ ...s.accountTypeIcon, color: accountType === t.id ? '#FF385C' : '#888' }}>{t.icon}</span>
                 <span style={s.accountTypeLabel}>{t.label}</span>
                 <span style={s.accountTypeDesc}>{t.desc}</span>
@@ -206,16 +209,12 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         </div>
 
         {/* ─── STEP 1: Personal Info ─── */}
-        <div
-          style={{
-            ...s.stepPane,
-            opacity: step === 1 ? 1 : 0,
-            transform: step === 1
-              ? 'translateX(0) scale(1)'
-              : direction === 'forward' ? 'translateX(30px) scale(0.97)' : 'translateX(-30px) scale(0.97)',
-            pointerEvents: step === 1 ? 'auto' : 'none',
-          }}
-        >
+        <div ref={step1Ref} style={{
+          ...s.stepPane,
+          opacity: step === 1 ? 1 : 0,
+          transform: step === 1 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
+          pointerEvents: step === 1 ? 'auto' : 'none',
+        }}>
           <div className="reg-name-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <InputField icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
             <InputField icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
@@ -238,16 +237,12 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
 
         {/* ─── STEP 2: Business Info (conditional) ─── */}
         {isBusiness && (
-          <div
-            style={{
-              ...s.stepPane,
-              opacity: step === 2 ? 1 : 0,
-              transform: step === 2
-                ? 'translateX(0) scale(1)'
-                : direction === 'forward' ? 'translateX(30px) scale(0.97)' : 'translateX(-30px) scale(0.97)',
-              pointerEvents: step === 2 ? 'auto' : 'none',
-            }}
-          >
+          <div ref={step2Ref} style={{
+            ...s.stepPane,
+            opacity: step === 2 ? 1 : 0,
+            transform: step === 2 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
+            pointerEvents: step === 2 ? 'auto' : 'none',
+          }}>
             <div style={s.businessStepHeader}>
               <Building2 size={20} color="#FF385C" />
               <span>Данные {ACCOUNT_TYPES.find(t => t.id === accountType)?.label || 'компании'}</span>
@@ -274,22 +269,18 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         )}
 
         {/* ─── STEP 2 (individual) / STEP 3 (business): Password ─── */}
-        <div
-          style={{
-            ...s.stepPane,
-            opacity: step === maxStep ? 1 : 0,
-            transform: step === maxStep
-              ? 'translateX(0) scale(1)'
-              : direction === 'forward' ? 'translateX(30px) scale(0.97)' : 'translateX(-30px) scale(0.97)',
-            pointerEvents: step === maxStep ? 'auto' : 'none',
-          }}
-        >
+        <div ref={stepFinalRef} style={{
+          ...s.stepPane,
+          opacity: step === maxStep ? 1 : 0,
+          transform: step === maxStep ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
+          pointerEvents: step === maxStep ? 'auto' : 'none',
+        }}>
           <PasswordStep />
           <InputField icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
         </div>
       </form>
 
-      {/* Navigation buttons — outside form, normal flow */}
+      {/* Navigation buttons */}
       <div style={s.navRow}>
         {step > 0 && (
           <button type="button" onClick={goBack} style={s.backBtn}>
@@ -303,7 +294,6 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
           </button>
         ) : (
           <button type="submit" form="" disabled={isPending} style={s.submitBtn} onClick={() => {
-            // Trigger form submit
             const form = document.querySelector('form');
             form?.requestSubmit();
           }}>
@@ -456,7 +446,7 @@ const s: Record<string, React.CSSProperties> = {
   formPane: { width: '50%', flexShrink: 0 },
   formTitle: { fontSize: 26, fontWeight: 900, margin: '0 0 6px', color: '#111' },
   formSubtitle: { fontSize: 14, color: '#888', margin: '0 0 20px', lineHeight: 1.5 },
-  form: { display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', minHeight: 420 },
+  form: { display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', transition: 'height 0.35s cubic-bezier(0.4,0,0.2,1)' },
   stepPane: {
     position: 'absolute', left: 0, right: 0, top: 0,
     display: 'flex', flexDirection: 'column', gap: 14,
