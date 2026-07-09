@@ -173,104 +173,120 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         {/* Hidden fields always submitted */}
         <input type="hidden" name="accountType" value={accountType} />
 
-        {[
-          { idx: 0, content: (
-            <>
-              <label style={{ ...s.label, marginBottom: 8 }}>Тип аккаунта</label>
-              <div style={s.accountTypeGrid}>
-                {ACCOUNT_TYPES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setAccountType(t.id)}
-                    style={{
-                      ...s.accountTypeCard,
-                      ...(accountType === t.id ? s.accountTypeCardActive : {}),
-                    }}
-                  >
-                    <span style={{ ...s.accountTypeIcon, color: accountType === t.id ? '#FF385C' : '#888' }}>{t.icon}</span>
-                    <span style={s.accountTypeLabel}>{t.label}</span>
-                    <span style={s.accountTypeDesc}>{t.desc}</span>
-                    {accountType === t.id && <span style={s.accountTypeCheck}><Check size={14} /></span>}
-                  </button>
-                ))}
+        {/* ─── STEP 0: Account Type ─── */}
+        <div
+          style={{
+            ...s.stepPane,
+            opacity: step === 0 ? 1 : 0,
+            transform: step === 0
+              ? 'translateX(0) scale(1)'
+              : direction === 'forward' ? 'translateX(-30px) scale(0.97)' : 'translateX(30px) scale(0.97)',
+            pointerEvents: step === 0 ? 'auto' : 'none',
+          }}
+        >
+          <label style={{ ...s.label, marginBottom: 8 }}>Тип аккаунта</label>
+          <div style={s.accountTypeGrid}>
+            {ACCOUNT_TYPES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setAccountType(t.id)}
+                style={{
+                  ...s.accountTypeCard,
+                  ...(accountType === t.id ? s.accountTypeCardActive : {}),
+                }}
+              >
+                <span style={{ ...s.accountTypeIcon, color: accountType === t.id ? '#FF385C' : '#888' }}>{t.icon}</span>
+                <span style={s.accountTypeLabel}>{t.label}</span>
+                <span style={s.accountTypeDesc}>{t.desc}</span>
+                {accountType === t.id && <span style={s.accountTypeCheck}><Check size={14} /></span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ─── STEP 1: Personal Info ─── */}
+        <div
+          style={{
+            ...s.stepPane,
+            opacity: step === 1 ? 1 : 0,
+            transform: step === 1
+              ? 'translateX(0) scale(1)'
+              : direction === 'forward' ? 'translateX(30px) scale(0.97)' : 'translateX(-30px) scale(0.97)',
+            pointerEvents: step === 1 ? 'auto' : 'none',
+          }}
+        >
+          <div className="reg-name-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <InputField icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
+            <InputField icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
+          </div>
+          <InputField icon={<Mail size={18} />} name="email" placeholder="demo@newsy.ru" label="Email" type="email" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={s.inputGroup}>
+              <label style={s.label}>Пол</label>
+              <div style={s.inputWrap}>
+                <select name="gender" style={{ ...s.input, cursor: 'pointer' }}>
+                  <option value="">Не указан</option>
+                  <option value="male">Мужской</option>
+                  <option value="female">Женский</option>
+                </select>
               </div>
-            </>
-          )},
-          { idx: 1, content: (
-            <>
-              <div className="reg-name-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <InputField icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
-                <InputField icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
-              </div>
-              <InputField icon={<Mail size={18} />} name="email" placeholder="demo@newsy.ru" label="Email" type="email" />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={s.inputGroup}>
-                  <label style={s.label}>Пол</label>
-                  <div style={s.inputWrap}>
-                    <select name="gender" style={{ ...s.input, cursor: 'pointer' }}>
-                      <option value="">Не указан</option>
-                      <option value="male">Мужской</option>
-                      <option value="female">Женский</option>
-                    </select>
-                  </div>
-                </div>
-                <InputField icon={<Calendar size={18} />} name="birthDate" placeholder="дд.мм.гггг" label="Дата рождения" type="date" />
-              </div>
-            </>
-          )},
-          ...(isBusiness ? [{ idx: 2, content: (
-            <>
-              <div style={s.businessStepHeader}>
-                <Building2 size={20} color="#FF385C" />
-                <span>Данные {ACCOUNT_TYPES.find(t => t.id === accountType)?.label || 'компании'}</span>
-              </div>
-              <InputField icon={<Building2 size={18} />} name="companyName" placeholder="ООО «Рога и Копыта»" label="Полное наименование" />
-              <InputField icon={<Landmark size={18} />} name="inn" placeholder="7701234567" label="ИНН" maxLength={12} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={s.inputGroup}>
-                  <label style={s.label}>Размер компании</label>
-                  <div style={s.inputWrap}>
-                    <select name="companySize" style={{ ...s.input, cursor: 'pointer' }}>
-                      <option value="">Не указан</option>
-                      {COMPANY_SIZES.map(sz => (
-                        <option key={sz.id} value={sz.id}>{sz.label} сотрудников</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <InputField icon={<Users size={18} />} name="employeeCount" placeholder="12" label="Число работников" type="number" />
-              </div>
-              <InputField icon={<MapPin size={18} />} name="companyAddress" placeholder="г. Москва, ул. Примерная, д. 1" label="Юридический адрес" />
-              <InputField icon={<Store size={18} />} name="platformName" placeholder="Мой бренд" label="Название на платформе" />
-            </>
-          )}] : []),
-          { idx: maxStep, content: (
-            <>
-              <PasswordStep />
-              <InputField icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
-            </>
-          )},
-        ].map(({ idx, content }) => {
-          const isActive = step === idx;
-          const slideDir = direction === 'forward' ? 1 : -1;
-          return (
-            <div
-              key={idx}
-              style={{
-                display: isActive ? 'flex' : 'none',
-                flexDirection: 'column',
-                gap: 14,
-                opacity: isActive ? 1 : 0,
-                transform: isActive
-                  ? 'translateX(0) scale(1)'
-                  : `translateX(${slideDir * 30}px) scale(0.97)`,
-              }}
-            >
-              {content}
             </div>
-          );
-        })}
+            <InputField icon={<Calendar size={18} />} name="birthDate" placeholder="дд.мм.гггг" label="Дата рождения" type="date" />
+          </div>
+        </div>
+
+        {/* ─── STEP 2: Business Info (conditional) ─── */}
+        {isBusiness && (
+          <div
+            style={{
+              ...s.stepPane,
+              opacity: step === 2 ? 1 : 0,
+              transform: step === 2
+                ? 'translateX(0) scale(1)'
+                : direction === 'forward' ? 'translateX(30px) scale(0.97)' : 'translateX(-30px) scale(0.97)',
+              pointerEvents: step === 2 ? 'auto' : 'none',
+            }}
+          >
+            <div style={s.businessStepHeader}>
+              <Building2 size={20} color="#FF385C" />
+              <span>Данные {ACCOUNT_TYPES.find(t => t.id === accountType)?.label || 'компании'}</span>
+            </div>
+            <InputField icon={<Building2 size={18} />} name="companyName" placeholder="ООО «Рога и Копыта»" label="Полное наименование" />
+            <InputField icon={<Landmark size={18} />} name="inn" placeholder="7701234567" label="ИНН" maxLength={12} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={s.inputGroup}>
+                <label style={s.label}>Размер компании</label>
+                <div style={s.inputWrap}>
+                  <select name="companySize" style={{ ...s.input, cursor: 'pointer' }}>
+                    <option value="">Не указан</option>
+                    {COMPANY_SIZES.map(sz => (
+                      <option key={sz.id} value={sz.id}>{sz.label} сотрудников</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <InputField icon={<Users size={18} />} name="employeeCount" placeholder="12" label="Число работников" type="number" />
+            </div>
+            <InputField icon={<MapPin size={18} />} name="companyAddress" placeholder="г. Москва, ул. Примерная, д. 1" label="Юридический адрес" />
+            <InputField icon={<Store size={18} />} name="platformName" placeholder="Мой бренд" label="Название на платформе" />
+          </div>
+        )}
+
+        {/* ─── STEP 2 (individual) / STEP 3 (business): Password ─── */}
+        <div
+          style={{
+            ...s.stepPane,
+            opacity: step === maxStep ? 1 : 0,
+            transform: step === maxStep
+              ? 'translateX(0) scale(1)'
+              : direction === 'forward' ? 'translateX(30px) scale(0.97)' : 'translateX(-30px) scale(0.97)',
+            pointerEvents: step === maxStep ? 'auto' : 'none',
+          }}
+        >
+          <PasswordStep />
+          <InputField icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
+        </div>
       </form>
 
       {/* Navigation buttons — outside form, normal flow */}
@@ -440,7 +456,12 @@ const s: Record<string, React.CSSProperties> = {
   formPane: { width: '50%', flexShrink: 0 },
   formTitle: { fontSize: 26, fontWeight: 900, margin: '0 0 6px', color: '#111' },
   formSubtitle: { fontSize: 14, color: '#888', margin: '0 0 20px', lineHeight: 1.5 },
-  form: { display: 'flex', flexDirection: 'column', gap: 14, position: 'relative' },
+  form: { display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', minHeight: 420 },
+  stepPane: {
+    position: 'absolute', left: 0, right: 0, top: 0,
+    display: 'flex', flexDirection: 'column', gap: 14,
+    transition: 'opacity 0.35s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+  },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: { fontSize: 12, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.04em' },
   inputWrap: {
@@ -484,11 +505,6 @@ const s: Record<string, React.CSSProperties> = {
   stepDot: {
     width: 8, height: 8, borderRadius: '50%',
     transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-  },
-  stepContainer: {
-    transition: 'opacity 0.35s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1)',
-    display: 'flex', flexDirection: 'column', gap: 14,
-    position: 'absolute', width: '100%', left: 0, top: 0,
   },
   navRow: {
     display: 'flex', alignItems: 'center', marginTop: 12,
