@@ -165,7 +165,6 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
       </div>
 
       <form action={formAction} style={s.form} onSubmit={(e) => {
-        // Don't submit on intermediate steps
         if (step < maxStep) {
           e.preventDefault();
           goNext();
@@ -297,29 +296,33 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
           <PasswordStep />
           <InputField icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
         </div>
-
-        {/* Navigation buttons */}
-        <div style={s.navRow}>
-          {step > 0 && (
-            <button type="button" onClick={goBack} style={s.backBtn}>
-              <ChevronLeft size={18} /> Назад
-            </button>
-          )}
-          <div style={{ flex: 1 }} />
-          {step < maxStep ? (
-            <button type="submit" style={s.nextBtn}>
-              Далее <ArrowRight size={18} />
-            </button>
-          ) : (
-            <button type="submit" disabled={isPending} style={s.submitBtn}>
-              {isPending ? 'Создаём...' : 'Зарегистрироваться'} <ArrowRight size={18} />
-            </button>
-          )}
-        </div>
-
-        {state.error && <p style={s.error}>{state.error}</p>}
-        {state.success && <p style={s.success}>{state.success}</p>}
       </form>
+
+      {/* Navigation buttons — outside form, normal flow */}
+      <div style={s.navRow}>
+        {step > 0 && (
+          <button type="button" onClick={goBack} style={s.backBtn}>
+            <ChevronLeft size={18} /> Назад
+          </button>
+        )}
+        <div style={{ flex: 1 }} />
+        {step < maxStep ? (
+          <button type="button" onClick={goNext} style={s.nextBtn}>
+            Далее <ArrowRight size={18} />
+          </button>
+        ) : (
+          <button type="submit" form="" disabled={isPending} style={s.submitBtn} onClick={() => {
+            // Trigger form submit
+            const form = document.querySelector('form');
+            form?.requestSubmit();
+          }}>
+            {isPending ? 'Создаём...' : 'Зарегистрироваться'} <ArrowRight size={18} />
+          </button>
+        )}
+      </div>
+
+      {state.error && <p style={s.error}>{state.error}</p>}
+      {state.success && <p style={s.success}>{state.success}</p>}
 
       <p style={s.footerText}>
         Уже есть аккаунт?{' '}
@@ -462,7 +465,7 @@ const s: Record<string, React.CSSProperties> = {
   formPane: { width: '50%', flexShrink: 0 },
   formTitle: { fontSize: 26, fontWeight: 900, margin: '0 0 6px', color: '#111' },
   formSubtitle: { fontSize: 14, color: '#888', margin: '0 0 20px', lineHeight: 1.5 },
-  form: { display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', minHeight: 340 },
+  form: { display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', minHeight: 360, overflow: 'hidden' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: { fontSize: 12, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.04em' },
   inputWrap: {
