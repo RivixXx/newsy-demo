@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Shield, Users, Trophy, CreditCard, Bell, TrendingUp, Activity, DollarSign, Eye, Edit3, Trash2, CheckCircle, XCircle, Clock, BarChart3 } from 'lucide-react';
+import { Shield, Users, Trophy, CreditCard, Bell, TrendingUp, Activity, DollarSign, Eye, Edit3, Trash2, CheckCircle, XCircle, Clock, BarChart3, Megaphone, Save, Info } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
 import { useSession } from '@/shared/components/session-provider';
@@ -36,10 +36,12 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [pendingChallenges, setPendingChallenges] = useState<PendingChallenge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'users' | 'challenges' | 'payments' | 'moderation'>('overview');
+  const [tab, setTab] = useState<'overview' | 'users' | 'challenges' | 'payments' | 'moderation' | 'ads'>('overview');
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [rejectModal, setRejectModal] = useState<{ challengeId: string; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [adConfig, setAdConfig] = useState<Record<string, string | boolean | string[]>>({});
+  const [adSaving, setAdSaving] = useState(false);
   const { toast } = useToast();
 
   const isAdmin = session?.user?.roles?.includes('admin');
@@ -60,6 +62,11 @@ export default function AdminPage() {
       .then(d => {
         if (d.challenges) setPendingChallenges(d.challenges);
       })
+      .catch(() => {});
+
+    fetch('/api/admin/ad-config')
+      .then(r => r.json())
+      .then(d => setAdConfig(d))
       .catch(() => {});
   }, [isAdmin]);
 
@@ -154,9 +161,9 @@ export default function AdminPage() {
         </header>
 
         <div className="admin-tabs">
-          {(['overview', 'moderation', 'users', 'challenges', 'payments'] as const).map(t => (
+          {(['overview', 'moderation', 'users', 'challenges', 'payments', 'ads'] as const).map(t => (
             <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-              {t === 'overview' ? 'Обзор' : t === 'moderation' ? `Модерация (${pendingChallenges.length})` : t === 'users' ? 'Пользователи' : t === 'challenges' ? 'Челленджи' : 'Платежи'}
+              {t === 'overview' ? 'Обзор' : t === 'moderation' ? `Модерация (${pendingChallenges.length})` : t === 'users' ? 'Пользователи' : t === 'challenges' ? 'Челленджи' : t === 'payments' ? 'Платежи' : 'Реклама'}
             </button>
           ))}
         </div>
@@ -400,6 +407,269 @@ export default function AdminPage() {
           </div>
         )}
 
+        {tab === 'ads' && (
+          <div className="tab-content">
+            <div className="ads-layout">
+              {/* Left: form */}
+              <div className="ads-form-card">
+                <h3><Megaphone size={18} /> Настройки рекламной модалки</h3>
+                <p className="ads-desc">Эта форма управляет всплывающим баннером на главной странице. Заполните поля и нажмите «Сохранить».</p>
+
+                <div className="ads-field">
+                  <label className="ads-label">
+                    <input
+                      type="checkbox"
+                      checked={!!adConfig.enabled}
+                      onChange={e => setAdConfig({ ...adConfig, enabled: e.target.checked })}
+                      className="ads-checkbox"
+                    />
+                    Показывать модалку
+                  </label>
+                  <span className="ads-hint">Если выключено — баннер не будет показываться никому</span>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Бейдж (попап сверху)</label>
+                  <input
+                    type="text"
+                    className="ads-input"
+                    value={(adConfig.badge as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, badge: e.target.value })}
+                    placeholder="ПАРТНЁР В ТАМБОВЕ"
+                  />
+                  <span className="ads-hint">Короткая надпись над заголовком. Например: «НОВИНКА», «ПАРТНЁР», «АКЦИЯ»</span>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Заголовок</label>
+                  <input
+                    type="text"
+                    className="ads-input"
+                    value={(adConfig.title as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, title: e.target.value })}
+                    placeholder="iStore68"
+                  />
+                  <span className="ads-hint">Название бренда или компании. Крупный жирный текст слева</span>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Подзаголовок (акцент)</label>
+                  <input
+                    type="text"
+                    className="ads-input"
+                    value={(adConfig.titleAccent as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, titleAccent: e.target.value })}
+                    placeholder="Ремонт Apple"
+                  />
+                  <span className="ads-hint">Вторая строка заголовка, отображается розовым градиентом</span>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Описание под заголовком</label>
+                  <textarea
+                    className="ads-textarea"
+                    value={(adConfig.subtitle as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, subtitle: e.target.value })}
+                    placeholder="Оригинальные запчасти, гарантия 30 дней..."
+                    rows={2}
+                  />
+                  <span className="ads-hint">Краткое описание под заголовком, серый текст</span>
+                </div>
+
+                <div className="ads-row">
+                  <div className="ads-field">
+                    <label className="ads-label">Скидка (крупно)</label>
+                    <input
+                      type="text"
+                      className="ads-input"
+                      value={(adConfig.discount as string) || ''}
+                      onChange={e => setAdConfig({ ...adConfig, discount: e.target.value })}
+                      placeholder="-20%"
+                    />
+                    <span className="ads-hint">Например: -20%, -500₽, БЕСПЛАТНО</span>
+                  </div>
+                  <div className="ads-field">
+                    <label className="ads-label">Подпись к скидке</label>
+                    <input
+                      type="text"
+                      className="ads-input"
+                      value={(adConfig.discountLabel as string) || ''}
+                      onChange={e => setAdConfig({ ...adConfig, discountLabel: e.target.value })}
+                      placeholder="на первый ремонт"
+                    />
+                    <span className="ads-hint">Текст рядом с цифрой скидки</span>
+                  </div>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Промокод</label>
+                  <input
+                    type="text"
+                    className="ads-input"
+                    value={(adConfig.promoCode as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, promoCode: e.target.value })}
+                    placeholder="САЙТ"
+                  />
+                  <span className="ads-hint">Код для копирования. Если пусто — блок промокода не показывается</span>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Описание справа</label>
+                  <textarea
+                    className="ads-textarea"
+                    value={(adConfig.description as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, description: e.target.value })}
+                    placeholder="Ремонт iPhone, iPad, MacBook..."
+                    rows={2}
+                  />
+                  <span className="ads-hint">Текст в правой белой части модалки</span>
+                </div>
+
+                <div className="ads-row">
+                  <div className="ads-field">
+                    <label className="ads-label">Текст кнопки CTA</label>
+                    <input
+                      type="text"
+                      className="ads-input"
+                      value={(adConfig.ctaText as string) || ''}
+                      onChange={e => setAdConfig({ ...adConfig, ctaText: e.target.value })}
+                      placeholder="Перейти на сайт"
+                    />
+                  </div>
+                  <div className="ads-field">
+                    <label className="ads-label">URL кнопки</label>
+                    <input
+                      type="url"
+                      className="ads-input"
+                      value={(adConfig.ctaUrl as string) || ''}
+                      onChange={e => setAdConfig({ ...adConfig, ctaUrl: e.target.value })}
+                      placeholder="https://example.com"
+                    />
+                    <span className="ads-hint">Куда ведёт кнопка. Откроется в новой вкладке</span>
+                  </div>
+                </div>
+
+                <div className="ads-divider" />
+
+                <h4 className="ads-section-title">Контакты</h4>
+
+                <div className="ads-field">
+                  <label className="ads-label">Адрес</label>
+                  <input
+                    type="text"
+                    className="ads-input"
+                    value={(adConfig.address as string) || ''}
+                    onChange={e => setAdConfig({ ...adConfig, address: e.target.value })}
+                    placeholder="г. Тамбов, ул. Чичерина, 17"
+                  />
+                </div>
+
+                <div className="ads-row">
+                  <div className="ads-field">
+                    <label className="ads-label">Телефон</label>
+                    <input
+                      type="tel"
+                      className="ads-input"
+                      value={(adConfig.phone as string) || ''}
+                      onChange={e => setAdConfig({ ...adConfig, phone: e.target.value })}
+                      placeholder="+7 (962) 230-40-40"
+                    />
+                  </div>
+                  <div className="ads-field">
+                    <label className="ads-label">Часы работы</label>
+                    <input
+                      type="text"
+                      className="ads-input"
+                      value={(adConfig.workHours as string) || ''}
+                      onChange={e => setAdConfig({ ...adConfig, workHours: e.target.value })}
+                      placeholder="Каждый день 10:00–19:00"
+                    />
+                  </div>
+                </div>
+
+                <div className="ads-field">
+                  <label className="ads-label">Услуги (через запятую)</label>
+                  <input
+                    type="text"
+                    className="ads-input"
+                    value={Array.isArray(adConfig.services) ? adConfig.services.join(', ') : ''}
+                    onChange={e => setAdConfig({ ...adConfig, services: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) })}
+                    placeholder="iPhone, iPad, MacBook, Android"
+                  />
+                  <span className="ads-hint">Список услуг через запятую. Отображаются иконками в правой части</span>
+                </div>
+
+                <div className="ads-actions">
+                  <button
+                    className="ads-save-btn"
+                    onClick={async () => {
+                      setAdSaving(true);
+                      try {
+                        const res = await fetch('/api/admin/ad-config', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(adConfig),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          toast('success', 'Настройки рекламы сохранены');
+                        } else {
+                          toast('error', 'Ошибка сохранения');
+                        }
+                      } catch {
+                        toast('error', 'Ошибка сети');
+                      }
+                      setAdSaving(false);
+                    }}
+                    disabled={adSaving}
+                  >
+                    <Save size={16} />
+                    {adSaving ? 'Сохраняем...' : 'Сохранить'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: preview */}
+              <div className="ads-preview-card">
+                <h3><Eye size={18} /> Предпросмотр</h3>
+                <div className="ads-preview">
+                  <div className="ads-preview-hero">
+                    <div className="ads-preview-badge">{String(adConfig.badge || 'БЕЙДЖ')}</div>
+                    <div className="ads-preview-title">{String(adConfig.title || 'Заголовок')}</div>
+                    <div className="ads-preview-accent">{String(adConfig.titleAccent || 'Подзаголовок')}</div>
+                    <div className="ads-preview-subtitle">{String(adConfig.subtitle || 'Описание')}</div>
+                    {adConfig.discount && (
+                      <div className="ads-preview-discount">
+                        <span className="ads-preview-discount-val">{String(adConfig.discount)}</span>
+                        <span className="ads-preview-discount-label">{String(adConfig.discountLabel || '')}</span>
+                      </div>
+                    )}
+                    {adConfig.promoCode && (
+                      <div className="ads-preview-promo">
+                        Промокод: <strong>{String(adConfig.promoCode)}</strong>
+                      </div>
+                    )}
+                  </div>
+                  <div className="ads-preview-body">
+                    <div className="ads-preview-desc">{String(adConfig.description || 'Описание справа')}</div>
+                    <div className="ads-preview-services">
+                      {(Array.isArray(adConfig.services) ? adConfig.services : []).map((s: string, i: number) => (
+                        <span key={i} className="ads-preview-service">{s}</span>
+                      ))}
+                    </div>
+                    <div className="ads-preview-contacts">
+                      {adConfig.address && <div>{String(adConfig.address)}</div>}
+                      {adConfig.phone && <div>{String(adConfig.phone)}</div>}
+                      {adConfig.workHours && <div>{String(adConfig.workHours)}</div>}
+                    </div>
+                    <div className="ads-preview-btn">{String(adConfig.ctaText || 'Кнопка')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <style jsx>{`
           .admin-page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; display: flex; flex-direction: column; }
           .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
@@ -483,6 +753,70 @@ export default function AdminPage() {
           .reject-modal .reject-confirm:hover { background: #b91c1c; }
           @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
           @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+          /* Ads tab */
+          .ads-layout { display: grid; grid-template-columns: 1fr 400px; gap: 20px; align-items: start; }
+          .ads-form-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #f0f0f0; }
+          .ads-form-card h3 { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 900; margin: 0 0 6px; color: #111; }
+          .ads-desc { font-size: 13px; color: #888; margin: 0 0 24px; line-height: 1.5; }
+          .ads-field { margin-bottom: 16px; }
+          .ads-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #333; margin-bottom: 6px; cursor: pointer; }
+          .ads-input, .ads-textarea {
+            width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px;
+            font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
+            background: #fafafa;
+          }
+          .ads-input:focus, .ads-textarea:focus { border-color: #FF385C; background: white; }
+          .ads-textarea { resize: vertical; min-height: 60px; }
+          .ads-hint { display: block; font-size: 11px; color: #aaa; margin-top: 4px; line-height: 1.4; }
+          .ads-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+          .ads-checkbox { width: 16px; height: 16px; accent-color: #FF385C; }
+          .ads-divider { height: 1px; background: #f0f0f0; margin: 20px 0; }
+          .ads-section-title { font-size: 14px; font-weight: 800; color: #111; margin: 0 0 14px; }
+          .ads-actions { padding-top: 8px; }
+          .ads-save-btn {
+            display: flex; align-items: center; gap: 8px; padding: 12px 28px;
+            border-radius: 12px; border: none; background: linear-gradient(135deg, #FF385C, #E31C5F);
+            color: white; font-size: 14px; font-weight: 800; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 16px rgba(255,56,92,0.3);
+          }
+          .ads-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(255,56,92,0.4); }
+          .ads-save-btn:disabled { opacity: 0.6; cursor: wait; }
+
+          /* Preview */
+          .ads-preview-card { background: white; border-radius: 16px; padding: 20px; border: 1px solid #f0f0f0; position: sticky; top: 90px; }
+          .ads-preview-card h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; margin: 0 0 14px; color: #111; }
+          .ads-preview { border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12); font-size: 12px; }
+          .ads-preview-hero {
+            background: linear-gradient(160deg, #0a0a0f, #1a1025);
+            padding: 24px 20px; color: white;
+          }
+          .ads-preview-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 99px;
+            background: rgba(255,56,92,0.9); color: white;
+            font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+            margin-bottom: 10px;
+          }
+          .ads-preview-title { font-size: 20px; font-weight: 900; margin-bottom: 2px; }
+          .ads-preview-accent { font-size: 16px; font-weight: 800; color: #FF385C; margin-bottom: 6px; }
+          .ads-preview-subtitle { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.4; margin-bottom: 12px; }
+          .ads-preview-discount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+          .ads-preview-discount-val { font-size: 28px; font-weight: 900; color: #FF385C; }
+          .ads-preview-discount-label { font-size: 11px; color: rgba(255,255,255,0.7); }
+          .ads-preview-promo { font-size: 11px; color: rgba(255,255,255,0.5); }
+          .ads-preview-promo strong { color: white; letter-spacing: 0.1em; }
+          .ads-preview-body { padding: 16px 20px; background: white; }
+          .ads-preview-desc { font-size: 11px; color: #666; margin-bottom: 10px; line-height: 1.4; }
+          .ads-preview-services { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+          .ads-preview-service { padding: 3px 8px; border-radius: 6px; background: #f3f4f6; font-size: 10px; font-weight: 600; color: #555; }
+          .ads-preview-contacts { font-size: 10px; color: #999; margin-bottom: 10px; display: flex; flex-direction: column; gap: 2px; }
+          .ads-preview-btn {
+            padding: 8px; border-radius: 8px; background: #FF385C; color: white;
+            font-size: 11px; font-weight: 800; text-align: center;
+          }
+
+          @media (max-width: 1100px) { .ads-layout { grid-template-columns: 1fr; } .ads-preview-card { position: static; } }
         `}</style>
       </div>
 
