@@ -41,6 +41,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<ModalChallenge | null>(null);
+  const [favStats, setFavStats] = useState<{ isOrganizer: boolean; totalFavorites: number; challenges: { id: string; title: string; favoritesCount: number }[] } | null>(null);
 
   useEffect(() => {
     fetch('/api/user/profile-stats')
@@ -79,6 +80,14 @@ export default function ProfilePage() {
       .then(d => setProfileData(d))
       .catch(() => {});
   };
+
+  // Загрузка статистики избранного для организаторов
+  useEffect(() => {
+    fetch('/api/organizer/favorites-stats')
+      .then(r => r.json())
+      .then(d => setFavStats(d))
+      .catch(() => {});
+  }, []);
 
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
   const isOrganizer = (session?.user?.organizationIds?.length ?? 0) > 0;
@@ -143,6 +152,28 @@ export default function ProfilePage() {
           achievements={data.achievements}
           points={data.points}
         />
+
+        {/* Статистика избранного для организаторов */}
+        {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
+          <div className="org-fav-section">
+            <div className="org-fav-header">
+              <Heart size={20} color="#FF385C" />
+              <h3>Избранное в ваших челленджах</h3>
+              <span className="org-fav-total">{favStats.totalFavorites} добавлений</span>
+            </div>
+            <div className="org-fav-list">
+              {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
+                <div key={c.id} className="org-fav-item">
+                  <span className="org-fav-title">{c.title}</span>
+                  <span className="org-fav-count">
+                    <Heart size={13} fill="#FF385C" color="#FF385C" />
+                    {c.favoritesCount}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="tabs-bar">
           <button className={`tab-btn ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>Обзор</button>
@@ -237,6 +268,33 @@ export default function ProfilePage() {
         .settings-danger { margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0; }
         .danger-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .danger-btn:hover { background: #fee2e2; border-color: #f87171; }
+
+        /* Organizer favorites stats */
+        .org-fav-section {
+          background: white; border-radius: 16px; padding: 20px;
+          border: 1px solid #f0f0f0;
+        }
+        .org-fav-header {
+          display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+        }
+        .org-fav-header h3 { font-size: 15px; font-weight: 800; margin: 0; color: #111; }
+        .org-fav-total {
+          margin-left: auto; padding: 3px 10px; border-radius: 99px;
+          background: #fff5f7; color: #FF385C; font-size: 12px; font-weight: 700;
+        }
+        .org-fav-list { display: flex; flex-direction: column; gap: 8px; }
+        .org-fav-item {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 8px 12px; border-radius: 10px; background: #fafafa;
+          transition: background 0.15s;
+        }
+        .org-fav-item:hover { background: #f5f5f5; }
+        .org-fav-title { font-size: 13px; font-weight: 600; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .org-fav-count {
+          display: flex; align-items: center; gap: 4px;
+          font-size: 13px; font-weight: 800; color: #FF385C; flex-shrink: 0;
+        }
+
         @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
       `}</style>
     </PageShell>
