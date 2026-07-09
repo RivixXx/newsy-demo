@@ -1,23 +1,23 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { X, MapPin, Search, Navigation, Globe } from 'lucide-react';
-import { RUSSIAN_REGIONS, type Region } from '@/shared/hooks/use-region';
+import { X, MapPin, Search, Navigation } from 'lucide-react';
+import { RUSSIAN_REGIONS } from '@/shared/hooks/use-region';
 
 interface RegionModalProps {
   isOpen: boolean;
-  onSelect: (region: Region) => void;
+  onSelect: (region: string) => void;
   onSkip: () => void;
 }
 
 export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
   const [query, setQuery] = useState('');
   const [detecting, setDetecting] = useState(false);
-  const [detected, setDetected] = useState<string | null>(null);
+  const [detectedCity, setDetectedCity] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return RUSSIAN_REGIONS;
+    if (!query.trim()) return RUSSIAN_REGIONS.slice(0, 12);
     const q = query.toLowerCase();
     return RUSSIAN_REGIONS.filter(r => r.toLowerCase().includes(q));
   }, [query]);
@@ -28,35 +28,65 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
     }
   }, [isOpen]);
 
+  // Auto-detect via timezone
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tzCity = tz.split('/').pop()?.replace(/_/g, ' ');
+      if (tzCity) {
+        const match = RUSSIAN_REGIONS.find(r =>
+          r.toLowerCase().includes(tzCity.toLowerCase())
+        );
+        setDetectedCity(match || tzCity);
+      }
+    } catch {
+      setDetectedCity(null);
+    }
+  }, [isOpen]);
+
   const handleDetect = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      // Fallback: use timezone
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const tzCity = tz.split('/').pop()?.replace(/_/g, ' ');
+        if (tzCity) setDetectedCity(tzCity);
+      } catch { /* ignore */ }
+      return;
+    }
     setDetecting(true);
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
+        // Use timezone as fallback (free geocoding is unreliable)
         try {
-          const { latitude, longitude } = pos.coords;
-          const resp = await fetch(
-            `https://geocode-maps.yandex.ru/1.x/?apikey=demo&geocode=${longitude},${latitude}&format=json&lang=ru_RU&results=1`
-          );
-          const data = await resp.json();
-          const city = data?.response?.GeoObjectCollection?.featureMember?.[0]
-            ?.GeoObject?.metaDataProperty?.GeocoderMetaData?.AddressDetails?.Country?.AdministrativeArea?.SubAdministrativeArea?.Localities?.City?.Name;
-          if (city && RUSSIAN_REGIONS.includes(city as Region)) {
-            setDetected(city);
-          } else {
-            setDetected(null);
-          }
-        } catch {
-          setDetected(null);
-        }
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const tzCity = tz.split('/').pop()?.replace(/_/g, ' ');
+          if (tzCity) setDetectedCity(tzCity);
+        } catch { /* ignore */ }
         setDetecting(false);
       },
       () => {
-        setDetected(null);
+        // Permission denied or error — try timezone
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const tzCity = tz.split('/').pop()?.replace(/_/g, ' ');
+          if (tzCity) setDetectedCity(tzCity);
+        } catch { /* ignore */ }
         setDetecting(false);
       },
-      { timeout: 8000, enableHighAccuracy: false }
+      { timeout: 5000, enableHighAccuracy: false }
     );
+  };
+
+  const handleSubmit = () => {
+    const val = query.trim();
+    if (val) onSelect(val);
+  };
+
+  const handleItemClick = (city: string) => {
+    setQuery(city);
+    onSelect(city);
   };
 
   if (!isOpen) return null;
@@ -74,62 +104,57 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
             <div className="region-icon">
               <MapPin size={28} />
             </div>
-            <h2 className="region-title">Выберите свой город</h2>
+            <h2 className="region-title">Где вы находитесь?</h2>
             <p className="region-subtitle">
-              Чтобы показывать челленджи рядом с вами
+              Введите название города, чтобы видеть челленджи рядом с вами
             </p>
           </div>
 
-          {/* Geolocation detect */}
-          <button
-            className="region-detect"
-            onClick={handleDetect}
-            disabled={detecting}
-          >
-            <Navigation size={16} />
-            {detecting ? 'Определяем...' : 'Определить автоматически'}
-          </button>
-
-          {detected && (
-            <div className="region-detected">
-              <Globe size={14} />
-              <span>Нашли: <strong>{detected}</strong></span>
-              <button className="region-detected-btn" onClick={() => onSelect(detected)}>
-                Выбрать
-              </button>
-            </div>
-          )}
-
-          {/* Search */}
+          {/* City input */}
           <div className="region-search">
             <Search size={16} />
             <input
               ref={inputRef}
               type="text"
-              placeholder="Начните вводить город..."
+              placeholder="Введите город..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
               className="region-input"
             />
+            {query.trim() && (
+              <button className="region-submit" onClick={handleSubmit}>
+                OK
+              </button>
+            )}
           </div>
 
-          {/* Region list */}
-          <div className="region-list">
-            {filtered.length === 0 ? (
-              <div className="region-empty">Город не найден</div>
-            ) : (
-              filtered.map((r) => (
-                <button
-                  key={r}
-                  className="region-item"
-                  onClick={() => onSelect(r)}
-                >
+          {/* Timezone detection */}
+          <button className="region-detect" onClick={handleDetect} disabled={detecting}>
+            <Navigation size={15} />
+            {detecting ? 'Определяем...' : 'Определить по геолокации'}
+          </button>
+
+          {detectedCity && (
+            <div className="region-detected">
+              <span>Ваш город: <strong>{detectedCity}</strong></span>
+              <button className="region-detected-btn" onClick={() => onSelect(detectedCity)}>
+                Выбрать
+              </button>
+            </div>
+          )}
+
+          {/* Suggestions */}
+          {filtered.length > 0 && (
+            <div className="region-list">
+              {filtered.map((r) => (
+                <button key={r} className="region-item" onClick={() => handleItemClick(r)}>
                   <MapPin size={14} />
                   {r}
                 </button>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
           <button className="region-skip" onClick={onSkip}>
             Показать все города
@@ -176,16 +201,36 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
           font-size: 22px; font-weight: 900; margin: 0 0 6px; color: #111;
         }
         .region-subtitle {
-          font-size: 14px; color: #888; margin: 0 0 20px;
+          font-size: 14px; color: #888; margin: 0 0 20px; line-height: 1.5;
         }
+        .region-search {
+          display: flex; align-items: center; gap: 8px;
+          margin: 0 28px 12px; padding: 0 8px 0 14px;
+          height: 48px; border-radius: 12px;
+          border: 1.5px solid #e5e7eb; background: #fafafa;
+          transition: border-color 0.2s;
+        }
+        .region-search:focus-within { border-color: #FF385C; }
+        .region-search svg { color: #aaa; flex-shrink: 0; }
+        .region-input {
+          flex: 1; border: none; outline: none; background: transparent;
+          font-size: 15px; color: #111; height: 100%;
+        }
+        .region-input::placeholder { color: #bbb; }
+        .region-submit {
+          padding: 6px 14px; border-radius: 8px; border: none;
+          background: #FF385C; color: white; font-size: 13px;
+          font-weight: 800; cursor: pointer; transition: background 0.15s;
+        }
+        .region-submit:hover { background: #E31C5F; }
         .region-detect {
           display: flex; align-items: center; justify-content: center;
-          gap: 8px; margin: 0 28px 12px; padding: 12px;
+          gap: 8px; margin: 0 28px 12px; padding: 11px;
           border-radius: 12px; border: 1.5px solid #e5e7eb;
-          background: white; font-size: 14px; font-weight: 700;
-          color: #333; cursor: pointer; transition: border-color 0.2s;
+          background: white; font-size: 13px; font-weight: 700;
+          color: #555; cursor: pointer; transition: border-color 0.2s;
         }
-        .region-detect:hover { border-color: #FF385C; }
+        .region-detect:hover { border-color: #FF385C; color: #333; }
         .region-detect:disabled { opacity: 0.6; cursor: wait; }
         .region-detected {
           display: flex; align-items: center; gap: 8px;
@@ -195,28 +240,15 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
           animation: popIn 0.2s ease;
         }
         .region-detected-btn {
-          margin-left: auto; padding: 4px 12px;
+          margin-left: auto; padding: 5px 14px;
           border-radius: 8px; border: none;
           background: #16a34a; color: white;
           font-size: 12px; font-weight: 700; cursor: pointer;
         }
-        .region-search {
-          display: flex; align-items: center; gap: 8px;
-          margin: 0 28px 12px; padding: 0 14px;
-          height: 44px; border-radius: 12px;
-          border: 1.5px solid #e5e7eb; background: #fafafa;
-          transition: border-color 0.2s;
-        }
-        .region-search:focus-within { border-color: #FF385C; }
-        .region-search svg { color: #aaa; flex-shrink: 0; }
-        .region-input {
-          flex: 1; border: none; outline: none; background: transparent;
-          font-size: 14px; color: #111;
-        }
-        .region-input::placeholder { color: #bbb; }
+        .region-detected-btn:hover { background: #15803d; }
         .region-list {
           flex: 1; overflow-y: auto; padding: 0 28px;
-          max-height: 300px; min-height: 120px;
+          max-height: 240px;
         }
         .region-item {
           display: flex; align-items: center; gap: 10px;
@@ -228,10 +260,6 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
         }
         .region-item:hover { background: #f5f5f5; }
         .region-item svg { color: #ccc; flex-shrink: 0; }
-        .region-empty {
-          padding: 24px; text-align: center;
-          font-size: 14px; color: #999;
-        }
         .region-skip {
           margin: 12px 28px 24px; padding: 12px;
           border-radius: 12px; border: none;

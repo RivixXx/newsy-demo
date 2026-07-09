@@ -324,7 +324,9 @@ export default function PublicHomePage() {
   // Filter by region: show challenges with no region (online/everywhere) or matching user's region
   const regionFiltered = useMemo(() => {
     if (!region) return challenges;
-    return challenges.filter(c => !c.region || c.region === region);
+    const matched = challenges.filter(c => !c.region || c.region === region);
+    // If nothing matches this region, show all (user probably typed a custom city)
+    return matched.length > 0 ? matched : challenges;
   }, [challenges, region]);
 
   const filtered = regionFiltered.filter(c => {
