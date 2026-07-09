@@ -277,6 +277,8 @@ model Challenge {
   region          String?                // Регион/город для фильтрации
   format          ChallengeFormat        @default(ONLINE)
   address         String?                // Адрес места проведения (для OFFLINE/HYBRID)
+  latitude        Float?                 // Широта для карты
+  longitude       Float?                 // Долгота для карты
   maxParticipants Int?                   // null = без ограничений
   isCooperative   Boolean                @default(false)
   startDate       DateTime?

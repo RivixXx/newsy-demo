@@ -30,15 +30,19 @@ export interface ModalChallenge {
   category: string;
   imageUrl: string;
   participantsCount: number;
-  maxParticipants: number;
+  maxParticipants: number | null;
   endDate: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   achievement: string;
   reward: string;
   description: string;
   requirements: string;
   refundPolicy: string;
   stages: ChallengeStage[];
+  media?: { id: string; url: string; type: string; altText: string | null }[];
+  galleryPhotos?: string[];
   isJoined?: boolean;
 }
 
@@ -61,11 +65,13 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [stages, setStages] = useState<ChallengeStage[]>(challenge.stages);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [activeTab, setActiveTab] = useState<'info' | 'chat'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'chat' | 'gallery'>('info');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [stageInputs, setStageInputs] = useState<Record<string, string>>({});
   const [loadingChat, setLoadingChat] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(true);
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>(challenge.galleryPhotos || []);
+  const [showMap, setShowMap] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const { toast } = useToast();
@@ -203,7 +209,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
     } catch {}
   };
 
-  const availableSlots = challenge.maxParticipants - challenge.participantsCount;
+  const maxSlots = challenge.maxParticipants ?? Infinity;
+  const availableSlots = maxSlots === Infinity ? null : Math.max(0, maxSlots - challenge.participantsCount);
 
   const getButtonLabel = () => {
     if (status === 'none') return 'Участвовать';
@@ -256,6 +263,12 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                 onClick={() => setActiveTab('chat')}
               >
                 <MessageSquare size={14} /> Общий чат
+              </button>
+              <button
+                className={`modal-tab ${activeTab === 'gallery' ? 'active' : ''}`}
+                onClick={() => setActiveTab('gallery')}
+              >
+                <Camera size={14} /> Галерея
               </button>
             </div>
 
@@ -398,12 +411,37 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               </div>
             )}
 
+            {/* GALLERY TAB */}
+            {activeTab === 'gallery' && (
+              <div className="gallery-tab">
+                {galleryPhotos.length === 0 ? (
+                  <div className="gallery-empty">
+                    <Camera size={40} color="#ddd" />
+                    <p>Пока нет фото от участников</p>
+                    <span>Фото появятся здесь, когда участники начнут выполнять этапы</span>
+                  </div>
+                ) : (
+                  <div className="gallery-grid">
+                    {galleryPhotos.map((url, i) => (
+                      <div key={i} className="gallery-item">
+                        <img src={url} alt={`Фото ${i + 1}`} loading="lazy" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ACTION BAR */}
             <div className="modal-action-bar">
               <div className="slots-info">
                 <Users size={14} />
                 <span>
-                  Свободно <strong>{availableSlots}</strong> из {challenge.maxParticipants} мест
+                  {availableSlots !== null ? (
+                    <>Свободно <strong>{availableSlots}</strong> из {maxSlots} мест</>
+                  ) : (
+                    <><strong>{challenge.participantsCount}</strong> участников · Без ограничений</>
+                  )}
                 </span>
               </div>
               <button
@@ -424,9 +462,27 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
             </div>
 
             <div className="modal-meta">
-              <div className="meta-row">
+              <div
+                className="meta-row meta-location"
+                onMouseEnter={() => challenge.latitude && setShowMap(true)}
+                onMouseLeave={() => setShowMap(false)}
+              >
                 <MapPin size={15} />
                 <span>{challenge.location}</span>
+                {showMap && challenge.latitude && challenge.longitude && (
+                  <div className="map-tooltip">
+                    <iframe
+                      width="280" height="180"
+                      style={{ border: 0, borderRadius: 10 }}
+                      loading="lazy"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${challenge.longitude - 0.01}%2C${challenge.latitude - 0.01}%2C${challenge.longitude + 0.01}%2C${challenge.latitude + 0.01}&layer=mapnik&marker=${challenge.latitude}%2C${challenge.longitude}`}
+                    />
+                    <div className="map-tooltip-address">
+                      <MapPin size={12} />
+                      {challenge.location}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="meta-row">
                 <Calendar size={15} />
@@ -435,8 +491,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               <div className="meta-row">
                 <Users size={15} />
                 <span>
-                  <strong>{challenge.participantsCount}</strong> участников ·{' '}
-                  <strong className={availableSlots <= 5 ? 'few-slots' : ''}>{availableSlots} мест</strong>
+                  <strong>{challenge.participantsCount}</strong> участников
+                  {availableSlots !== null && <> · <strong className={availableSlots <= 5 ? 'few-slots' : ''}>{availableSlots} мест</strong></>}
                 </span>
               </div>
             </div>
@@ -463,10 +519,12 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               <p>{challenge.description}</p>
             </div>
 
-            <div className="modal-desc">
-              <h3>Требования</h3>
-              <p>{challenge.requirements}</p>
-            </div>
+            {challenge.requirements && (
+              <div className="modal-desc">
+                <h3>Требования</h3>
+                <p>{challenge.requirements}</p>
+              </div>
+            )}
 
             <div className="modal-refund">
               <AlertTriangle size={15} />
@@ -585,6 +643,40 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         }
 
         .few-slots { color: #ef4444; }
+
+        /* Location map tooltip */
+        .meta-location { position: relative; cursor: default; }
+        .map-tooltip {
+          position: absolute; top: 100%; left: 0; z-index: 100;
+          margin-top: 8px; background: white; border-radius: 14px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.15); overflow: hidden;
+          animation: mapFadeIn 0.2s ease;
+        }
+        .map-tooltip-address {
+          display: flex; align-items: center; gap: 6px;
+          padding: 8px 12px; font-size: 12px; font-weight: 600; color: #333;
+          border-top: 1px solid #f0f0f0;
+        }
+        .map-tooltip-address svg { color: #FF385C; flex-shrink: 0; }
+        @keyframes mapFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Gallery tab */
+        .gallery-tab { padding: 16px 20px; flex: 1; overflow-y: auto; }
+        .gallery-empty {
+          display: flex; flex-direction: column; align-items: center;
+          gap: 8px; padding: 40px 20px; text-align: center;
+        }
+        .gallery-empty p { font-size: 15px; font-weight: 700; color: #333; margin: 0; }
+        .gallery-empty span { font-size: 12px; color: #999; margin: 0; }
+        .gallery-grid {
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+        }
+        .gallery-item {
+          aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+          cursor: pointer; transition: transform 0.2s;
+        }
+        .gallery-item:hover { transform: scale(1.03); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 
         .modal-rewards-block {
           padding: 16px 20px;

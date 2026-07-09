@@ -20,8 +20,15 @@ export async function GET(
       where: { id, deletedAt: null, status: 'PUBLISHED' },
       include: {
         organizer: { select: { name: true } },
-        media: { orderBy: { sortOrder: 'asc' }, take: 1 },
+        media: { orderBy: { sortOrder: 'asc' } },
         steps: { orderBy: { order: 'asc' } },
+        participations: {
+          include: {
+            stepProgress: {
+              select: { submission: true, stepId: true, status: true },
+            },
+          },
+        },
         _count: { select: { participations: true } },
       },
     });
@@ -69,6 +76,16 @@ export async function GET(
       };
     });
 
+    // Собираем фото из submissions (ФОТО этапы)
+    const galleryPhotos: string[] = [];
+    for (const p of challenge.participations) {
+      for (const sp of p.stepProgress) {
+        if (sp.status === 'APPROVED' && sp.submission && typeof sp.submission === 'string' && sp.submission.startsWith('http')) {
+          galleryPhotos.push(sp.submission);
+        }
+      }
+    }
+
     return NextResponse.json({
       id: challenge.id,
       title: challenge.title,
@@ -76,16 +93,20 @@ export async function GET(
       category: challenge.category || 'Другое',
       imageUrl: challenge.media[0]?.url || '',
       participantsCount: challenge._count.participations,
-      maxParticipants: 100,
+      maxParticipants: challenge.maxParticipants ?? null,
       endDate: challenge.endDate ? new Date(challenge.endDate).toLocaleDateString('ru-RU') : 'Бессрочно',
-      location: 'Онлайн',
+      location: challenge.address || 'Онлайн',
+      latitude: challenge.latitude,
+      longitude: challenge.longitude,
       achievement: challenge.steps[0]?.rewardPoints ? `${challenge.steps[0].rewardPoints} баллов` : 'Участие',
-      reward: 'Награда',
+      reward: challenge.steps[0]?.rewardPoints ? `${challenge.steps[0].rewardPoints} баллов` : 'Участие',
       description: challenge.description || '',
-      requirements: '',
+      requirements: challenge.description || '',
       refundPolicy: '',
       isJoined,
       stages,
+      media: challenge.media.map(m => ({ id: m.id, url: m.url, type: m.type, altText: m.altText })),
+      galleryPhotos,
     });
   } catch (error: any) {
     console.error('Challenge detail error:', error);
