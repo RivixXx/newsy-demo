@@ -11,6 +11,7 @@ import { useRegion } from '@/shared/components/region-provider';
 import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
+import { useFavorites } from '@/shared/hooks/use-favorites';
 
 const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
 
@@ -54,10 +55,23 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
 }
 
 // ─── Карточка ─────────────────────────────────────────────────────────────
-function CatalogCard({ challenge, onOpen, isAdmin }: { challenge: CatalogChallenge; onOpen: (c: CatalogChallenge) => void; isAdmin?: boolean }) {
-  const [liked, setLiked] = useState(false);
+function CatalogCard({ challenge, onOpen, isAdmin, isFav, onToggleFav }: {
+  challenge: CatalogChallenge;
+  onOpen: (c: CatalogChallenge) => void;
+  isAdmin?: boolean;
+  isFav: boolean;
+  onToggleFav: (id: string) => void;
+}) {
+  const [animating, setAnimating] = useState(false);
   const availableSlots = challenge.maxParticipants - challenge.participantsCount;
   const isNew = challenge.badges?.includes('new');
+
+  const handleFavClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAnimating(true);
+    onToggleFav(challenge.id);
+    setTimeout(() => setAnimating(false), 400);
+  };
 
   return (
     <div className="catalog-card" onClick={() => onOpen(challenge)}>
@@ -74,10 +88,11 @@ function CatalogCard({ challenge, onOpen, isAdmin }: { challenge: CatalogChallen
           }}>Новый</span>
         )}
         <button
-          className={`card-heart ${liked ? 'liked' : ''}`}
-          onClick={e => { e.stopPropagation(); setLiked(v => !v); }}
+          className={`card-heart ${isFav ? 'liked' : ''} ${animating ? 'animating' : ''}`}
+          onClick={handleFavClick}
         >
-          <Heart size={17} fill={liked ? '#FF385C' : 'none'} color={liked ? '#FF385C' : '#111'} />
+          <Heart size={17} fill={isFav ? '#FF385C' : 'none'} color={isFav ? '#FF385C' : '#111'} />
+          {animating && <span className="heart-particles">{'✨'.repeat(5)}</span>}
         </button>
       </div>
       <div className="card-body">
@@ -142,9 +157,25 @@ function CatalogCard({ challenge, onOpen, isAdmin }: { challenge: CatalogChallen
           background: rgba(255,255,255,0.92);
           border: none; display: grid; place-items: center;
           cursor: pointer; z-index: 1;
-          transition: transform 0.15s;
+          transition: transform 0.15s, background 0.2s;
         }
         .card-heart:hover { transform: scale(1.15); }
+        .card-heart.liked { background: rgba(255,56,92,0.1); }
+        .card-heart.animating { animation: heartBounce 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+        .heart-particles {
+          position: absolute; top: -8px; right: -8px;
+          font-size: 14px; pointer-events: none;
+          animation: particleBurst 0.5s ease-out forwards;
+        }
+        @keyframes heartBounce {
+          0% { transform: scale(1); }
+          40% { transform: scale(1.35); }
+          100% { transform: scale(1); }
+        }
+        @keyframes particleBurst {
+          0% { opacity: 1; transform: scale(0.5); }
+          100% { opacity: 0; transform: scale(1.5) translateY(-12px); }
+        }
         .card-body {
           padding: 16px; display: flex;
           flex-direction: column; gap: 10px;
@@ -201,12 +232,16 @@ function CarouselSection({
   onOpen,
   direction = 'right',
   isAdmin,
+  isFavFn,
+  onToggleFav,
 }: {
   title: string;
   challenges: CatalogChallenge[];
   onOpen: (c: CatalogChallenge) => void;
   direction?: 'left' | 'right';
   isAdmin?: boolean;
+  isFavFn: (id: string) => boolean;
+  onToggleFav: (id: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -274,7 +309,7 @@ function CarouselSection({
           onMouseMove={onMouseMove}
         >
           {challenges.map((c, i) => (
-            <CatalogCard key={`${c.id}-${i}`} challenge={c} onOpen={onOpen} isAdmin={isAdmin} />
+            <CatalogCard key={`${c.id}-${i}`} challenge={c} onOpen={onOpen} isAdmin={isAdmin} isFav={isFavFn(c.id)} onToggleFav={onToggleFav} />
           ))}
         </div>
         <button className="carousel-btn next" onClick={() => scrollBy('right')}>
@@ -317,6 +352,7 @@ function CarouselSection({
 export default function PublicHomePage() {
   const { challenges, loading, isAdmin } = useChallenges();
   const { region, isLoaded, setRegion } = useRegion();
+  const { isFavorite, toggleFavorite, favoritesCount } = useFavorites();
   const [activeCategory, setActiveCategory] = useState('Все подряд');
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
 
@@ -401,6 +437,8 @@ export default function PublicHomePage() {
                   onOpen={c => setSelectedChallenge(c)}
                   direction={idx % 2 === 0 ? 'right' : 'left'}
                   isAdmin={isAdmin}
+                  isFavFn={isFavorite}
+                  onToggleFav={toggleFavorite}
                 />
               ))}
             </div>
@@ -414,7 +452,7 @@ export default function PublicHomePage() {
               </p>
               <div className="grid-layout">
                 {filtered.map(c => (
-                  <CatalogCard key={c.id} challenge={c} onOpen={ch => setSelectedChallenge(ch)} isAdmin={isAdmin} />
+                  <CatalogCard key={c.id} challenge={c} onOpen={ch => setSelectedChallenge(ch)} isAdmin={isAdmin} isFav={isFavorite(c.id)} onToggleFav={toggleFavorite} />
                 ))}
               </div>
             </>

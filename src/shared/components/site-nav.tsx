@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X, MapPin } from 'lucide-react';
+import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X, MapPin, Heart } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { useRegion } from '@/shared/components/region-provider';
@@ -169,6 +169,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                   {session ? (
                     <>
                       <DDItem href="/dashboard/profile" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
+                      <DDItem href="/favorites" icon={<Heart size={18} />} label="Избранное" onClick={close} />
                       <div className="dd-divider" />
                       <DDItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
                       {session.user?.roles?.includes('admin') && (
@@ -184,6 +185,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                   ) : (
                     <>
                       <DDItem href="/login" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
+                      <DDItem href="/favorites" icon={<Heart size={18} />} label="Избранное" onClick={close} />
                       <div className="dd-divider" />
                       <DDItem href="/login" icon={<LogOut size={18} />} label="Войти" bold onClick={close} />
                       <DDItem href="/register" icon={<Plus size={18} />} label="Зарегистрироваться" onClick={close} />
