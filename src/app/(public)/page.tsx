@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal } from 'lucide-react';
 import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
@@ -316,7 +316,7 @@ function CarouselSection({
 // ─── Главный компонент ─────────────────────────────────────────────────────
 export default function PublicHomePage() {
   const { challenges, loading, isAdmin } = useChallenges();
-  const { region, isLoaded, showModal, setRegion, changeRegion, skipRegion } = useRegion();
+  const { region, isLoaded, setRegion } = useRegion();
   const [activeCategory, setActiveCategory] = useState('Все подряд');
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
 
@@ -368,25 +368,6 @@ export default function PublicHomePage() {
       )}
 
       <main className="catalog-main">
-
-        {/* Регион */}
-        {region && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: -8 }}>
-            <button
-              onClick={changeRegion}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
-                borderRadius: 99, border: '1.5px solid #e5e7eb', background: 'white',
-                fontSize: 13, fontWeight: 700, color: '#333', cursor: 'pointer',
-                transition: 'border-color 0.2s',
-              }}
-            >
-              <MapPin size={14} color="#FF385C" />
-              {region}
-              <span style={{ fontSize: 11, color: '#aaa' }}>&#x2716;</span>
-            </button>
-          </div>
-        )}
 
         {/* Категории */}
         <div className="categories-scroll">
