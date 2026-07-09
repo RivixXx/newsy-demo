@@ -7,8 +7,7 @@ import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
-import { RegionModal } from '@/shared/components/region-modal';
-import { useRegion } from '@/shared/hooks/use-region';
+import { useRegion } from '@/shared/components/region-provider';
 import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
@@ -355,9 +354,6 @@ export default function PublicHomePage() {
 
   return (
     <PageShell variant="public">
-      {/* Модалка выбора региона */}
-      <RegionModal isOpen={showModal} onSelect={setRegion} onSkip={skipRegion} />
-
       {/* Попап-баннер */}
       <AnnouncementPopup />
 

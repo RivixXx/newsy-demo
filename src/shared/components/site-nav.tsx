@@ -3,9 +3,11 @@
 import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X } from 'lucide-react';
+import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X, MapPin } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
+import { useRegion } from '@/shared/components/region-provider';
+import { RegionModal } from '@/shared/components/region-modal';
 
 const SearchPanel = lazy(() => import('@/shared/components/search-panel').then(m => ({ default: m.SearchPanel })));
 
@@ -24,6 +26,7 @@ interface NavNotification {
 export function SiteNav({ variant = 'public' }: SiteNavProps) {
   const pathname = usePathname();
   const session = useSession();
+  const { region, showModal, setRegion, changeRegion, closeRegionModal, skipRegion } = useRegion();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -99,6 +102,12 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
           </div>
 
           <div className="nav-right">
+            {/* Region button */}
+            <button className="region-btn" onClick={changeRegion}>
+              <MapPin size={15} />
+              <span className="region-btn-text">{region || 'Весь мир'}</span>
+            </button>
+
             <Link href="/dashboard/challenges/new" className="host-link hide-tablet" prefetch={true}>
               Создать челендж
             </Link>
@@ -190,6 +199,8 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
         </div>
       </header>
 
+      <RegionModal isOpen={showModal} onSelect={setRegion} onSkip={skipRegion} />
+
       <style>{`
         .site-header {
           position: sticky; top: 0; z-index: 1000;
@@ -238,6 +249,18 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
         /* Right */
         .nav-right { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
+        .region-btn {
+          display: flex; align-items: center; gap: 6px;
+          padding: 8px 14px; border-radius: 20px;
+          border: 1px solid #ddd; background: white;
+          font-size: 13px; font-weight: 700; color: #333;
+          cursor: pointer; transition: all 0.2s;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+          white-space: nowrap;
+        }
+        .region-btn:hover { border-color: #FF385C; color: #FF385C; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .region-btn svg { color: #FF385C; flex-shrink: 0; }
+        .region-btn-text { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
         .host-link {
           padding: 12px 14px; border-radius: 24px; text-decoration: none; color: #222;
           font-size: 14px; font-weight: 600; transition: background 0.2s;
