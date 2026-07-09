@@ -16,6 +16,23 @@ enum UserStatus {
   DELETED
 }
 
+enum ChallengeFormat {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum ChallengeType {
+  OPEN      // Открытый — участвовать может каждый
+  CLOSED    // Закрытый — организатор согласовывает участие
+}
+
+enum CancellationPolicy {
+  FULL_REFUND_24H   // Полный возврат за 24ч до начала
+  FULL_REFUND_7D    // Полный возврат за 7 дней до начала
+  NO_REFUND         // Без возврата
+}
+
 enum OrganizerType {
   BRAND
   INFLUENCER
@@ -38,12 +55,6 @@ enum ChallengeStatus {
   ONGOING
   COMPLETED
   ARCHIVED
-}
-
-enum ChallengeFormat {
-  ONLINE
-  OFFLINE
-  HYBRID
 }
 
 enum OrganizerMemberRole {
@@ -274,11 +285,21 @@ model Challenge {
   title           String
   description     String?
   category        String?
-  region          String?                // Регион/город для фильтрации
   format          ChallengeFormat        @default(ONLINE)
+  challengeType   ChallengeType         @default(OPEN)
+  country         String?
+  region          String?                // Регион/город для фильтрации
+  city            String?
   address         String?                // Адрес места проведения (для OFFLINE/HYBRID)
   latitude        Float?                 // Широта для карты
   longitude       Float?                 // Долгота для карты
+  startTime       String?                // Время начала (HH:MM)
+  endTime         String?                // Время окончания (HH:MM)
+  requirements    String?                // Требования к участникам
+  minAge          Int?                   // Минимальный возраст
+  maxAge          Int?                   // Максимальный возраст
+  gender          String?                // 'male', 'female', null (все)
+  cancellationPolicy CancellationPolicy  @default(FULL_REFUND_24H)
   maxParticipants Int?                   // null = без ограничений
   isCooperative   Boolean                @default(false)
   startDate       DateTime?

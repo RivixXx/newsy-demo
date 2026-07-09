@@ -1,35 +1,44 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   ChevronLeft, ChevronRight, Plus, Trash2, GripVertical,
   Camera, MapPin, HelpCircle, Type, Trophy, Zap, Users,
   Calendar, DollarSign, Target, X, Upload, Eye,
-  Check, ArrowRight, Award, Settings2, Smartphone, Tablet, Monitor
+  Check, ArrowRight, Award, Settings2, Monitor,
+  Globe, Clock, Lock, AlertTriangle, Star, FileUp, ListChecks,
+  UserX, Map
 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { Spinner } from '@/shared/components/spinner';
 import { createChallengeAction } from '@/modules/challenges/actions/create';
 import { FileUpload } from '@/shared/components/file-upload';
 
-type StepType = 'action' | 'photo' | 'geo' | 'question';
-type Device = 'mobile' | 'tablet' | 'desktop';
+type StepType = 'action' | 'upload' | 'survey';
 
 interface Step {
   id: string; type: StepType; title: string; description: string; points: number;
   options?: string[]; correctIndex?: number; location?: string;
-  verification?: {
-    minTextLength?: number;
-    requirePhoto?: boolean;
-    minPhotoWidth?: number;
-    minPhotoHeight?: number;
-    requireGeo?: boolean;
-    maxGeoAccuracy?: number;
-    requireOption?: boolean;
-  };
+  verification?: Record<string, unknown>;
 }
-interface FormData { title: string; description: string; category: string; coverImage: string; startDate: string; endDate: string; maxParticipants: number; entryFee: number; isCooperative: boolean; steps: Step[]; rewardTitle: string; rewardDescription: string; }
+interface FormData {
+  title: string; description: string; category: string; coverImage: string;
+  // Настройки
+  format: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  challengeType: 'OPEN' | 'CLOSED';
+  country: string; region: string; city: string; address: string;
+  latitude: number | null; longitude: number | null;
+  startDate: string; endDate: string; startTime: string; endTime: string;
+  maxParticipants: number; entryFee: number;
+  requirements: string;
+  minAge: number | ''; maxAge: number | ''; gender: string;
+  cancellationPolicy: 'FULL_REFUND_24H' | 'FULL_REFUND_7D' | 'NO_REFUND';
+  // Этапы
+  steps: Step[];
+  // Награды
+  achievementName: string; rewardTitle: string; rewardDescription: string;
+}
 
 const CATEGORIES = [
   { key: 'sport', label: 'Спорт', icon: <Zap size={18} />, color: '#16a34a' },
@@ -40,59 +49,94 @@ const CATEGORIES = [
 ];
 
 const STEP_TYPES: { key: StepType; icon: React.ReactNode; label: string; desc: string; color: string }[] = [
-  { key: 'action', icon: <Type size={20} />, label: 'Действие', desc: 'Текстовое задание', color: '#FF385C' },
-  { key: 'photo', icon: <Camera size={20} />, label: 'Фото', desc: 'Загрузка фото', color: '#16a34a' },
-  { key: 'geo', icon: <MapPin size={20} />, label: 'Локация', desc: 'Геопозиция', color: '#2563eb' },
-  { key: 'question', icon: <HelpCircle size={20} />, label: 'Вопрос', desc: 'Тест', color: '#d97706' },
+  { key: 'action', icon: <Type size={20} />, label: 'Действие', desc: 'Текстовое задание или инструкция', color: '#FF385C' },
+  { key: 'upload', icon: <FileUp size={20} />, label: 'Загрузка данных', desc: 'Фото, видео, файл, аудио, геолокация', color: '#16a34a' },
+  { key: 'survey', icon: <ListChecks size={20} />, label: 'Опрос', desc: 'Тест или голосование', color: '#2563eb' },
 ];
+
+const CANCELLATION_LABELS: Record<string, { label: string; desc: string }> = {
+  FULL_REFUND_24H: { label: 'Полный возврат за 24 часа', desc: 'Возврат взноса при отмене не позднее чем за 1 день до начала' },
+  FULL_REFUND_7D: { label: 'Полный возврат за 7 дней', desc: 'Возврат взноса при отмене не позднее чем за 7 дней до начала' },
+  NO_REFUND: { label: 'Без возврата', desc: 'Возврат средств не производится' },
+};
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=800&q=80';
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export default function NewChallengePage() {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<FormData>({ title: '', description: '', category: '', coverImage: '', startDate: '', endDate: '', maxParticipants: 100, entryFee: 0, isCooperative: false, steps: [], rewardTitle: '', rewardDescription: '' });
+  const [data, setData] = useState<FormData>({
+    title: '', description: '', category: '', coverImage: '',
+    format: 'ONLINE', challengeType: 'OPEN',
+    country: 'Россия', region: '', city: '', address: '',
+    latitude: null, longitude: null,
+    startDate: '', endDate: '', startTime: '', endTime: '',
+    maxParticipants: 100, entryFee: 0,
+    requirements: '', minAge: '', maxAge: '', gender: '',
+    cancellationPolicy: 'FULL_REFUND_24H',
+    steps: [],
+    achievementName: '', rewardTitle: '', rewardDescription: '',
+  });
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
-  const [device, setDevice] = useState<Device>('mobile');
   const [animDir, setAnimDir] = useState<'in' | 'out'>('in');
+  const [showMapPick, setShowMapPick] = useState(false);
 
   const update = (p: Partial<FormData>) => setData(d => ({ ...d, ...p }));
   const go = (to: number) => { setAnimDir('out'); setTimeout(() => { setStep(to); setAnimDir('in'); }, 180); };
-  const addStep = (type: StepType) => update({ steps: [...data.steps, { id: uid(), type, title: '', description: '', points: 50, options: type === 'question' ? ['', ''] : undefined }] });
+  const addStep = (type: StepType) => update({ steps: [...data.steps, { id: uid(), type, title: '', description: '', points: 50, options: type === 'survey' ? ['', ''] : undefined }] });
   const updateStep = (id: string, p: Partial<Step>) => update({ steps: data.steps.map(s => s.id === id ? { ...s, ...p } : s) });
   const removeStep = (id: string) => update({ steps: data.steps.filter(s => s.id !== id) });
   const moveStep = (f: number, t: number) => { const a = [...data.steps]; const [item] = a.splice(f, 1); a.splice(t, 0, item); update({ steps: a }); };
 
-  const totalPts = data.steps.reduce((s, st) => s + st.points, 0);
-  const canNext = step === 0 ? !!data.title && !!data.category : step === 1 ? data.steps.length > 0 : true;
+  const LABELS = ['Основы', 'Настройки', 'Этапы', 'Награды', 'Обзор'];
+  const catObj = CATEGORIES.find(c => c.key === data.category);
   const progress = ((step + 1) / 5) * 100;
+
+  const canNext = step === 0 ? !!data.title && !!data.category
+    : step === 1 ? true
+    : step === 2 ? data.steps.length > 0
+    : true;
 
   const handlePublish = async () => {
     setPublishing(true); setError(null);
     try {
-      const r = await createChallengeAction({ title: data.title, description: data.description, category: data.category, coverImage: data.coverImage, startDate: data.startDate, endDate: data.endDate, maxParticipants: data.maxParticipants, entryFee: data.entryFee, isCooperative: data.isCooperative, rewardTitle: data.rewardTitle, rewardDescription: data.rewardDescription, steps: data.steps.map(s => ({ type: s.type, title: s.title, description: s.description, points: s.points, options: s.options, correctIndex: s.correctIndex, location: s.location, verification: s.verification })) });
+      const r = await createChallengeAction({
+        title: data.title, description: data.description, category: data.category,
+        coverImage: data.coverImage, startDate: data.startDate, endDate: data.endDate,
+        maxParticipants: data.maxParticipants, entryFee: data.entryFee, isCooperative: false,
+        rewardTitle: data.rewardTitle, rewardDescription: data.rewardDescription,
+        format: data.format, challengeType: data.challengeType,
+        country: data.country, region: data.region, city: data.city, address: data.address,
+        latitude: data.latitude, longitude: data.longitude,
+        startTime: data.startTime, endTime: data.endTime,
+        requirements: data.requirements,
+        minAge: data.minAge === '' ? null : Number(data.minAge),
+        maxAge: data.maxAge === '' ? null : Number(data.maxAge),
+        gender: data.gender || null,
+        cancellationPolicy: data.cancellationPolicy,
+        achievementName: data.achievementName,
+        steps: data.steps.map(s => ({
+          type: s.type, title: s.title, description: s.description,
+          points: s.points, options: s.options, correctIndex: s.correctIndex,
+          location: s.location, verification: s.verification,
+        })),
+      });
       if (r?.error) { setError(r.error); return; }
       if (!r?.success || !r?.challengeId) { setError('Ошибка создания челенджа'); return; }
       window.location.href = `/dashboard/challenges/${r.challengeId}/publish`;
     } catch { setError('Ошибка сети'); } finally { setPublishing(false); }
   };
 
-  const LABELS = ['Основы', 'Этапы', 'Настройки', 'Награда', 'Обзор'];
-  const catObj = CATEGORIES.find(c => c.key === data.category);
-
-  const previewW = device === 'mobile' ? 375 : device === 'tablet' ? 768 : '100%';
-  const previewH = device === 'mobile' ? 667 : device === 'tablet' ? 600 : 500;
-  const previewRadius = device === 'mobile' ? 36 : device === 'tablet' ? 24 : 16;
-  const previewBorder = device === 'mobile' ? 8 : device === 'tablet' ? 6 : 0;
+  const formatLabel = data.format === 'ONLINE' ? 'Онлайн' : data.format === 'OFFLINE' ? 'Офлайн' : 'Гибрид';
+  const typeLabel = data.challengeType === 'OPEN' ? 'Открытый' : 'Закрытый';
 
   return (
     <PageShell>
       <div className="cc">
-        {/* Stepper header */}
         <header className="cc-header">
           <Link href="/dashboard" className="cc-h-back"><ChevronLeft size={18} /> Назад</Link>
           <div className="cc-stepper">
@@ -108,10 +152,10 @@ export default function NewChallengePage() {
         </header>
 
         <div className="cc-layout">
-          {/* Main */}
           <main className="cc-main">
             <div className={`cc-slide ${animDir}`}>
 
+              {/* ─── ШАГ 1: ОСНОВЫ ─── */}
               {step === 0 && (
                 <section className="cc-section">
                   <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#FF385C' }}><Target size={18} color="#fff" /></div><div><h2>Основы челенджа</h2><p>Начни с главного</p></div></div>
@@ -128,17 +172,114 @@ export default function NewChallengePage() {
                   <div className="cc-f"><label>Обложка</label>
                     <FileUpload
                       onUpload={(url) => update({ coverImage: url })}
-                      bucket="challenges"
-                      folder="covers"
-                      accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
-                      maxSize={50}
-                      label="Загрузить обложку (фото или видео до 50 МБ)"
+                      bucket="challenges" folder="covers"
+                      accept="image/jpeg,image/png,image/webp"
+                      maxSize={20} label="Загрузить обложку (фото до 20 МБ)"
                     />
                   </div>
                 </section>
               )}
 
+              {/* ─── ШАГ 2: НАСТРОЙКИ ─── */}
               {step === 1 && (
+                <section className="cc-section">
+                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#2563eb' }}><Settings2 size={18} color="#fff" /></div><div><h2>Настройки</h2><p>Формат, время, ограничения</p></div></div>
+
+                  {/* Формат */}
+                  <div className="cc-f"><label>Формат проведения</label>
+                    <div className="cc-pills">
+                      {([['ONLINE', 'Онлайн', <Globe size={15} />], ['OFFLINE', 'Офлайн', <MapPin size={15} />], ['HYBRID', 'Гибрид', <Globe size={15} />]] as const).map(([val, lbl, icon]) => (
+                        <button key={val} className={`cc-pill ${data.format === val ? 'on' : ''}`} onClick={() => update({ format: val as any })}>{icon} {lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Тип */}
+                  <div className="cc-f"><label>Тип мероприятия</label>
+                    <div className="cc-pills">
+                      <button className={`cc-pill ${data.challengeType === 'OPEN' ? 'on' : ''}`} onClick={() => update({ challengeType: 'OPEN' })}>
+                        <Users size={15} /> Открытый <span className="cc-pill-hint">— участвовать может каждый</span>
+                      </button>
+                      <button className={`cc-pill ${data.challengeType === 'CLOSED' ? 'on' : ''}`} onClick={() => update({ challengeType: 'CLOSED' })}>
+                        <Lock size={15} /> Закрытый <span className="cc-pill-hint">— организатор согласовывает</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* География */}
+                  {data.format !== 'ONLINE' && (
+                    <div className="cc-f"><label>География проведения</label>
+                      <div className="cc-grid-2">
+                        <div className="cc-set"><div className="cc-set-i" style={{ background: '#2563eb12', color: '#2563eb' }}><Globe size={16} /></div><div className="cc-set-b"><label>Страна</label><input value={data.country} onChange={e => update({ country: e.target.value })} placeholder="Россия" /></div></div>
+                        <div className="cc-set"><div className="cc-set-i" style={{ background: '#16a34a12', color: '#16a34a' }}><MapPin size={16} /></div><div className="cc-set-b"><label>Регион</label><input value={data.region} onChange={e => update({ region: e.target.value })} placeholder="Тамбовская область" /></div></div>
+                        <div className="cc-set"><div className="cc-set-i" style={{ background: '#d9770612', color: '#d97706' }}><MapPin size={16} /></div><div className="cc-set-b"><label>Город</label><input value={data.city} onChange={e => update({ city: e.target.value })} placeholder="Тамбов" /></div></div>
+                        <div className="cc-set"><div className="cc-set-i" style={{ background: '#7c3aed12', color: '#7c3aed' }}><Map size={16} /></div><div className="cc-set-b"><label>Адрес</label><input value={data.address} onChange={e => update({ address: e.target.value })} placeholder="ул. Чичерина, 17" /></div></div>
+                      </div>
+                      <div className="cc-map-row">
+                        <button className="cc-map-btn" onClick={() => setShowMapPick(!showMapPick)}>
+                          <MapPin size={14} /> {data.latitude ? 'Координаты установлены' : 'Указать на карте'}
+                        </button>
+                        {data.latitude && data.longitude && (
+                          <span className="cc-map-coords">{data.latitude.toFixed(5)}, {data.longitude.toFixed(5)}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Даты и время */}
+                  <div className="cc-f"><label>Дата и время проведения</label>
+                    <div className="cc-grid-2">
+                      <div className="cc-set"><div className="cc-set-i" style={{ background: '#16a34a12', color: '#16a34a' }}><Calendar size={16} /></div><div className="cc-set-b"><label>Начало</label><input type="date" value={data.startDate} onChange={e => update({ startDate: e.target.value })} /></div></div>
+                      <div className="cc-set"><div className="cc-set-i" style={{ background: '#dc262612', color: '#dc2626' }}><Calendar size={16} /></div><div className="cc-set-b"><label>Окончание</label><input type="date" value={data.endDate} onChange={e => update({ endDate: e.target.value })} /></div></div>
+                      <div className="cc-set"><div className="cc-set-i" style={{ background: '#FF385C12', color: '#FF385C' }}><Clock size={16} /></div><div className="cc-set-b"><label>Время начала</label><input type="time" value={data.startTime} onChange={e => update({ startTime: e.target.value })} /></div></div>
+                      <div className="cc-set"><div className="cc-set-i" style={{ background: '#d9770612', color: '#d97706' }}><Clock size={16} /></div><div className="cc-set-b"><label>Время окончания</label><input type="time" value={data.endTime} onChange={e => update({ endTime: e.target.value })} /></div></div>
+                    </div>
+                  </div>
+
+                  {/* Лимиты */}
+                  <div className="cc-grid-2">
+                    <div className="cc-f"><label>Макс. участников</label><input className="cc-in" type="number" value={data.maxParticipants} onChange={e => update({ maxParticipants: parseInt(e.target.value) || 0 })} /></div>
+                    <div className="cc-f"><label>Взнос (₽)</label><input className="cc-in" type="number" value={data.entryFee} onChange={e => update({ entryFee: parseInt(e.target.value) || 0 })} /></div>
+                  </div>
+
+                  {/* Требования */}
+                  <div className="cc-f"><label>Требования к участникам</label><textarea className="cc-ta" rows={2} placeholder="Необходимые навыки, инвентарь, информация..." value={data.requirements} onChange={e => update({ requirements: e.target.value })} /></div>
+
+                  {/* Ограничения */}
+                  <div className="cc-f"><label>Ограничения для участников</label>
+                    <div className="cc-grid-3">
+                      <div className="cc-f"><label>Мин. возраст</label><input className="cc-in" type="number" min={0} max={120} value={data.minAge} onChange={e => update({ minAge: e.target.value === '' ? '' : parseInt(e.target.value) || '' })} placeholder="—" /></div>
+                      <div className="cc-f"><label>Макс. возраст</label><input className="cc-in" type="number" min={0} max={120} value={data.maxAge} onChange={e => update({ maxAge: e.target.value === '' ? '' : parseInt(e.target.value) || '' })} placeholder="—" /></div>
+                      <div className="cc-f"><label>Пол</label>
+                        <select className="cc-in" value={data.gender} onChange={e => update({ gender: e.target.value })}>
+                          <option value="">Все</option>
+                          <option value="male">Мужской</option>
+                          <option value="female">Женский</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Правила отмены */}
+                  <div className="cc-f"><label>Правила отмены</label>
+                    <div className="cc-cancel-opts">
+                      {Object.entries(CANCELLATION_LABELS).map(([key, { label, desc }]) => (
+                        <button key={key} className={`cc-cancel-opt ${data.cancellationPolicy === key ? 'on' : ''}`} onClick={() => update({ cancellationPolicy: key as any })}>
+                          <div className="cc-cancel-radio">{data.cancellationPolicy === key && <Check size={10} />}</div>
+                          <div><strong>{label}</strong><span>{desc}</span></div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="cc-cancel-note">
+                      <AlertTriangle size={14} />
+                      <span>Средства перечисляются организатору через 3–7 дней после проведения ЧИ. При отмене — возврат участникам согласно выбранной политике.</span>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* ─── ШАГ 3: ЭТАПЫ ─── */}
+              {step === 2 && (
                 <section className="cc-section">
                   <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#16a34a' }}><Target size={18} color="#fff" /></div><div><h2>Этапы</h2><p>{data.steps.length} этапов</p></div></div>
                   <div className="cc-types">{STEP_TYPES.map(t => (
@@ -152,7 +293,9 @@ export default function NewChallengePage() {
                     {data.steps.map((s, i) => {
                       const st = STEP_TYPES.find(t => t.key === s.type)!;
                       return (
-                        <div key={s.id} className={`cc-card ${dragIdx === i ? 'drag' : ''} ${dragOver === i ? 'over' : ''}`} draggable onDragStart={() => setDragIdx(i)} onDragOver={e => { e.preventDefault(); setDragOver(i); }} onDragLeave={() => setDragOver(null)} onDrop={() => { if (dragIdx !== null && dragIdx !== i) moveStep(dragIdx, i); setDragIdx(null); setDragOver(null); }} onDragEnd={() => { setDragIdx(null); setDragOver(null); }}>
+                        <div key={s.id} className={`cc-card ${dragIdx === i ? 'drag' : ''} ${dragOver === i ? 'over' : ''}`}
+                          draggable onDragStart={() => setDragIdx(i)} onDragOver={e => { e.preventDefault(); setDragOver(i); }}
+                          onDragLeave={() => setDragOver(null)} onDrop={() => { if (dragIdx !== null && dragIdx !== i) moveStep(dragIdx, i); setDragIdx(null); setDragOver(null); }} onDragEnd={() => { setDragIdx(null); setDragOver(null); }}>
                           <div className="cc-card-grip"><GripVertical size={14} /></div>
                           <div className="cc-card-num" style={{ background: st.color }}>{i + 1}</div>
                           <div className="cc-card-body">
@@ -160,52 +303,8 @@ export default function NewChallengePage() {
                             <input className="cc-card-title" placeholder="Название этапа..." value={s.title} onChange={e => updateStep(s.id, { title: e.target.value })} />
                             <textarea className="cc-card-desc" rows={1} placeholder="Инструкция..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
                             <div className="cc-card-foot">
-                              {/* Баллы скрыты по решению заказчика — вернуть после утверждения механики */}
-                              {false && (
-                                <div className="cc-card-pts"><Zap size={11} /><input type="number" value={s.points} onChange={e => updateStep(s.id, { points: parseInt(e.target.value) || 0 })} /><span>баллов</span></div>
-                              )}
-                              {s.type === 'question' && <div className="cc-opts">{(s.options || []).map((o, oi) => (<div key={oi} className="cc-opt"><button className={`cc-opt-r ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={9} /></button><input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />{(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}</div>))}<button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button></div>}
-                              {s.type === 'geo' && <input className="cc-card-geo" placeholder="Локация..." value={s.location || ''} onChange={e => updateStep(s.id, { location: e.target.value })} />}
-                            </div>
-
-                            {/* Verification rules */}
-                            <div className="cc-card-verify">
-                              <span className="cc-verify-label">Верификация</span>
-                              {s.type === 'action' && (
-                                <div className="cc-verify-row">
-                                  <label>Мин. длина текста</label>
-                                  <input type="number" min={0} placeholder="0" value={s.verification?.minTextLength || ''}
-                                    onChange={e => updateStep(s.id, { verification: { ...s.verification, minTextLength: parseInt(e.target.value) || undefined } })} />
-                                  <span>символов</span>
-                                </div>
-                              )}
-                              {s.type === 'photo' && (
-                                <>
-                                  <div className="cc-verify-row">
-                                    <label>Мин. ширина</label>
-                                    <input type="number" min={0} placeholder="800" value={s.verification?.minPhotoWidth || ''}
-                                      onChange={e => updateStep(s.id, { verification: { ...s.verification, minPhotoWidth: parseInt(e.target.value) || undefined } })} />
-                                    <span>px</span>
-                                  </div>
-                                  <div className="cc-verify-row">
-                                    <label>Мин. высота</label>
-                                    <input type="number" min={0} placeholder="600" value={s.verification?.minPhotoHeight || ''}
-                                      onChange={e => updateStep(s.id, { verification: { ...s.verification, minPhotoHeight: parseInt(e.target.value) || undefined } })} />
-                                    <span>px</span>
-                                  </div>
-                                </>
-                              )}
-                              {s.type === 'geo' && (
-                                <div className="cc-verify-row">
-                                  <label>Макс. точность</label>
-                                  <input type="number" min={0} placeholder="200" value={s.verification?.maxGeoAccuracy || ''}
-                                    onChange={e => updateStep(s.id, { verification: { ...s.verification, maxGeoAccuracy: parseInt(e.target.value) || undefined } })} />
-                                  <span>метров</span>
-                                </div>
-                              )}
-                              {s.type === 'question' && (
-                                <div className="cc-verify-row"><span className="cc-verify-hint">Выбор ответа обязателен</span></div>
-                              )}
+                              {s.type === 'survey' && <div className="cc-opts">{(s.options || []).map((o, oi) => (<div key={oi} className="cc-opt"><button className={`cc-opt-r ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={9} /></button><input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />{(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}</div>))}<button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button></div>}
+                              {s.type === 'upload' && <span className="cc-verify-hint">Участник загрузит: фото, видео, файл, аудио или геолокацию</span>}
                             </div>
                           </div>
                         </div>
@@ -215,38 +314,32 @@ export default function NewChallengePage() {
                 </section>
               )}
 
-              {step === 2 && (
-                <section className="cc-section">
-                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#2563eb' }}><Settings2 size={18} color="#fff" /></div><div><h2>Настройки</h2><p>Даты, лимиты, формат</p></div></div>
-                  <div className="cc-grid-2">
-                    <div className="cc-set"><div className="cc-set-i" style={{ background: '#FF385C12', color: '#FF385C' }}><Calendar size={16} /></div><div className="cc-set-b"><label>Начало</label><input type="date" value={data.startDate} onChange={e => update({ startDate: e.target.value })} /></div></div>
-                    <div className="cc-set"><div className="cc-set-i" style={{ background: '#dc262612', color: '#dc2626' }}><Calendar size={16} /></div><div className="cc-set-b"><label>Окончание</label><input type="date" value={data.endDate} onChange={e => update({ endDate: e.target.value })} /></div></div>
-                    <div className="cc-set"><div className="cc-set-i" style={{ background: '#16a34a12', color: '#16a34a' }}><Users size={16} /></div><div className="cc-set-b"><label>Макс. участников</label><input type="number" value={data.maxParticipants} onChange={e => update({ maxParticipants: parseInt(e.target.value) || 0 })} /></div></div>
-                    <div className="cc-set"><div className="cc-set-i" style={{ background: '#d9770612', color: '#d97706' }}><DollarSign size={16} /></div><div className="cc-set-b"><label>Взнос (₽)</label><input type="number" value={data.entryFee} onChange={e => update({ entryFee: parseInt(e.target.value) || 0 })} /></div></div>
-                  </div>
-                  {/* Кооперативный скрыт по решению заказчика — вернуть после реализации механики */}
-                  {false && (
-                    <div className="cc-toggle-row"><div className="cc-toggle-info"><Users size={16} /><div><strong>Кооперативный</strong><span>Командное участие</span></div></div><button className={`cc-toggle ${data.isCooperative ? 'on' : ''}`} onClick={() => update({ isCooperative: !data.isCooperative })}><div className="cc-toggle-knob" /></button></div>
-                  )}
-                </section>
-              )}
-
+              {/* ─── ШАГ 4: НАГРАДЫ ─── */}
               {step === 3 && (
                 <section className="cc-section">
-                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#d97706' }}><Award size={18} color="#fff" /></div><div><h2>Награда</h2><p>Что получат победители</p></div></div>
-                  {/* Баннер баллов скрыт по решению заказчика */}
+                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#d97706' }}><Award size={18} color="#fff" /></div><div><h2>Награды и достижения</h2><p>Что получат победители</p></div></div>
+                  <div className="cc-f"><label>Название достижения</label><input className="cc-in" placeholder="Например: Мастер закатов" value={data.achievementName} onChange={e => update({ achievementName: e.target.value })} /><span className="cc-f-hint">Бейдж, который получит участник за прохождение</span></div>
                   <div className="cc-f"><label>Название награды</label><input className="cc-in" placeholder="Кроссовки Nike Air Max" value={data.rewardTitle} onChange={e => update({ rewardTitle: e.target.value })} /></div>
-                  <div className="cc-f"><label>Описание</label><textarea className="cc-ta" rows={2} placeholder="Что получит победитель..." value={data.rewardDescription} onChange={e => update({ rewardDescription: e.target.value })} /></div>
+                  <div className="cc-f"><label>Описание награды</label><textarea className="cc-ta" rows={2} placeholder="Что получит победитель..." value={data.rewardDescription} onChange={e => update({ rewardDescription: e.target.value })} /></div>
                 </section>
               )}
 
+              {/* ─── ШАГ 5: ОБЗОР ─── */}
               {step === 4 && (
                 <section className="cc-section">
                   <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#7c3aed' }}><Eye size={18} color="#fff" /></div><div><h2>Обзор</h2><p>Проверь перед публикацией</p></div></div>
                   <div className="cc-rv">
                     <div className="cc-rv-head"><img src={data.coverImage || PLACEHOLDER} alt="" /><div><span>{catObj?.label || 'Без категории'}</span><h3>{data.title || 'Без названия'}</h3><p>{data.description || 'Без описания'}</p></div></div>
-                    <div className="cc-rv-stats">{[{ v: data.steps.length, l: 'этапов' }, { v: data.maxParticipants, l: 'мест' }, { v: data.entryFee ? `${data.entryFee}₽` : '0₽', l: 'взнос' }].map((s, i) => (<div key={i} className="cc-rv-s"><strong>{s.v}</strong><span>{s.l}</span></div>))}</div>
+                    <div className="cc-rv-settings">
+                      <div className="cc-rv-tag"><Globe size={13} /> {formatLabel}</div>
+                      <div className="cc-rv-tag"><Users size={13} /> {typeLabel}</div>
+                      {data.format !== 'ONLINE' && data.city && <div className="cc-rv-tag"><MapPin size={13} /> {data.city}</div>}
+                      {data.startDate && <div className="cc-rv-tag"><Calendar size={13} /> {data.startDate}{data.startTime ? ` ${data.startTime}` : ''}</div>}
+                      {data.maxParticipants > 0 && <div className="cc-rv-tag"><Users size={13} /> {data.maxParticipants} мест</div>}
+                      {data.entryFee > 0 && <div className="cc-rv-tag"><DollarSign size={13} /> {data.entryFee}₽</div>}
+                    </div>
                     {data.steps.length > 0 && <div className="cc-rv-list">{data.steps.map((s, i) => { const st = STEP_TYPES.find(t => t.key === s.type)!; return <div key={s.id} className="cc-rv-step"><div className="cc-rv-step-n" style={{ background: st.color }}>{i + 1}</div><div><strong>{s.title || 'Без названия'}</strong><span>{st.label}</span></div></div>; })}</div>}
+                    {data.achievementName && <div className="cc-rv-reward"><Star size={16} /><div><strong>{data.achievementName}</strong><span>Достижение</span></div></div>}
                     {data.rewardTitle && <div className="cc-rv-reward"><Award size={16} /><div><strong>{data.rewardTitle}</strong><span>{data.rewardDescription}</span></div></div>}
                   </div>
                   {error && <div className="cc-error">{error}</div>}
@@ -254,7 +347,6 @@ export default function NewChallengePage() {
               )}
             </div>
 
-            {/* Footer nav */}
             <div className="cc-nav">
               {step > 0 && <button className="cc-btn cc-btn--back" onClick={() => go(step - 1)}><ChevronLeft size={15} /> Назад</button>}
               <div style={{ flex: 1 }} />
@@ -265,50 +357,16 @@ export default function NewChallengePage() {
               )}
             </div>
           </main>
-
-          {/* Preview panel */}
-          {preview && (
-            <aside className="cc-aside">
-              <div className="cc-aside-head">
-                <span>Превью</span>
-                <div className="cc-devices">
-                  <button className={`cc-dev ${device === 'mobile' ? 'on' : ''}`} onClick={() => setDevice('mobile')}><Smartphone size={14} /></button>
-                  <button className={`cc-dev ${device === 'tablet' ? 'on' : ''}`} onClick={() => setDevice('tablet')}><Tablet size={14} /></button>
-                  <button className={`cc-dev ${device === 'desktop' ? 'on' : ''}`} onClick={() => setDevice('desktop')}><Monitor size={14} /></button>
-                </div>
-              </div>
-              <div className="cc-viewport" style={{ width: previewW, maxWidth: '100%', borderRadius: previewRadius, border: previewBorder ? `${previewBorder}px solid #1a1a1a` : 'none' }}>
-                <div className="cc-pv-scroll">
-                  <div className="cc-pv-card">
-                    <img src={data.coverImage || PLACEHOLDER} alt="" className="cc-pv-img" />
-                    <div className="cc-pv-body">
-                      <span className="cc-pv-cat">{catObj?.label || 'Категория'}</span>
-                      <h4>{data.title || 'Название челенджа'}</h4>
-                      <p>{data.description || 'Описание...'}</p>
-                      <div className="cc-pv-meta"><span><Target size={10} /> {data.steps.length} этапов</span></div>
-                      {data.steps.length > 0 && <div className="cc-pv-steps">{data.steps.slice(0, 3).map((s, i) => <div key={s.id} className="cc-pv-step"><div className="cc-pv-step-n">{i + 1}</div><span>{s.title || `Этап ${i + 1}`}</span></div>)}{data.steps.length > 3 && <span className="cc-pv-more">+{data.steps.length - 3} ещё</span>}</div>}
-                      {data.rewardTitle && <div className="cc-pv-reward"><Trophy size={12} /> {data.rewardTitle}</div>}
-                      <button className="cc-pv-btn">Участвовать</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
-          )}
         </div>
       </div>
 
       <style>{`
         .cc { min-height: 100vh; display: flex; flex-direction: column; background: #f4f4f5; }
-
-        /* Header */
         .cc-header { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.88); backdrop-filter: blur(16px); border-bottom: 1px solid #e4e4e7; padding: 8px clamp(16px, 3vw, 32px); display: flex; align-items: center; gap: 12px; }
         .cc-h-back { display: flex; align-items: center; gap: 2px; font-size: 13px; font-weight: 700; color: #71717a; text-decoration: none; padding: 7px 10px; border-radius: 8px; transition: all 0.15s; flex-shrink: 0; }
         .cc-h-back:hover { background: #f4f4f5; color: #18181b; }
         .cc-h-preview { display: flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 8px; border: 1px solid #e4e4e7; background: #fff; font-size: 12px; font-weight: 700; color: #71717a; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
         .cc-h-preview:hover { border-color: #a1a1aa; color: #18181b; }
-
-        /* Stepper */
         .cc-stepper { flex: 1; display: flex; align-items: center; position: relative; }
         .cc-s { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 0 10px; position: relative; z-index: 1; }
         .cc-s-circle { width: 28px; height: 28px; border-radius: 50%; background: #e4e4e7; color: #a1a1aa; display: grid; place-items: center; font-size: 11px; font-weight: 800; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
@@ -319,32 +377,24 @@ export default function NewChallengePage() {
         .cc-s.done .cc-s-text { color: #16a34a; }
         .cc-s-track { position: absolute; top: 14px; left: 48px; right: 48px; height: 2px; background: #e4e4e7; z-index: 0; }
         .cc-s-fill { height: 100%; background: linear-gradient(90deg, #16a34a, #FF385C); border-radius: 99px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
-
-        /* Layout */
         .cc-layout { flex: 1; display: flex; }
         .cc-main { flex: 1; max-width: 700px; margin: 0 auto; padding: 24px 16px 100px; min-width: 0; }
         .cc-slide.in { animation: slideIn 0.25s ease both; }
         .cc-slide.out { animation: slideOut 0.15s ease both; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
         @keyframes slideOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-16px); } }
-
-        /* Section */
         .cc-section { display: flex; flex-direction: column; gap: 18px; }
         .cc-sh { display: flex; align-items: center; gap: 12px; }
         .cc-sh-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; }
         .cc-sh h2 { font-size: 18px; font-weight: 800; margin: 0; color: #18181b; }
         .cc-sh p { font-size: 12px; color: #71717a; margin: 1px 0 0; }
-
-        /* Fields */
         .cc-f { display: flex; flex-direction: column; gap: 5px; }
         .cc-f label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa; }
         .cc-f-hint { font-size: 10px; color: #d4d4d8; text-align: right; }
-        .cc-in, .cc-ta { padding: 11px 14px; border: 1.5px solid #e4e4e7; border-radius: 10px; font-size: 14px; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
-        .cc-in:focus, .cc-ta:focus { border-color: #FF385C; box-shadow: 0 0 0 3px rgba(255,56,92,0.06); }
+        .cc-in, .cc-ta, select.cc-in { padding: 11px 14px; border: 1.5px solid #e4e4e7; border-radius: 10px; font-size: 14px; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
+        .cc-in:focus, .cc-ta:focus, select.cc-in:focus { border-color: #FF385C; box-shadow: 0 0 0 3px rgba(255,56,92,0.06); }
         .cc-in--lg { font-size: 17px; font-weight: 700; padding: 14px; }
         .cc-ta { resize: vertical; font-family: inherit; }
-
-        /* Categories */
         .cc-cats { display: flex; gap: 8px; flex-wrap: wrap; }
         .cc-cat { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; transition: all 0.2s; position: relative; }
         .cc-cat:hover { border-color: var(--c); }
@@ -352,33 +402,18 @@ export default function NewChallengePage() {
         .cc-cat-icon { transition: transform 0.2s; }
         .cc-cat.on .cc-cat-icon { transform: scale(1.12); }
         .cc-cat span:not(.cc-cat-icon):not(.cc-cat-ok) { font-size: 13px; font-weight: 700; color: #3f3f46; }
-        .cc-cat-ok { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: animation: pop 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+        .cc-cat-ok { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; animation: pop 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-
-        /* Cover */
-        .cc-cover { border-radius: 12px; overflow: hidden; cursor: pointer; border: 1.5px dashed #d4d4d8; transition: border-color 0.15s; min-height: 120px; }
-        .cc-cover:hover { border-color: #FF385C; }
-        .cc-cover-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 28px; color: #a1a1aa; }
-        .cc-cover-empty span { font-size: 12px; font-weight: 700; }
-        .cc-cover-empty small { font-size: 10px; color: #d4d4d8; }
-        .cc-cover-img { position: relative; }
-        .cc-cover-img img { width: 100%; height: 140px; object-fit: cover; display: block; }
-        .cc-cover-x { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: none; display: grid; place-items: center; cursor: pointer; }
-
-        /* Types */
-        .cc-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .cc-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .cc-type { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; transition: all 0.2s; }
         .cc-type:hover { border-color: #a1a1aa; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
         .cc-type-icon { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
         .cc-type-text { text-align: left; }
         .cc-type-text strong { display: block; font-size: 12px; font-weight: 700; color: #18181b; }
         .cc-type-text span { font-size: 10px; color: #a1a1aa; }
-
-        /* Steps list */
         .cc-list { display: flex; flex-direction: column; gap: 8px; }
         .cc-list-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 36px; color: #d4d4d8; }
         .cc-list-empty p { font-size: 13px; font-weight: 700; color: #a1a1aa; margin: 0; }
-
         .cc-card { display: flex; gap: 8px; background: #fff; border-radius: 12px; padding: 12px; border: 1.5px solid #f0f0f0; transition: all 0.15s; cursor: grab; }
         .cc-card:hover { border-color: #e4e4e7; }
         .cc-card.drag { opacity: 0.4; }
@@ -393,9 +428,6 @@ export default function NewChallengePage() {
         .cc-card-title { border: none; font-size: 13px; font-weight: 700; color: #18181b; outline: none; padding: 0; background: transparent; }
         .cc-card-desc { border: none; font-size: 11px; color: #a1a1aa; outline: none; padding: 0; background: transparent; resize: none; font-family: inherit; }
         .cc-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 1px; }
-        .cc-card-pts { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #a1a1aa; }
-        .cc-card-pts input { width: 44px; border: 1px solid #e4e4e7; border-radius: 5px; padding: 2px 5px; font-size: 11px; font-weight: 700; text-align: center; outline: none; }
-        .cc-card-pts input:focus { border-color: #FF385C; }
         .cc-opts { display: flex; flex-direction: column; gap: 3px; width: 100%; }
         .cc-opt { display: flex; align-items: center; gap: 4px; }
         .cc-opt-r { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #d4d4d8; background: #fff; display: grid; place-items: center; cursor: pointer; color: transparent; transition: all 0.1s; flex-shrink: 0; }
@@ -405,43 +437,36 @@ export default function NewChallengePage() {
         .cc-opt-x { background: none; border: none; color: #d4d4d8; cursor: pointer; }
         .cc-opt-x:hover { color: #dc2626; }
         .cc-opt-add { align-self: flex-start; background: none; border: 1px dashed #FF385C; color: #FF385C; padding: 2px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 2px; }
-        .cc-card-geo { border: 1px solid #e4e4e7; border-radius: 5px; padding: 4px 7px; font-size: 11px; outline: none; width: 100%; }
-        .cc-card-geo:focus { border-color: #FF385C; }
-
-        .cc-card-verify { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f0f0f0; }
-        .cc-verify-label { font-size: 9px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; }
-        .cc-verify-row { display: flex; align-items: center; gap: 6px; }
-        .cc-verify-row label { font-size: 11px; color: #71717a; font-weight: 600; }
-        .cc-verify-row input { width: 56px; border: 1px solid #e4e4e7; border-radius: 5px; padding: 3px 5px; font-size: 11px; font-weight: 700; text-align: center; outline: none; }
-        .cc-verify-row input:focus { border-color: #FF385C; }
-        .cc-verify-row span { font-size: 10px; color: #a1a1aa; }
         .cc-verify-hint { font-size: 11px; color: #16a34a; font-weight: 600; }
-
-        /* Settings */
         .cc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .cc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .cc-set { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 10px; padding: 14px; border: 1.5px solid #f0f0f0; }
         .cc-set-i { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
         .cc-set-b { flex: 1; display: flex; flex-direction: column; gap: 3px; }
         .cc-set-b label { font-size: 10px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; }
         .cc-set-b input { border: 1px solid #e4e4e7; border-radius: 6px; padding: 7px 8px; font-size: 12px; outline: none; width: 100%; }
         .cc-set-b input:focus { border-color: #FF385C; }
-
-        .cc-toggle-row { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 10px; padding: 14px 16px; border: 1.5px solid #f0f0f0; }
-        .cc-toggle-info { display: flex; align-items: center; gap: 10px; color: #71717a; }
-        .cc-toggle-info strong { font-size: 13px; font-weight: 700; color: #18181b; }
-        .cc-toggle-info span { font-size: 11px; color: #a1a1aa; display: block; margin-top: 1px; }
-        .cc-toggle { width: 40px; height: 22px; border-radius: 11px; border: none; background: #d4d4d8; cursor: pointer; position: relative; transition: background 0.2s; padding: 0; }
-        .cc-toggle.on { background: #FF385C; }
-        .cc-toggle-knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12); transition: transform 0.2s cubic-bezier(0.4,0,0.2,1); }
-        .cc-toggle.on .cc-toggle-knob { transform: translateX(18px); }
-
-        /* Reward */
-        .cc-reward-banner { display: flex; align-items: center; gap: 12px; background: linear-gradient(135deg, #fffbeb, #fef3c7); border-radius: 12px; padding: 16px; border: 1px solid #fde68a; }
-        .cc-reward-badge { width: 44px; height: 44px; border-radius: 12px; background: #fff; display: grid; place-items: center; color: #d97706; box-shadow: 0 2px 8px rgba(217,119,6,0.12); }
-        .cc-reward-pts { font-size: 17px; font-weight: 900; color: #92400e; }
-        .cc-reward-sub { font-size: 11px; color: #b45309; }
-
-        /* Review */
+        .cc-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+        .cc-pill { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 10px; border: 1.5px solid #e4e4e7; background: #fff; font-size: 13px; font-weight: 700; color: #3f3f46; cursor: pointer; transition: all 0.2s; }
+        .cc-pill:hover { border-color: #FF385C; }
+        .cc-pill.on { border-color: #FF385C; background: #fff5f7; color: #FF385C; }
+        .cc-pill-hint { font-size: 11px; color: #a1a1aa; font-weight: 500; }
+        .cc-pill.on .cc-pill-hint { color: #e03e5c; }
+        .cc-map-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+        .cc-map-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px dashed #e4e4e7; background: #fff; font-size: 12px; font-weight: 600; color: #71717a; cursor: pointer; transition: all 0.15s; }
+        .cc-map-btn:hover { border-color: #FF385C; color: #FF385C; }
+        .cc-map-coords { font-size: 11px; color: #a1a1aa; font-family: monospace; }
+        .cc-cancel-opts { display: flex; flex-direction: column; gap: 8px; }
+        .cc-cancel-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .cc-cancel-opt:hover { border-color: #a1a1aa; }
+        .cc-cancel-opt.on { border-color: #FF385C; background: #fff5f7; }
+        .cc-cancel-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d4d4d8; display: grid; place-items: center; flex-shrink: 0; margin-top: 1px; color: transparent; transition: all 0.2s; }
+        .cc-cancel-opt.on .cc-cancel-radio { border-color: #FF385C; background: #FF385C; color: #fff; }
+        .cc-cancel-opt strong { font-size: 13px; font-weight: 700; color: #18181b; display: block; }
+        .cc-cancel-opt span { font-size: 11px; color: #a1a1aa; display: block; margin-top: 2px; }
+        .cc-cancel-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; margin-top: 4px; }
+        .cc-cancel-note svg { color: #d97706; flex-shrink: 0; margin-top: 1px; }
+        .cc-cancel-note span { font-size: 11px; color: #92400e; line-height: 1.5; }
         .cc-rv { display: flex; flex-direction: column; gap: 10px; }
         .cc-rv-head { display: flex; gap: 12px; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #f0f0f0; }
         .cc-rv-head img { width: 160px; height: 120px; object-fit: cover; flex-shrink: 0; }
@@ -449,10 +474,8 @@ export default function NewChallengePage() {
         .cc-rv-head span { font-size: 10px; font-weight: 800; color: #FF385C; text-transform: uppercase; }
         .cc-rv-head h3 { font-size: 15px; font-weight: 800; margin: 0; color: #18181b; }
         .cc-rv-head p { font-size: 12px; color: #71717a; margin: 0; }
-        .cc-rv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-        .cc-rv-s { background: #fff; border-radius: 8px; padding: 10px; text-align: center; border: 1px solid #f0f0f0; }
-        .cc-rv-s strong { display: block; font-size: 16px; font-weight: 900; color: #18181b; }
-        .cc-rv-s span { font-size: 10px; color: #a1a1aa; font-weight: 600; }
+        .cc-rv-settings { display: flex; flex-wrap: wrap; gap: 6px; }
+        .cc-rv-tag { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; background: #f4f4f5; font-size: 11px; font-weight: 600; color: #52525b; }
         .cc-rv-list { background: #fff; border-radius: 10px; padding: 12px; border: 1px solid #f0f0f0; display: flex; flex-direction: column; gap: 4px; }
         .cc-rv-step { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
         .cc-rv-step-n { width: 20px; height: 20px; border-radius: 50%; color: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 800; flex-shrink: 0; }
@@ -463,8 +486,6 @@ export default function NewChallengePage() {
         .cc-rv-reward strong { font-size: 12px; }
         .cc-rv-reward span { font-size: 10px; color: #b45309; }
         .cc-error { background: #fef2f2; color: #dc2626; padding: 9px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 1px solid #fecaca; }
-
-        /* Nav */
         .cc-nav { display: flex; align-items: center; gap: 8px; padding: 14px 0; position: sticky; bottom: 0; background: linear-gradient(transparent, #f4f4f5 30%); }
         .cc-btn { display: flex; align-items: center; gap: 4px; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: none; }
         .cc-btn--back { background: #fff; color: #71717a; border: 1px solid #e4e4e7; }
@@ -475,51 +496,8 @@ export default function NewChallengePage() {
         .cc-btn--pub { background: #FF385C; color: #fff; box-shadow: 0 2px 8px rgba(255,56,92,0.25); }
         .cc-btn--pub:hover { background: #E31C5F; transform: translateY(-1px); }
         .cc-btn--pub:disabled { opacity: 0.5; cursor: default; transform: none; }
-
-        /* Preview aside */
-        .cc-aside { width: 380px; flex-shrink: 0; padding: 16px 16px 100px 0; position: sticky; top: 52px; height: fit-content; max-height: calc(100vh - 60px); overflow-y: auto; }
-        .cc-aside-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .cc-aside-head span { font-size: 12px; font-weight: 700; color: #71717a; }
-        .cc-devices { display: flex; gap: 4px; background: #e4e4e7; border-radius: 6px; padding: 2px; }
-        .cc-dev { width: 28px; height: 26px; border-radius: 5px; border: none; background: transparent; color: #a1a1aa; display: grid; place-items: center; cursor: pointer; transition: all 0.15s; }
-        .cc-dev.on { background: #fff; color: #18181b; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        .cc-viewport { background: #1a1a1a; overflow: hidden; margin: 0 auto; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
-        .cc-pv-scroll { max-height: calc(100vh - 160px); overflow-y: auto; }
-        .cc-pv-scroll::-webkit-scrollbar { width: 0; }
-        .cc-pv-card { background: #fff; border-radius: 0; overflow: hidden; }
-        .cc-pv-img { width: 100%; height: 180px; object-fit: cover; display: block; }
-        .cc-pv-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-        .cc-pv-cat { font-size: 10px; font-weight: 800; color: #FF385C; text-transform: uppercase; letter-spacing: 0.05em; }
-        .cc-pv-body h4 { font-size: 16px; font-weight: 800; margin: 0; color: #18181b; line-height: 1.3; }
-        .cc-pv-body p { font-size: 13px; color: #71717a; margin: 0; line-height: 1.5; }
-        .cc-pv-meta { display: flex; gap: 12px; font-size: 11px; color: #a1a1aa; font-weight: 600; }
-        .cc-pv-meta span { display: flex; align-items: center; gap: 3px; }
-        .cc-pv-steps { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
-        .cc-pv-step { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #3f3f46; font-weight: 600; }
-        .cc-pv-step-n { width: 18px; height: 18px; border-radius: 50%; background: #FF385C; color: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 800; flex-shrink: 0; }
-        .cc-pv-more { font-size: 11px; color: #a1a1aa; font-weight: 600; }
-        .cc-pv-reward { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #d97706; background: #fffbeb; padding: 8px 10px; border-radius: 8px; }
-        .cc-pv-btn { width: 100%; padding: 12px; border-radius: 10px; background: #FF385C; color: #fff; font-size: 14px; font-weight: 800; border: none; cursor: pointer; margin-top: 4px; }
-
-        @media (max-width: 1100px) {
-          .cc-aside { width: 320px; }
-        }
-        @media (max-width: 900px) {
-          .cc-aside { display: none; }
-          .cc-types { grid-template-columns: repeat(2, 1fr); }
-          .cc-grid-2 { grid-template-columns: 1fr; }
-          .cc-rv-stats { grid-template-columns: repeat(2, 1fr); }
-          .cc-s-text { display: none; }
-        }
-        @media (max-width: 600px) {
-          .cc-main { padding: 16px 10px 80px; }
-          .cc-sh h2 { font-size: 16px; }
-          .cc-cats { gap: 6px; }
-          .cc-cat { padding: 8px 10px; font-size: 12px; }
-          .cc-rv-head { flex-direction: column; }
-          .cc-rv-head img { width: 100%; height: 100px; }
-          .cc-btn { padding: 9px 14px; font-size: 12px; }
-        }
+        @media (max-width: 900px) { .cc-types { grid-template-columns: 1fr; } .cc-grid-2, .cc-grid-3 { grid-template-columns: 1fr; } .cc-s-text { display: none; } }
+        @media (max-width: 600px) { .cc-main { padding: 16px 10px 80px; } .cc-sh h2 { font-size: 16px; } .cc-cats { gap: 6px; } .cc-cat { padding: 8px 10px; font-size: 12px; } .cc-btn { padding: 9px 14px; font-size: 12px; } }
       `}</style>
     </PageShell>
   );

@@ -9,15 +9,29 @@ export interface CreateChallengeInput {
   description: string;
   category: string;
   format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  challengeType?: 'OPEN' | 'CLOSED';
+  country?: string;
+  region?: string;
+  city?: string;
   address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  startTime?: string;
+  endTime?: string;
   coverImage: string;
   startDate: string;
   endDate: string;
   maxParticipants?: number | null;
   entryFee: number;
   isCooperative: boolean;
+  requirements?: string;
+  minAge?: number | null;
+  maxAge?: number | null;
+  gender?: string | null;
+  cancellationPolicy?: 'FULL_REFUND_24H' | 'FULL_REFUND_7D' | 'NO_REFUND';
   rewardTitle: string;
   rewardDescription: string;
+  achievementName?: string;
   steps: {
     type: string;
     title: string;
@@ -26,15 +40,7 @@ export interface CreateChallengeInput {
     options?: string[];
     correctIndex?: number;
     location?: string;
-    verification?: {
-      minTextLength?: number;
-      requirePhoto?: boolean;
-      minPhotoWidth?: number;
-      minPhotoHeight?: number;
-      requireGeo?: boolean;
-      maxGeoAccuracy?: number;
-      requireOption?: boolean;
-    };
+    verification?: Record<string, unknown>;
   }[];
 }
 
@@ -73,10 +79,23 @@ export async function createChallengeAction(input: CreateChallengeInput) {
         description: input.description?.trim() || null,
         category: input.category || null,
         format: input.format ?? 'ONLINE',
+        challengeType: input.challengeType ?? 'OPEN',
+        country: input.country?.trim() || null,
+        region: input.region?.trim() || null,
+        city: input.city?.trim() || null,
         address: input.address?.trim() || null,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+        startTime: input.startTime || null,
+        endTime: input.endTime || null,
         maxParticipants: input.maxParticipants ?? null,
         isCooperative: input.isCooperative,
         entryFee: input.entryFee || 0,
+        requirements: input.requirements?.trim() || null,
+        minAge: input.minAge ?? null,
+        maxAge: input.maxAge ?? null,
+        gender: input.gender || null,
+        cancellationPolicy: input.cancellationPolicy ?? 'FULL_REFUND_24H',
         startDate: input.startDate ? new Date(input.startDate) : null,
         endDate: input.endDate ? new Date(input.endDate) : null,
         publishPrice: 0,
@@ -86,19 +105,7 @@ export async function createChallengeAction(input: CreateChallengeInput) {
             const config: Record<string, unknown> = {};
             if (s.options) { config.options = s.options; config.correctIndex = s.correctIndex; }
             if (s.location) { config.location = s.location; }
-            if (s.verification) {
-              if (s.verification.minTextLength) config.minTextLength = s.verification.minTextLength;
-              if (s.type === 'photo') {
-                config.requirePhoto = true;
-                if (s.verification.minPhotoWidth) config.minPhotoWidth = s.verification.minPhotoWidth;
-                if (s.verification.minPhotoHeight) config.minPhotoHeight = s.verification.minPhotoHeight;
-              }
-              if (s.type === 'geo') {
-                config.requireGeo = true;
-                if (s.verification.maxGeoAccuracy) config.maxGeoAccuracy = s.verification.maxGeoAccuracy;
-              }
-              if (s.type === 'question') config.requireOption = true;
-            }
+            if (s.verification) Object.assign(config, s.verification);
             return {
               title: s.title || `Этап ${i + 1}`,
               description: s.description || null,
