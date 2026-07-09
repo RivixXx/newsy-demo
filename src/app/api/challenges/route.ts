@@ -45,14 +45,15 @@ export async function GET() {
         category: c.category ?? 'Другое',
         imageUrl:
           c.media[0]?.url ??
-          null, // Не используем внешние зависимости (Unsplash)
+          null,
         participantsCount: c._count.participations,
         isCooperative: c.isCooperative,
         badges,
         isRecommended: false,
         achievement:
           c.steps[0]?.rewardPoints ? `${c.steps[0].rewardPoints} баллов` : 'Участие',
-        location: 'Онлайн',
+        location: c.address || 'Онлайн',
+        region: c.region ?? null,
         endDate: c.endDate
           ? new Date(c.endDate).toLocaleDateString('ru-RU')
           : 'Бессрочно',

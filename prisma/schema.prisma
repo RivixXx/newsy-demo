@@ -274,6 +274,7 @@ model Challenge {
   title           String
   description     String?
   category        String?
+  region          String?                // Регион/город для фильтрации
   format          ChallengeFormat        @default(ONLINE)
   address         String?                // Адрес места проведения (для OFFLINE/HYBRID)
   maxParticipants Int?                   // null = без ограничений

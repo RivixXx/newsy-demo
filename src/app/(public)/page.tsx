@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useRef, useState, useEffect, lazy, Suspense } from 'react';
+import React, { useRef, useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal, MapPin } from 'lucide-react';
 import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
+import { RegionModal } from '@/shared/components/region-modal';
+import { useRegion } from '@/shared/hooks/use-region';
 import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
@@ -315,10 +317,17 @@ function CarouselSection({
 // ─── Главный компонент ─────────────────────────────────────────────────────
 export default function PublicHomePage() {
   const { challenges, loading, isAdmin } = useChallenges();
+  const { region, isLoaded, showModal, setRegion, changeRegion, skipRegion } = useRegion();
   const [activeCategory, setActiveCategory] = useState('Все подряд');
   const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
 
-  const filtered = challenges.filter(c => {
+  // Filter by region: show challenges with no region (online/everywhere) or matching user's region
+  const regionFiltered = useMemo(() => {
+    if (!region) return challenges;
+    return challenges.filter(c => !c.region || c.region === region);
+  }, [challenges, region]);
+
+  const filtered = regionFiltered.filter(c => {
     const matchCat = activeCategory === 'Все подряд' || c.category === activeCategory;
     return matchCat;
   });
@@ -326,10 +335,10 @@ export default function PublicHomePage() {
   const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
 
   if (activeCategory === 'Все подряд') {
-    const recommended = challenges.filter(c => c.isRecommended);
+    const recommended = regionFiltered.filter(c => c.isRecommended);
     if (recommended.length) sections.push({ title: 'Рекомендовано', challenges: recommended, direction: 'right' });
     CATEGORY_KEYS.forEach((key, i) => {
-      const group = challenges.filter(c => c.category === key);
+      const group = regionFiltered.filter(c => c.category === key);
       if (group.length) sections.push({ title: CATEGORY_LABELS[key], challenges: group, direction: i % 2 === 0 ? 'left' : 'right' });
     });
   }
@@ -344,6 +353,9 @@ export default function PublicHomePage() {
 
   return (
     <PageShell variant="public">
+      {/* Модалка выбора региона */}
+      <RegionModal isOpen={showModal} onSelect={setRegion} onSkip={skipRegion} />
+
       {/* Попап-баннер */}
       <AnnouncementPopup />
 
@@ -358,6 +370,25 @@ export default function PublicHomePage() {
       )}
 
       <main className="catalog-main">
+
+        {/* Регион */}
+        {region && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: -8 }}>
+            <button
+              onClick={changeRegion}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+                borderRadius: 99, border: '1.5px solid #e5e7eb', background: 'white',
+                fontSize: 13, fontWeight: 700, color: '#333', cursor: 'pointer',
+                transition: 'border-color 0.2s',
+              }}
+            >
+              <MapPin size={14} color="#FF385C" />
+              {region}
+              <span style={{ fontSize: 11, color: '#aaa' }}>&#x2716;</span>
+            </button>
+          </div>
+        )}
 
         {/* Категории */}
         <div className="categories-scroll">

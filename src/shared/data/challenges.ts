@@ -12,6 +12,7 @@ export interface CatalogChallenge {
   achievement: string;
   reward: string;
   location: string;
+  region?: string | null;
   endDate: string;
   description: string;
   requirements: string;
@@ -26,7 +27,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80',
     participantsCount: 45, maxParticipants: 60, isJoined: false, badges: ['hot'], isRecommended: true,
     achievement: 'Стартап-пионер', reward: 'Бесплатный офис в Сколково на 1 мес.',
-    location: 'Москва', endDate: '25 июля 2026',
+    location: 'Москва', region: 'Москва', endDate: '25 июля 2026',
     description: 'Создай рабочий прототип продукта за 48 часов в команде. Менторы Сколково помогут на всех этапах.',
     requirements: 'Участники от 18 лет. Команда 2-5 человек. Наличие ноутбука.',
     refundPolicy: 'Возврат взноса при отмене за 72 часа до старта. После — средства не возвращаются.',
@@ -50,7 +51,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=400&q=80',
     participantsCount: 150, maxParticipants: 200, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Железный кандидат', reward: 'Сертификат HR Academy',
-    location: 'Москва / Онлайн', endDate: '5 августа 2026',
+    location: 'Москва / Онлайн', region: 'Москва', endDate: '5 августа 2026',
     description: 'Пройди минимум 5 реальных собеседований в IT-компании за 7 дней и получи экспертную обратную связь.',
     requirements: 'Резюме на hh.ru. Опыт в IT от 6 месяцев.',
     refundPolicy: 'Возврат взноса при отмене за 48 часов. Дисквалификация при нечестном прохождении.',
@@ -182,7 +183,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=400&q=80',
     participantsCount: 120, maxParticipants: 200, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Утренний бегун', reward: 'Кроссовки Nike Air Max (на выбор)',
-    location: 'Парк Горького, Москва', endDate: '27 июля 2026',
+    location: 'Парк Горького, Москва', region: 'Москва', endDate: '27 июля 2026',
     description: 'Пробеги 5 км вместе с Nike Run Club. Старт в 7:00. Темп свободный.',
     requirements: 'Любой уровень подготовки. Спортивная одежда. Приложение Nike Run.',
     refundPolicy: 'Возврат при отмене за 3 дня. После — средства не возвращаются.',
@@ -204,7 +205,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=400&q=80',
     participantsCount: 15, maxParticipants: 50, isJoined: false, badges: ['cooperative'], isRecommended: true,
     achievement: 'Покоритель Волги', reward: 'Экипировка Arena на ₽25 000',
-    location: 'Волгоград', endDate: '3 августа 2026',
+    location: 'Волгоград', region: 'Волгоград', endDate: '3 августа 2026',
     description: 'Групповой заплыв через Волгу. Сопровождение катером. Медицинский контроль.',
     requirements: 'Подтверждённое умение плавать на 2 км+. Медсправка.',
     refundPolicy: 'Возврат при отмене за 7 дней. Медотвод — полный возврат.',
@@ -226,7 +227,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: 'https://images.unsplash.com/photo-1519567281794-66f81156ba2a?auto=format&fit=crop&w=400&q=80',
     participantsCount: 15, maxParticipants: 30, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Охотник за стикерами', reward: 'Сертификат ТЦ Триумф на ₽5 000',
-    location: 'ТЦ Триумф, Москва', endDate: '28 июля 2026',
+    location: 'ТЦ Триумф, Москва', region: 'Москва', endDate: '28 июля 2026',
     description: 'Собери 10 скрытых стикеров, спрятанных на территории ТЦ Триумф. Квест для всей семьи.',
     requirements: 'Смартфон. Любой возраст.',
     refundPolicy: 'Бесплатное участие.',
@@ -281,7 +282,8 @@ export async function getChallengeFromDb(id: string): Promise<CatalogChallenge |
       isRecommended: false,
       achievement: challenge.steps[0]?.rewardPoints ? `${challenge.steps[0].rewardPoints} баллов` : 'Участие',
       reward: 'Награда',
-      location: 'Онлайн',
+      location: challenge.address || 'Онлайн',
+      region: challenge.region || null,
       endDate: challenge.endDate ? new Date(challenge.endDate).toLocaleDateString('ru-RU') : 'Бессрочно',
       description: challenge.description || '',
       requirements: '',
