@@ -41,7 +41,7 @@ export function SiteFooter() {
             </Link>
             <p className="footer-tagline">
               Платформа интерактивных челенджей.
-              <br />Растей над собой, соревнуйся, побеждай.
+              <br />Соревнуйся, выполняй задания, побеждай.
             </p>
             <div className="footer-socials">
               <a href="#" className="social-btn" aria-label="Telegram">

@@ -58,7 +58,7 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
           </Link>
           <p className="brand-subtitle" style={s.brandSubtitle}>
             Платформа интерактивных челленджей.
-            <br />Растей над собой, соревнуйся с друзьями и получай реальные награды.
+            <br />Соревнуйся, выполняй задания и получай награды.
           </p>
           <div className="stats-row" style={s.statsRow}>
             <Stat num="50k+" label="участников" />
