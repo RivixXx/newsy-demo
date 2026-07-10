@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { notifyAdminsNewChallenge } from '@/lib/notification-bus';
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,6 +42,13 @@ export async function POST(req: NextRequest) {
       where: { id: challengeId },
       data: { status: 'PENDING_REVIEW' },
     });
+
+    // Уведомить админов о новом ЧИ на модерации
+    const organizerName = challenge.organizer.members[0]?.userId
+      ? (await prisma.user.findUnique({ where: { id: challenge.organizer.members[0].userId }, select: { firstName: true, lastName: true } }))
+      : null;
+    const orgName = organizerName ? `${organizerName.firstName} ${organizerName.lastName}`.trim() : challenge.organizer.name;
+    notifyAdminsNewChallenge(challengeId, challenge.title, orgName);
 
     return NextResponse.json({ success: true, status: 'PENDING_REVIEW' });
   } catch (error: any) {

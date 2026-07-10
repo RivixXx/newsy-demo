@@ -8,6 +8,7 @@ import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { useRegion } from '@/shared/components/region-provider';
 import { RegionModal } from '@/shared/components/region-modal';
+import { useSSE } from '@/shared/hooks/use-sse';
 
 const SearchPanel = lazy(() => import('@/shared/components/search-panel').then(m => ({ default: m.SearchPanel })));
 
@@ -35,18 +36,23 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!session) return;
-    const loadCount = () => {
-      fetch('/api/notifications/unread-count')
-        .then(r => r.json())
-        .then(d => setUnreadCount(d.count || 0))
-        .catch(() => {});
-    };
-    loadCount();
-    const interval = setInterval(loadCount, 30000);
-    return () => clearInterval(interval);
-  }, [session]);
+  // Real-time notifications via SSE
+  useSSE({
+    onUnreadCount: (count) => setUnreadCount(count),
+    onNotification: (data) => {
+      setNotifications(prev => [{
+        id: data.id as string || Date.now().toString(),
+        title: data.title as string || '',
+        body: data.body as string || '',
+        readAt: null,
+        createdAt: data.createdAt as string || new Date().toISOString(),
+      }, ...prev]);
+      setUnreadCount(c => c + 1);
+    },
+    onModerationNeeded: () => {
+      setUnreadCount(c => c + 1);
+    },
+  });
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
