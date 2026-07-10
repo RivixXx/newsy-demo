@@ -22,7 +22,7 @@ export async function GET() {
       include: {
         organizer: { select: { name: true } },
         media: { orderBy: { sortOrder: 'asc' }, take: 1 },
-        steps: { select: { title: true, type: true, rewardPoints: true }, orderBy: { order: 'asc' } },
+        steps: { select: { title: true, type: true, rewardPoints: true, description: true }, orderBy: { order: 'asc' } },
         _count: { select: { participations: true } },
       },
       orderBy: { createdAt: 'desc' },

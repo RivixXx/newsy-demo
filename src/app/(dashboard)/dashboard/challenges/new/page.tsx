@@ -312,7 +312,7 @@ export default function NewChallengePage() {
                           <div className="cw-step-body">
                             <div className="cw-step-top"><span className="cw-step-badge" style={{ color: st.color }}>{st.icon} {st.label}</span><button className="cw-step-del" onClick={() => removeStep(s.id)}><Trash2 size={13} /></button></div>
                             <input className="cw-step-title" placeholder="Название этапа..." value={s.title} onChange={e => updateStep(s.id, { title: e.target.value })} />
-                            <textarea className="cw-step-desc" rows={1} placeholder="Инструкция для участника..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
+                            <textarea className="cw-step-desc" rows={2} placeholder="Инструкция для участника..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
                             <input className="cw-step-criteria" placeholder="Критерии приёма при проверке..." value={s.criteria || ''} onChange={e => updateStep(s.id, { criteria: e.target.value })} />
                             {s.type === 'survey' && (
                               <div className="cw-opts">
@@ -542,7 +542,7 @@ const globalCSS = `
   .cw-step-del { background: none; border: none; color: #d1d5db; cursor: pointer; padding: 4px; border-radius: 6px; transition: all 0.15s; }
   .cw-step-del:hover { color: #ef4444; background: #fef2f2; }
   .cw-step-title { border: none; font-size: 14px; font-weight: 700; color: #111; background: transparent; outline: none; }
-  .cw-step-desc { border: none; font-size: 12px; color: #9ca3af; background: transparent; outline: none; resize: none; font-family: inherit; }
+  .cw-step-desc { border: none; font-size: 12px; color: #9ca3af; background: transparent; outline: none; resize: vertical; font-family: inherit; min-height: 32px; }
   .cw-step-criteria { border: 1px dashed #d1d5db; border-radius: 6px; padding: 5px 8px; font-size: 11px; color: #9ca3af; background: white; outline: none; font-style: italic; }
   .cw-step-criteria:focus { border-color: #FF385C; border-style: solid; color: #111; }
   .cw-opts { display: flex; flex-direction: column; gap: 4px; }

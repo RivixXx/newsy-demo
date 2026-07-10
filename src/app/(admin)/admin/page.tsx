@@ -23,11 +23,21 @@ interface PendingChallenge {
   title: string;
   description: string | null;
   category: string | null;
+  format: string;
+  challengeType: string;
+  address: string | null;
+  city: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  maxParticipants: number | null;
+  entryFee: number;
+  requirements: string | null;
+  cancellationPolicy: string;
   status: string;
   createdAt: string;
   organizer: { name: string };
   media: { url: string }[];
-  steps: { title: string; type: string; rewardPoints: number }[];
+  steps: { title: string; type: string; rewardPoints: number; description: string | null }[];
   _count: { participations: number };
 }
 
@@ -36,12 +46,13 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [pendingChallenges, setPendingChallenges] = useState<PendingChallenge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'users' | 'challenges' | 'payments' | 'moderation' | 'ads'>('overview');
+  const [tab, setTab] = useState<'overview' | 'users' | 'organizations' | 'challenges' | 'payments' | 'moderation' | 'ads'>('overview');
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [rejectModal, setRejectModal] = useState<{ challengeId: string; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [adConfig, setAdConfig] = useState<Record<string, string | boolean | string[]>>({});
   const [adSaving, setAdSaving] = useState(false);
+  const [organizations, setOrganizations] = useState<{ id: string; name: string; inn: string | null; type: string; status: string; memberCount: number; challengeCount: number; createdAt: string }[]>([]);
   const { toast } = useToast();
 
   const isAdmin = session?.user?.roles?.includes('admin');
@@ -67,6 +78,11 @@ export default function AdminPage() {
     fetch('/api/admin/ad-config')
       .then(r => r.json())
       .then(d => setAdConfig(d))
+      .catch(() => {});
+
+    fetch('/api/admin/organizations')
+      .then(r => r.json())
+      .then(d => setOrganizations(d.organizations || []))
       .catch(() => {});
   }, [isAdmin]);
 
@@ -161,9 +177,9 @@ export default function AdminPage() {
         </header>
 
         <div className="admin-tabs">
-          {(['overview', 'moderation', 'users', 'challenges', 'payments', 'ads'] as const).map(t => (
+          {(['overview', 'moderation', 'users', 'organizations', 'challenges', 'payments', 'ads'] as const).map(t => (
             <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-              {t === 'overview' ? 'Обзор' : t === 'moderation' ? `Модерация (${pendingChallenges.length})` : t === 'users' ? 'Пользователи' : t === 'challenges' ? 'Челленджи' : t === 'payments' ? 'Платежи' : 'Реклама'}
+              {t === 'overview' ? 'Обзор' : t === 'moderation' ? `Модерация (${pendingChallenges.length})` : t === 'users' ? 'Пользователи' : t === 'organizations' ? 'Организации' : t === 'challenges' ? 'Челленджи' : t === 'payments' ? 'Платежи' : 'Реклама'}
             </button>
           ))}
         </div>
@@ -322,6 +338,32 @@ export default function AdminPage() {
           </div>
         )}
 
+        {tab === 'organizations' && (
+          <div className="tab-content">
+            <div className="list-card full">
+              <h3>Организации ({organizations.length})</h3>
+              {organizations.length === 0 ? (
+                <div style={{ padding: 24, textAlign: 'center', color: '#888', fontSize: 13 }}>
+                  Нет зарегистрированных организаций
+                </div>
+              ) : (
+                organizations.map(o => (
+                  <div key={o.id} className="list-row">
+                    <div className="list-info">
+                      <span className="list-name">
+                        {o.name}
+                        {o.inn && <span className="org-badge" style={{ marginLeft: 8, background: '#dbeafe', color: '#2563eb' }}>ИНН {o.inn}</span>}
+                      </span>
+                      <span className="list-meta">{o.type} · {o.memberCount} участников · {o.challengeCount} челленджей · {new Date(o.createdAt).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                    <span className={`status-badge ${o.status === 'ACTIVE' ? 'active' : 'pending'}`}>{o.status}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {tab === 'moderation' && (
           <div className="tab-content">
             {pendingChallenges.length === 0 ? (
@@ -341,14 +383,28 @@ export default function AdminPage() {
                       <div className="mod-meta">
                         <span>Организатор: <strong>{ch.organizer.name}</strong></span>
                         <span>Категория: <strong>{ch.category || '—'}</strong></span>
-                        <span>Этапов: <strong>{ch.steps.length}</strong></span>
+                        <span>Формат: <strong>{ch.format}</strong></span>
+                        <span>Тип: <strong>{ch.challengeType === 'OPEN' ? 'Открытый' : 'Закрытый'}</strong></span>
+                        {ch.city && <span>Город: <strong>{ch.city}</strong></span>}
+                        {ch.startDate && <span>Начало: <strong>{new Date(ch.startDate).toLocaleDateString('ru-RU')}</strong></span>}
+                        {ch.endDate && <span>Окончание: <strong>{new Date(ch.endDate).toLocaleDateString('ru-RU')}</strong></span>}
+                        <span>Мест: <strong>{ch.maxParticipants || '∞'}</strong></span>
+                        <span>Взнос: <strong>{ch.entryFee || 0}₽</strong></span>
                         <span>{new Date(ch.createdAt).toLocaleDateString('ru-RU')}</span>
                       </div>
+                      {ch.requirements && (
+                        <div className="mod-detail"><strong>Требования:</strong> {ch.requirements}</div>
+                      )}
                     </div>
                   </div>
                   <div className="mod-steps">
+                    <strong style={{ fontSize: 12, color: '#666' }}>Этапы ({ch.steps.length}):</strong>
                     {ch.steps.map((s, i) => (
-                      <span key={i} className="mod-step-badge">{s.title} ({s.rewardPoints} б.)</span>
+                      <div key={i} className="mod-step-item">
+                        <span className="mod-step-badge">{s.title}</span>
+                        <span className="mod-step-type">{s.type}</span>
+                        {s.description && <span className="mod-step-desc">{s.description}</span>}
+                      </div>
                     ))}
                   </div>
                   <div className="mod-actions">
@@ -731,6 +787,11 @@ export default function AdminPage() {
           .mod-meta strong { color: #333; }
           .mod-steps { display: flex; gap: 6px; flex-wrap: wrap; }
           .mod-step-badge { padding: 4px 10px; border-radius: 8px; background: #f3f4f6; font-size: 11px; font-weight: 600; color: #555; }
+          .mod-detail { font-size: 12px; color: #555; margin-top: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 8px; line-height: 1.5; }
+          .mod-detail strong { color: #333; }
+          .mod-step-item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+          .mod-step-type { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; }
+          .mod-step-desc { font-size: 11px; color: #888; }
           .mod-actions { display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid #f5f5f5; }
           .mod-btn { display: flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: all 0.15s; }
           .mod-btn:disabled { opacity: 0.5; cursor: default; }
