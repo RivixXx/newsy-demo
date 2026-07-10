@@ -18,7 +18,7 @@ export interface ChallengeStage {
   id: string;
   title: string;
   description: string;
-  type: 'ДЕЙСТВИЕ' | 'ГЕО' | 'ФОТО' | 'ФАЙЛ' | 'ВОПРОС';
+  type: 'ДЕЙСТВИЕ' | 'ГЕО' | 'ФОТО' | 'ФАЙЛ' | 'ВОПРОС' | 'ЗАГРУЗКА' | 'ОПРОС';
   status: StageStatus;
   config?: Record<string, unknown> | null;
 }
