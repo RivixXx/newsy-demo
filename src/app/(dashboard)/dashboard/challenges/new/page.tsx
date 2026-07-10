@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { Spinner } from '@/shared/components/spinner';
+import { useToast } from '@/shared/components/toast';
 import { createChallengeAction } from '@/modules/challenges/actions/create';
 import { FileUpload } from '@/shared/components/file-upload';
 
@@ -20,6 +21,7 @@ type StepType = 'action' | 'upload' | 'survey';
 interface Step {
   id: string; type: StepType; title: string; description: string; points: number;
   options?: string[]; correctIndex?: number; location?: string;
+  criteria?: string;
   verification?: Record<string, unknown>;
 }
 interface FormData {
@@ -33,11 +35,12 @@ interface FormData {
   maxParticipants: number; entryFee: number;
   requirements: string;
   minAge: number | ''; maxAge: number | ''; gender: string;
-  cancellationPolicy: 'FULL_REFUND_24H' | 'FULL_REFUND_7D' | 'NO_REFUND';
   // Этапы
   steps: Step[];
   // Награды
-  achievementName: string; rewardTitle: string; rewardDescription: string;
+  selectedAchievements: string[]; // keys достижений
+  customAchievement: { name: string; description: string; icon: string } | null;
+  rewardTitle: string; rewardDescription: string;
 }
 
 const CATEGORIES = [
@@ -54,11 +57,27 @@ const STEP_TYPES: { key: StepType; icon: React.ReactNode; label: string; desc: s
   { key: 'survey', icon: <ListChecks size={20} />, label: 'Опрос', desc: 'Тест или голосование', color: '#2563eb' },
 ];
 
-const CANCELLATION_LABELS: Record<string, { label: string; desc: string }> = {
-  FULL_REFUND_24H: { label: 'Полный возврат за 24 часа', desc: 'Возврат взноса при отмене не позднее чем за 1 день до начала' },
-  FULL_REFUND_7D: { label: 'Полный возврат за 7 дней', desc: 'Возврат взноса при отмене не позднее чем за 7 дней до начала' },
-  NO_REFUND: { label: 'Без возврата', desc: 'Возврат средств не производится' },
-};
+const CANCELLATION_LABELS: Record<string, { label: string; desc: string }> = {};
+
+const PRESET_ACHIEVEMENTS = [
+  { key: 'first_step', name: 'Первый шаг', icon: '👣' },
+  { key: 'photo_master', name: 'Мастер фото', icon: '📸' },
+  { key: 'explorer', name: 'Исследователь', icon: '🧭' },
+  { key: 'speed_demon', name: 'Демон скорости', icon: '⚡' },
+  { key: 'social_butterfly', name: 'Социальная бабочка', icon: '🦋' },
+  { key: 'streak_master', name: 'Мастер серии', icon: '🔥' },
+  { key: 'team_player', name: 'Командный игрок', icon: '🤝' },
+  { key: 'creative_soul', name: 'Творческая душа', icon: '🎨' },
+  { key: 'tech_wizard', name: 'Техно-волшебник', icon: '🧙' },
+  { key: 'athlete', name: 'Атлет', icon: '🏋️' },
+  { key: 'scholar', name: 'Учёный', icon: '🎓' },
+  { key: 'quest_hunter', name: 'Охотник за квестами', icon: '🗺️' },
+  { key: 'perfectionist', name: 'Перфекционист', icon: '💎' },
+  { key: 'early_bird', name: 'Ранняя пташка', icon: '🐦' },
+  { key: 'night_owl', name: 'Ночная сова', icon: '🦉' },
+];
+
+const ACHIEVEMENT_ICONS = ['🏆', '🎯', '🌟', '💪', '🎖️', '🏅', '🥇', '🥈', '🥉', '⭐', '✨', '🎪', '🎭', '🎬', '🎤', '🎵', '📚', '💻', '🎮', '🏃', '🚴', '🏊', '🧗', '🎯', '♟️', '🎸', '🎹', '🖌️', '📷', '🎬'];
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=800&q=80';
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -73,9 +92,10 @@ export default function NewChallengePage() {
     startDate: '', endDate: '', startTime: '', endTime: '',
     maxParticipants: 100, entryFee: 0,
     requirements: '', minAge: '', maxAge: '', gender: '',
-    cancellationPolicy: 'FULL_REFUND_24H',
     steps: [],
-    achievementName: '', rewardTitle: '', rewardDescription: '',
+    selectedAchievements: [],
+    customAchievement: null,
+    rewardTitle: '', rewardDescription: '',
   });
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
@@ -84,6 +104,7 @@ export default function NewChallengePage() {
   const [preview, setPreview] = useState(false);
   const [animDir, setAnimDir] = useState<'in' | 'out'>('in');
   const [showMapPick, setShowMapPick] = useState(false);
+  const { toast } = useToast();
 
   const update = (p: Partial<FormData>) => setData(d => ({ ...d, ...p }));
   const go = (to: number) => { setAnimDir('out'); setTimeout(() => { setStep(to); setAnimDir('in'); }, 180); };
@@ -117,12 +138,12 @@ export default function NewChallengePage() {
         minAge: data.minAge === '' ? null : Number(data.minAge),
         maxAge: data.maxAge === '' ? null : Number(data.maxAge),
         gender: data.gender || null,
-        cancellationPolicy: data.cancellationPolicy,
-        achievementName: data.achievementName,
+        selectedAchievements: data.selectedAchievements,
+        customAchievement: data.customAchievement,
         steps: data.steps.map(s => ({
           type: s.type, title: s.title, description: s.description,
           points: s.points, options: s.options, correctIndex: s.correctIndex,
-          location: s.location, verification: s.verification,
+          location: s.location, criteria: s.criteria, verification: s.verification,
         })),
       });
       if (r?.error) { setError(r.error); return; }
@@ -260,20 +281,9 @@ export default function NewChallengePage() {
                     </div>
                   </div>
 
-                  {/* Правила отмены */}
-                  <div className="cc-f"><label>Правила отмены</label>
-                    <div className="cc-cancel-opts">
-                      {Object.entries(CANCELLATION_LABELS).map(([key, { label, desc }]) => (
-                        <button key={key} className={`cc-cancel-opt ${data.cancellationPolicy === key ? 'on' : ''}`} onClick={() => update({ cancellationPolicy: key as any })}>
-                          <div className="cc-cancel-radio">{data.cancellationPolicy === key && <Check size={10} />}</div>
-                          <div><strong>{label}</strong><span>{desc}</span></div>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="cc-cancel-note">
-                      <AlertTriangle size={14} />
-                      <span>Средства перечисляются организатору через 3–7 дней после проведения ЧИ. При отмене — возврат участникам согласно выбранной политике.</span>
-                    </div>
+                  <div className="cc-cancel-note">
+                    <AlertTriangle size={14} />
+                    <span>Правила отмены устанавливаются площадкой при модерации. Средства перечисляются организатору через 3–7 дней после проведения.</span>
                   </div>
                 </section>
               )}
@@ -302,6 +312,9 @@ export default function NewChallengePage() {
                             <div className="cc-card-top"><span className="cc-card-badge" style={{ color: st.color, background: `${st.color}10` }}>{st.icon} {st.label}</span><button className="cc-card-del" onClick={() => removeStep(s.id)}><Trash2 size={13} /></button></div>
                             <input className="cc-card-title" placeholder="Название этапа..." value={s.title} onChange={e => updateStep(s.id, { title: e.target.value })} />
                             <textarea className="cc-card-desc" rows={1} placeholder="Инструкция..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
+                            <div className="cc-card-criteria">
+                              <input className="cc-criteria-input" placeholder="Критерии приёма (при проверке организатором)" value={s.criteria || ''} onChange={e => updateStep(s.id, { criteria: e.target.value })} />
+                            </div>
                             <div className="cc-card-foot">
                               {s.type === 'survey' && <div className="cc-opts">{(s.options || []).map((o, oi) => (<div key={oi} className="cc-opt"><button className={`cc-opt-r ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={9} /></button><input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />{(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}</div>))}<button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button></div>}
                               {s.type === 'upload' && <span className="cc-verify-hint">Участник загрузит: фото, видео, файл, аудио или геолокацию</span>}
@@ -317,8 +330,58 @@ export default function NewChallengePage() {
               {/* ─── ШАГ 4: НАГРАДЫ ─── */}
               {step === 3 && (
                 <section className="cc-section">
-                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#d97706' }}><Award size={18} color="#fff" /></div><div><h2>Награды и достижения</h2><p>Что получат победители</p></div></div>
-                  <div className="cc-f"><label>Название достижения</label><input className="cc-in" placeholder="Например: Мастер закатов" value={data.achievementName} onChange={e => update({ achievementName: e.target.value })} /><span className="cc-f-hint">Бейдж, который получит участник за прохождение</span></div>
+                  <div className="cc-sh"><div className="cc-sh-icon" style={{ background: '#d97706' }}><Award size={18} color="#fff" /></div><div><h2>Награды и достижения</h2><p>Выбери достижения и награду</p></div></div>
+
+                  {/* Достижения */}
+                  <div className="cc-f"><label>Достижения</label>
+                    <div className="cc-ach-grid">
+                      {PRESET_ACHIEVEMENTS.map(a => {
+                        const selected = data.selectedAchievements.includes(a.key);
+                        return (
+                          <button key={a.key} className={`cc-ach ${selected ? 'on' : ''}`} onClick={() => {
+                            const next = selected
+                              ? data.selectedAchievements.filter(k => k !== a.key)
+                              : [...data.selectedAchievements, a.key];
+                            update({ selectedAchievements: next });
+                          }}>
+                            <span className="cc-ach-icon">{a.icon}</span>
+                            <span className="cc-ach-name">{a.name}</span>
+                            {selected && <span className="cc-ach-ok"><Check size={10} /></span>}
+                          </button>
+                        );
+                      })}
+                      {/* Кнопка «Создать» */}
+                      <button className="cc-ach cc-ach--add" onClick={() => update({ customAchievement: { name: '', description: '', icon: '🏆' } })}>
+                        <span className="cc-ach-icon">+</span>
+                        <span className="cc-ach-name">Добавить достижение</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Кастомное достижение (модалка) */}
+                  {data.customAchievement && (
+                    <div className="cc-custom-ach">
+                      <h4>Новое достижение</h4>
+                      <div className="cc-f"><label>Название</label><input className="cc-in" value={data.customAchievement.name} onChange={e => update({ customAchievement: { ...data.customAchievement!, name: e.target.value } })} placeholder="Например: Покоритель вершин" /></div>
+                      <div className="cc-f"><label>За что</label><input className="cc-in" value={data.customAchievement.description} onChange={e => update({ customAchievement: { ...data.customAchievement!, description: e.target.value } })} placeholder="Описание достижения" /></div>
+                      <div className="cc-f"><label>Иконка</label>
+                        <div className="cc-icon-grid">{ACHIEVEMENT_ICONS.map(icon => (
+                          <button key={icon} className={`cc-icon-btn ${data.customAchievement?.icon === icon ? 'on' : ''}`} onClick={() => update({ customAchievement: { ...data.customAchievement!, icon } })}>{icon}</button>
+                        ))}</div>
+                      </div>
+                      <div className="cc-custom-actions">
+                        <button className="cc-btn cc-btn--back" onClick={() => update({ customAchievement: null })}>Отмена</button>
+                        <button className="cc-btn cc-btn--next" onClick={() => {
+                          if (data.customAchievement?.name) {
+                            update({ customAchievement: null });
+                            toast('success', 'Достижение отправлено на модерацию');
+                          }
+                        }}>Добавить</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Награда */}
                   <div className="cc-f"><label>Название награды</label><input className="cc-in" placeholder="Кроссовки Nike Air Max" value={data.rewardTitle} onChange={e => update({ rewardTitle: e.target.value })} /></div>
                   <div className="cc-f"><label>Описание награды</label><textarea className="cc-ta" rows={2} placeholder="Что получит победитель..." value={data.rewardDescription} onChange={e => update({ rewardDescription: e.target.value })} /></div>
                 </section>
@@ -339,7 +402,7 @@ export default function NewChallengePage() {
                       {data.entryFee > 0 && <div className="cc-rv-tag"><DollarSign size={13} /> {data.entryFee}₽</div>}
                     </div>
                     {data.steps.length > 0 && <div className="cc-rv-list">{data.steps.map((s, i) => { const st = STEP_TYPES.find(t => t.key === s.type)!; return <div key={s.id} className="cc-rv-step"><div className="cc-rv-step-n" style={{ background: st.color }}>{i + 1}</div><div><strong>{s.title || 'Без названия'}</strong><span>{st.label}</span></div></div>; })}</div>}
-                    {data.achievementName && <div className="cc-rv-reward"><Star size={16} /><div><strong>{data.achievementName}</strong><span>Достижение</span></div></div>}
+                    {data.selectedAchievements.length > 0 && <div className="cc-rv-reward"><Star size={16} /><div><strong>{data.selectedAchievements.length} достижений</strong><span>{data.selectedAchievements.map(k => PRESET_ACHIEVEMENTS.find(a => a.key === k)?.icon || '').join(' ')}</span></div></div>}
                     {data.rewardTitle && <div className="cc-rv-reward"><Award size={16} /><div><strong>{data.rewardTitle}</strong><span>{data.rewardDescription}</span></div></div>}
                   </div>
                   {error && <div className="cc-error">{error}</div>}
@@ -467,6 +530,35 @@ export default function NewChallengePage() {
         .cc-cancel-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; margin-top: 4px; }
         .cc-cancel-note svg { color: #d97706; flex-shrink: 0; margin-top: 1px; }
         .cc-cancel-note span { font-size: 11px; color: #92400e; line-height: 1.5; }
+
+        /* Achievements grid */
+        .cc-ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+        .cc-ach { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: 10px; border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; transition: all 0.2s; position: relative; }
+        .cc-ach:hover { border-color: #a1a1aa; transform: translateY(-1px); }
+        .cc-ach.on { border-color: #FF385C; background: #fff5f7; }
+        .cc-ach-icon { font-size: 24px; transition: transform 0.2s; }
+        .cc-ach.on .cc-ach-icon { transform: scale(1.15); }
+        .cc-ach-name { font-size: 11px; font-weight: 700; color: #3f3f46; text-align: center; }
+        .cc-ach-ok { position: absolute; top: 4px; right: 4px; width: 16px; height: 16px; border-radius: 50%; background: #FF385C; color: #fff; display: grid; place-items: center; animation: pop 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+        .cc-ach--add { border-style: dashed; color: #a1a1aa; }
+        .cc-ach--add:hover { border-color: #FF385C; color: #FF385C; }
+        .cc-ach--add .cc-ach-icon { font-size: 20px; font-weight: 800; }
+
+        /* Custom achievement modal */
+        .cc-custom-ach { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .cc-custom-ach h4 { font-size: 14px; font-weight: 800; margin: 0; color: #18181b; }
+        .cc-custom-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+        /* Icon picker */
+        .cc-icon-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+        .cc-icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid #e4e4e7; background: #fff; font-size: 18px; cursor: pointer; display: grid; place-items: center; transition: all 0.15s; }
+        .cc-icon-btn:hover { border-color: #a1a1aa; transform: scale(1.1); }
+        .cc-icon-btn.on { border-color: #FF385C; background: #fff5f7; }
+
+        /* Criteria input */
+        .cc-card-criteria { margin-top: 4px; }
+        .cc-criteria-input { width: 100%; border: 1px dashed #d4d4d8; border-radius: 5px; padding: 4px 7px; font-size: 11px; color: #71717a; outline: none; font-style: italic; }
+        .cc-criteria-input:focus { border-color: #FF385C; border-style: solid; color: #18181b; }
         .cc-rv { display: flex; flex-direction: column; gap: 10px; }
         .cc-rv-head { display: flex; gap: 12px; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #f0f0f0; }
         .cc-rv-head img { width: 160px; height: 120px; object-fit: cover; flex-shrink: 0; }

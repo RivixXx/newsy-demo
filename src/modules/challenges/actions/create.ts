@@ -32,6 +32,8 @@ export interface CreateChallengeInput {
   rewardTitle: string;
   rewardDescription: string;
   achievementName?: string;
+  selectedAchievements?: string[];
+  customAchievement?: { name: string; description: string; icon: string } | null;
   steps: {
     type: string;
     title: string;
@@ -40,6 +42,7 @@ export interface CreateChallengeInput {
     options?: string[];
     correctIndex?: number;
     location?: string;
+    criteria?: string;
     verification?: Record<string, unknown>;
   }[];
 }
@@ -111,6 +114,7 @@ export async function createChallengeAction(input: CreateChallengeInput) {
               description: s.description || null,
               order: i,
               type: s.type,
+              criteria: s.criteria || null,
               rewardPoints: s.points || 0,
               config: Object.keys(config).length > 0 ? config as any : undefined,
             };

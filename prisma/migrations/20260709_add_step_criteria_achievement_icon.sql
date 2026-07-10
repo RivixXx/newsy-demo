@@ -1,0 +1,4 @@
+ALTER TABLE "Step" ADD COLUMN "criteria" TEXT;
+ALTER TABLE "Achievement" ADD COLUMN "icon" TEXT;
+ALTER TABLE "Achievement" ADD COLUMN "isCustom" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Achievement" ADD COLUMN "isApproved" BOOLEAN NOT NULL DEFAULT true;
