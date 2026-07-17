@@ -101,13 +101,6 @@ export default async function ChallengeDetailPage({ params }: { params: Promise<
             <span style={styles.statNum}>{challenge.steps.length}</span>
             <span style={styles.statText}>этапов</span>
           </div>
-          {challenge.achievement && (
-            <div style={styles.statBox}>
-              <Trophy size={18} color="#f59e0b" />
-              <span style={styles.statNum}>{challenge.achievement}</span>
-              <span style={styles.statText}>достижение</span>
-            </div>
-          )}
         </div>
 
         {/* Этапы */}
