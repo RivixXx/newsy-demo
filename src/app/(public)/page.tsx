@@ -4,9 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Zap, Users, BarChart3, Trophy, MapPin, Sparkles } from 'lucide-react';
 import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
+import { PageShell } from '@/shared/components/page-shell';
 
 export default function LandingPage() {
   return (
+    <PageShell variant="public">
     <div className="landing">
       {/* HERO */}
       <section className="hero">
@@ -193,27 +195,6 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
-
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-inner">
-          <div className="footer-brand">
-            <img src="/icon.png" alt="NEWSY" width={32} height={32} />
-            <span>NEWSY</span>
-          </div>
-          <div className="footer-links">
-            <Link href="/explore">Каталог</Link>
-            <Link href="/feed">Лента</Link>
-            <Link href="/stories">Stories</Link>
-            <Link href="/live">Live</Link>
-            <Link href="/api-docs">API</Link>
-            <Link href="/pricing">Тарифы</Link>
-            <Link href="/register">Регистрация</Link>
-            <Link href="/login">Вход</Link>
-          </div>
-          <p className="footer-copy">© 2026 NEWSY. Все права защищены.</p>
-        </div>
-      </footer>
 
       <style jsx>{`
         .landing { font-family: system-ui, -apple-system, sans-serif; }
@@ -499,31 +480,7 @@ export default function LandingPage() {
         .cta-actions .btn-secondary { border-color: rgba(255,255,255,0.2); color: white; background: transparent; }
         .cta-actions .btn-secondary:hover { border-color: white; }
 
-        /* FOOTER */
-        .footer {
-          padding: 32px 40px;
-          border-top: 1px solid #f0f0f0;
-        }
-        .footer-inner {
-          max-width: 1200px;
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .footer-brand {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 900;
-          font-size: 18px;
-        }
-        .footer-links { display: flex; gap: 24px; }
-        .footer-links a { font-size: 14px; color: #666; text-decoration: none; font-weight: 600; }
-        .footer-links a:hover { color: #FF385C; }
-        .footer-copy { font-size: 13px; color: #aaa; margin: 0; }
-
-        @media (max-width: 768px) {
+        /* Responsive */
           .hero { flex-direction: column; padding: 40px 20px; text-align: center; }
           .hero-actions { justify-content: center; }
           .hero-stats { justify-content: center; }
@@ -537,5 +494,6 @@ export default function LandingPage() {
         }
       `}</style>
     </div>
+    </PageShell>
   );
 }

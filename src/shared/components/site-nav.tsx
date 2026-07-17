@@ -102,9 +102,11 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
           </div>
 
           <div className="nav-center">
-            <Suspense fallback={<div style={{ width: 500, height: 52 }} />}>
-              <SearchPanel />
-            </Suspense>
+            {session && (
+              <Suspense fallback={<div style={{ width: 500, height: 52 }} />}>
+                <SearchPanel />
+              </Suspense>
+            )}
           </div>
 
           <div className="nav-right">
@@ -114,9 +116,18 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
               <span className="region-btn-text">{region || 'Весь мир'}</span>
             </button>
 
-            <Link href="/dashboard/challenges/new" className="host-link hide-tablet" prefetch={true}>
-              Создать челендж
-            </Link>
+            {!session && (
+              <>
+                <Link href="/login" className="auth-link">Войти</Link>
+                <Link href="/register" className="auth-link auth-link--primary">Регистрация</Link>
+              </>
+            )}
+
+            {session && (
+              <Link href="/dashboard/challenges/new" className="host-link hide-tablet" prefetch={true}>
+                Создать челендж
+              </Link>
+            )}
 
             {session && (
               <div ref={notifRef} className="notif-wrap">
@@ -274,6 +285,17 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
           font-size: 14px; font-weight: 600; transition: background 0.2s;
         }
         .host-link:hover { background: #f7f7f7; }
+
+        .auth-link {
+          padding: 10px 18px; border-radius: 24px; text-decoration: none;
+          font-size: 14px; font-weight: 700; color: #333; transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .auth-link:hover { background: #f7f7f7; }
+        .auth-link--primary {
+          background: #FF385C; color: white;
+        }
+        .auth-link--primary:hover { background: #E31C5F; }
 
         /* Capsule */
         .capsule-wrap { position: relative; margin-left: 8px; }
