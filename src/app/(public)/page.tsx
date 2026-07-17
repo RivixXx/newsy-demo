@@ -5,180 +5,27 @@ import Link from 'next/link';
 import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
 import { PageShell } from '@/shared/components/page-shell';
 
-/* ─── Three.js hero scene ─── */
-function HeroScene() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let w = 0;
-    let h = 0;
-    const particles: { x: number; y: number; z: number; r: number; vx: number; vy: number; vz: number; hue: number }[] = [];
-
-    const resize = () => {
-      const rect = canvas.parentElement!.getBoundingClientRect();
-      w = canvas.width = rect.width * 2;
-      h = canvas.height = rect.height * 2;
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    // Create floating geometric shapes
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * w - w / 2,
-        y: Math.random() * h - h / 2,
-        z: Math.random() * 400 + 100,
-        r: Math.random() * 30 + 8,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        vz: (Math.random() - 0.5) * 0.5,
-        hue: Math.random() * 30 + 350, // warm corals
-      });
-    }
-
-    let mouseX = 0;
-    let mouseY = 0;
-    const handleMouse = (e: MouseEvent) => {
-      mouseX = (e.clientX / window.innerWidth - 0.5) * 40;
-      mouseY = (e.clientY / window.innerHeight - 0.5) * 40;
-    };
-    window.addEventListener('mousemove', handleMouse);
-
-    let time = 0;
-    const render = () => {
-      time += 0.005;
-      ctx.clearRect(0, 0, w, h);
-
-      // Sort by z for depth
-      particles.sort((a, b) => a.z - b.z);
-
-      for (const p of particles) {
-        // Animate
-        p.x += p.vx + Math.sin(time + p.vz) * 0.2;
-        p.y += p.vy + Math.cos(time * 0.7 + p.vx) * 0.15;
-        p.z += p.vz;
-
-        // Wrap around
-        if (p.z < 10) p.z = 500;
-        if (p.z > 500) p.z = 10;
-        if (p.x < -w / 2) p.x = w / 2;
-        if (p.x > w / 2) p.x = -w / 2;
-        if (p.y < -h / 2) p.y = h / 2;
-        if (p.y > h / 2) p.y = -h / 2;
-
-        // Perspective projection
-        const scale = 300 / p.z;
-        const px = w / 2 + (p.x + mouseX) * scale;
-        const py = h / 2 + (p.y + mouseY) * scale;
-        const pr = p.r * scale;
-
-        if (px < -50 || px > w + 50 || py < -50 || py > h + 50) continue;
-
-        // Draw shape
-        ctx.save();
-        ctx.globalAlpha = Math.min(0.6, scale * 0.8);
-
-        const hue = (p.hue + time * 20) % 360;
-        ctx.fillStyle = `hsla(${hue}, 70%, 55%, 1)`;
-        ctx.strokeStyle = `hsla(${hue}, 70%, 65%, 0.5)`;
-        ctx.lineWidth = 1;
-
-        // Draw different shapes
-        const sides = Math.floor(p.r) % 3 + 3; // 3-5 sides
-        ctx.beginPath();
-        for (let i = 0; i <= sides; i++) {
-          const angle = (i / sides) * Math.PI * 2 + time;
-          const x = px + Math.cos(angle) * pr;
-          const y = py + Math.sin(angle) * pr;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // Draw connecting lines between nearby particles
-      ctx.save();
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i];
-          const b = particles[j];
-          const scaleA = 300 / a.z;
-          const scaleB = 300 / b.z;
-          const ax = w / 2 + (a.x + mouseX) * scaleA;
-          const ay = h / 2 + (a.y + mouseY) * scaleA;
-          const bx = w / 2 + (b.x + mouseX) * scaleB;
-          const by = h / 2 + (b.y + mouseY) * scaleB;
-          const dist = Math.hypot(ax - bx, ay - by);
-          if (dist < 120) {
-            ctx.globalAlpha = (1 - dist / 120) * 0.15;
-            ctx.strokeStyle = 'rgba(255, 120, 140, 1)';
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(ax, ay);
-            ctx.lineTo(bx, by);
-            ctx.stroke();
-          }
-        }
-      }
-      ctx.restore();
-
-      animRef.current = requestAnimationFrame(render);
-    };
-    render();
-
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', handleMouse);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-    />
-  );
-}
-
 /* ─── Scroll reveal hook ─── */
-function useReveal() {
+function useReveal(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('revealed');
-          obs.unobserve(el);
-        }
+        if (entry.isIntersecting) { el.classList.add('revealed'); obs.unobserve(el); }
       },
-      { threshold: 0.15 }
+      { threshold }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
-
+  }, [threshold]);
   return ref;
 }
 
 /* ─── Parallax hook ─── */
-function useParallax(speed = 0.3) {
+function useParallax(speed = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -199,45 +46,132 @@ function useParallax(speed = 0.3) {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, [speed]);
-
   return ref;
 }
 
 /* ─── Counter animation ─── */
-function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number; suffix?: string; prefix?: string }) {
+function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          let start = 0;
-          const duration = 2000;
-          const startTime = performance.now();
-          const animate = (now: number) => {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setCount(Math.floor(eased * target));
-            if (progress < 1) requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-          obs.unobserve(el);
-        }
-      },
-      { threshold: 0.5 }
-    );
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) {
+        const start = performance.now();
+        const dur = 2000;
+        const animate = (now: number) => {
+          const p = Math.min((now - start) / dur, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          setCount(Math.floor(eased * target));
+          if (p < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+        obs.unobserve(el);
+      }
+    }, { threshold: 0.5 });
     obs.observe(el);
     return () => obs.disconnect();
   }, [target]);
+  return <span ref={ref}>{count.toLocaleString('ru-RU')}{suffix}</span>;
+}
 
+/* ─── Hero SVG Visual ─── */
+function HeroVisual() {
   return (
-    <span ref={ref}>
-      {prefix}{count.toLocaleString('ru-RU')}{suffix}
-    </span>
+    <div className="lp-hero-visual-wrap">
+      <svg viewBox="0 0 800 600" className="lp-hero-svg" aria-hidden="true">
+        <defs>
+          <radialGradient id="glow1" cx="50%" cy="45%" r="45%">
+            <stop offset="0%" stopColor="#FF385C" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#FF385C" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="glow2" cx="60%" cy="55%" r="40%">
+            <stop offset="0%" stopColor="#FF6B8A" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#FF6B8A" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="grad-coral" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF385C" />
+            <stop offset="100%" stopColor="#FF6B8A" />
+          </linearGradient>
+          <linearGradient id="grad-glass" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.12)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.02)" />
+          </linearGradient>
+          <filter id="blur-glow">
+            <feGaussianBlur stdDeviation="40" />
+          </filter>
+          <filter id="blur-soft">
+            <feGaussianBlur stdDeviation="12" />
+          </filter>
+          <clipPath id="hero-clip">
+            <rect x="0" y="0" width="800" height="600" rx="0" />
+          </clipPath>
+        </defs>
+
+        {/* Background glow */}
+        <ellipse cx="400" cy="280" rx="300" ry="250" fill="url(#glow1)" filter="url(#blur-glow)" className="lp-float-slow" />
+        <ellipse cx="450" cy="320" rx="200" ry="180" fill="url(#glow2)" filter="url(#blur-glow)" className="lp-float-med" />
+
+        {/* Abstract 3D crystal shape - main */}
+        <g className="lp-float-slow" style={{ transformOrigin: '400px 280px' }}>
+          {/* Back face */}
+          <polygon points="400,120 520,220 480,380 320,380 280,220"
+            fill="url(#grad-glass)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          {/* Left face */}
+          <polygon points="280,220 320,380 200,340 220,200"
+            fill="rgba(255,56,92,0.06)" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+          {/* Right face */}
+          <polygon points="520,220 480,380 600,340 580,200"
+            fill="rgba(255,107,138,0.06)" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+          {/* Top face */}
+          <polygon points="400,120 520,220 580,200 400,100 220,200 280,220"
+            fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+          {/* Front highlight edge */}
+          <line x1="400" y1="120" x2="320" y2="380" stroke="rgba(255,56,92,0.3)" strokeWidth="1.5" />
+          <line x1="400" y1="120" x2="480" y2="380" stroke="rgba(255,107,138,0.2)" strokeWidth="1" />
+          <line x1="320" y1="380" x2="480" y2="380" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+        </g>
+
+        {/* Floating orb 1 */}
+        <g className="lp-float-med" style={{ transformOrigin: '180px 160px' }}>
+          <circle cx="180" cy="160" r="32" fill="url(#grad-coral)" opacity="0.9" />
+          <circle cx="180" cy="160" r="32" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <ellipse cx="172" cy="148" rx="8" ry="5" fill="rgba(255,255,255,0.3)" transform="rotate(-30 172 148)" />
+        </g>
+
+        {/* Floating orb 2 */}
+        <g className="lp-float-fast" style={{ transformOrigin: '620px 180px' }}>
+          <circle cx="620" cy="180" r="20" fill="url(#grad-coral)" opacity="0.7" />
+          <circle cx="620" cy="180" r="20" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+          <ellipse cx="615" cy="173" rx="5" ry="3" fill="rgba(255,255,255,0.25)" transform="rotate(-30 615 173)" />
+        </g>
+
+        {/* Floating orb 3 */}
+        <g className="lp-float-slow" style={{ transformOrigin: '140px 400px' }}>
+          <circle cx="140" cy="400" r="14" fill="url(#grad-coral)" opacity="0.5" />
+          <circle cx="140" cy="400" r="14" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+        </g>
+
+        {/* Floating orb 4 */}
+        <g className="lp-float-fast" style={{ transformOrigin: '660px 380px' }}>
+          <circle cx="660" cy="380" r="24" fill="url(#grad-coral)" opacity="0.6" />
+          <circle cx="660" cy="380" r="24" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
+          <ellipse cx="654" cy="372" rx="6" ry="4" fill="rgba(255,255,255,0.2)" transform="rotate(-25 654 372)" />
+        </g>
+
+        {/* Small diamond accents */}
+        <polygon points="680,120 690,130 680,140 670,130" fill="#FF385C" opacity="0.4" className="lp-float-med" style={{ transformOrigin: '680px 130px' }} />
+        <polygon points="120,280 128,288 120,296 112,288" fill="#FF6B8A" opacity="0.3" className="lp-float-fast" style={{ transformOrigin: '120px 288px' }} />
+        <polygon points="560,450 568,458 560,466 552,458" fill="#FF385C" opacity="0.35" className="lp-float-slow" style={{ transformOrigin: '560px 458px' }} />
+
+        {/* Thin connection lines */}
+        <line x1="180" y1="160" x2="320" y2="220" stroke="rgba(255,56,92,0.12)" strokeWidth="0.5" strokeDasharray="4 4" />
+        <line x1="620" y1="180" x2="480" y2="220" stroke="rgba(255,107,138,0.1)" strokeWidth="0.5" strokeDasharray="4 4" />
+        <line x1="140" y1="400" x2="320" y2="380" stroke="rgba(255,56,92,0.08)" strokeWidth="0.5" strokeDasharray="4 4" />
+        <line x1="660" y1="380" x2="480" y2="380" stroke="rgba(255,107,138,0.08)" strokeWidth="0.5" strokeDasharray="4 4" />
+      </svg>
+    </div>
   );
 }
 
@@ -245,25 +179,95 @@ function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number;
 function SectionLabel({ children }: { children: React.ReactNode }) {
   const ref = useReveal();
   return (
-    <div ref={ref} className="lp-reveal" style={{ marginBottom: 20 }}>
-      <span style={{
-        display: 'inline-block',
-        padding: '6px 16px',
-        background: 'rgba(255, 56, 92, 0.08)',
-        border: '1px solid rgba(255, 56, 92, 0.15)',
-        borderRadius: 99,
-        fontSize: 13,
-        fontWeight: 700,
-        color: '#FF385C',
-        letterSpacing: '0.02em',
-      }}>
-        {children}
-      </span>
+    <div ref={ref} className="lp-reveal" style={{ marginBottom: 20, textAlign: 'center' }}>
+      <span className="lp-section-badge">{children}</span>
     </div>
   );
 }
 
-/* ─── Main landing page ─── */
+/* ─── Feature illustration SVGs ─── */
+function FeatureIllustration({ type }: { type: 'construct' | 'gamify' | 'partner' | 'analytics' | 'monetize' | 'mobile' }) {
+  const illustrations: Record<string, React.ReactNode> = {
+    construct: (
+      <svg viewBox="0 0 200 160" className="lp-feature-svg">
+        <defs>
+          <linearGradient id="fc1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF385C" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#FF6B8A" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+        <rect x="30" y="20" width="140" height="120" rx="12" fill="url(#fc1)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+        <rect x="44" y="36" width="60" height="8" rx="4" fill="rgba(255,56,92,0.4)" />
+        <rect x="44" y="52" width="112" height="6" rx="3" fill="rgba(255,255,255,0.08)" />
+        <rect x="44" y="64" width="90" height="6" rx="3" fill="rgba(255,255,255,0.06)" />
+        <rect x="44" y="84" width="48" height="40" rx="8" fill="rgba(255,56,92,0.12)" stroke="rgba(255,56,92,0.2)" strokeWidth="1" />
+        <rect x="100" y="84" width="56" height="18" rx="6" fill="rgba(255,255,255,0.06)" />
+        <rect x="100" y="108" width="56" height="16" rx="6" fill="rgba(255,255,255,0.04)" />
+        <circle cx="68" cy="104" r="8" fill="rgba(255,56,92,0.3)" />
+        <path d="M64 104 L68 108 L74 100" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </svg>
+    ),
+    gamify: (
+      <svg viewBox="0 0 200 160" className="lp-feature-svg">
+        <circle cx="100" cy="70" r="40" fill="none" stroke="rgba(255,56,92,0.2)" strokeWidth="8" />
+        <circle cx="100" cy="70" r="40" fill="none" stroke="#FF385C" strokeWidth="8" strokeDasharray="180 252" strokeLinecap="round" className="lp-progress-ring" />
+        <text x="100" y="75" textAnchor="middle" fill="white" fontSize="20" fontWeight="800" fontFamily="system-ui">72%</text>
+        <rect x="40" y="124" width="120" height="8" rx="4" fill="rgba(255,255,255,0.06)" />
+        <rect x="40" y="124" width="86" height="8" rx="4" fill="#FF385C" opacity="0.6" />
+        <circle cx="148" cy="60" r="12" fill="rgba(255,56,92,0.15)" />
+        <text x="148" y="64" textAnchor="middle" fill="#FF385C" fontSize="10" fontWeight="800" fontFamily="system-ui">+5</text>
+      </svg>
+    ),
+    partner: (
+      <svg viewBox="0 0 200 160" className="lp-feature-svg">
+        <circle cx="72" cy="72" r="32" fill="rgba(255,56,92,0.1)" stroke="rgba(255,56,92,0.25)" strokeWidth="1.5" />
+        <circle cx="128" cy="72" r="32" fill="rgba(255,107,138,0.1)" stroke="rgba(255,107,138,0.25)" strokeWidth="1.5" />
+        <ellipse cx="100" cy="72" rx="18" ry="32" fill="rgba(255,56,92,0.12)" />
+        <text x="72" y="77" textAnchor="middle" fill="#FF385C" fontSize="14" fontWeight="800" fontFamily="system-ui">A</text>
+        <text x="128" y="77" textAnchor="middle" fill="#FF6B8A" fontSize="14" fontWeight="800" fontFamily="system-ui">B</text>
+        <rect x="50" y="120" width="100" height="6" rx="3" fill="rgba(255,255,255,0.06)" />
+        <rect x="50" y="120" width="60" height="6" rx="3" fill="rgba(255,56,92,0.3)" />
+      </svg>
+    ),
+    analytics: (
+      <svg viewBox="0 0 200 160" className="lp-feature-svg">
+        <rect x="30" y="100" width="24" height="40" rx="4" fill="rgba(255,56,92,0.2)" />
+        <rect x="62" y="70" width="24" height="70" rx="4" fill="rgba(255,56,92,0.3)" />
+        <rect x="94" y="40" width="24" height="100" rx="4" fill="rgba(255,56,92,0.5)" />
+        <rect x="126" y="55" width="24" height="85" rx="4" fill="rgba(255,56,92,0.35)" />
+        <rect x="158" y="30" width="24" height="110" rx="4" fill="#FF385C" opacity="0.7" />
+        <line x1="30" y1="140" x2="182" y2="140" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+      </svg>
+    ),
+    monetize: (
+      <svg viewBox="0 0 200 160" className="lp-feature-svg">
+        <circle cx="100" cy="72" r="44" fill="none" stroke="rgba(255,56,92,0.15)" strokeWidth="1" />
+        <text x="100" y="82" textAnchor="middle" fill="white" fontSize="32" fontWeight="900" fontFamily="system-ui" opacity="0.9">₽</text>
+        <circle cx="100" cy="72" r="44" fill="none" stroke="#FF385C" strokeWidth="2" strokeDasharray="80 276" strokeLinecap="round" className="lp-progress-ring" style={{ transformOrigin: '100px 72px' }} />
+        <rect x="56" y="130" width="88" height="8" rx="4" fill="rgba(255,255,255,0.06)" />
+        <rect x="56" y="130" width="62" height="8" rx="4" fill="#FF385C" opacity="0.4" />
+        <text x="138" y="138" fill="rgba(255,255,255,0.3)" fontSize="8" fontWeight="600" fontFamily="system-ui">70%</text>
+      </svg>
+    ),
+    mobile: (
+      <svg viewBox="0 0 200 160" className="lp-feature-svg">
+        <rect x="68" y="10" width="64" height="120" rx="14" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+        <rect x="74" y="22" width="52" height="96" rx="4" fill="rgba(255,56,92,0.08)" />
+        <rect x="82" y="32" width="36" height="6" rx="3" fill="rgba(255,56,92,0.4)" />
+        <rect x="82" y="44" width="28" height="4" rx="2" fill="rgba(255,255,255,0.08)" />
+        <rect x="82" y="54" width="36" height="28" rx="6" fill="rgba(255,56,92,0.15)" />
+        <circle cx="100" cy="68" r="6" fill="rgba(255,56,92,0.4)" />
+        <rect x="82" y="90" width="36" height="4" rx="2" fill="rgba(255,255,255,0.06)" />
+        <rect x="82" y="98" width="20" height="4" rx="2" fill="rgba(255,255,255,0.04)" />
+        <circle cx="100" cy="134" r="3" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <rect x="90" y="14" width="20" height="4" rx="2" fill="rgba(255,255,255,0.1)" />
+      </svg>
+    ),
+  };
+  return <>{illustrations[type]}</>;
+}
+
+/* ═══════════════════════════════════════ MAIN ═══════════════════════════════════════ */
 export default function LandingPage() {
   const heroRef = useReveal();
   const featuresRef = useReveal();
@@ -273,18 +277,17 @@ export default function LandingPage() {
   const pricingRef = useReveal();
   const faqRef = useReveal();
   const ctaRef = useReveal();
-
-  const parallaxBg = useParallax(0.15);
-  const parallaxCards = useParallax(-0.1);
+  const parallaxBg = useParallax(0.12);
+  const parallaxCards = useParallax(-0.08);
 
   return (
     <PageShell variant="public">
       <div className="lp">
-        {/* ═══════════ HERO ═══════════ */}
+
+        {/* ═══ HERO ═══ */}
         <section className="lp-hero">
           <div className="lp-hero-bg" ref={parallaxBg}>
-            <HeroScene />
-            <div className="lp-hero-glow" />
+            <HeroVisual />
           </div>
           <div className="lp-hero-content lp-reveal" ref={heroRef}>
             <div className="lp-badge">Интерактивная платформа</div>
@@ -296,37 +299,33 @@ export default function LandingPage() {
               Создавай челленджи с геймификацией. Бренды, HR, НКО — запускайте
               интерактивные задания, а участники соревнуются и получают реальные награды.
             </p>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="lp-hero-actions">
               <Link href="/register" className="lp-btn lp-btn--primary">
                 <span>Создать челлендж</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </Link>
-              <Link href="/explore" className="lp-btn lp-btn--ghost">
-                Смотреть каталог
-              </Link>
+              <Link href="/explore" className="lp-btn lp-btn--ghost">Смотреть каталог</Link>
             </div>
             <div className="lp-hero-stats">
               <div className="lp-stat">
-                <span className="lp-stat-num"><AnimatedCounter target={2500} suffix="+" /></span>
+                <span className="lp-stat-num"><Counter target={2500} suffix="+" /></span>
                 <span className="lp-stat-label">Челленджей создано</span>
               </div>
               <div className="lp-stat-divider" />
               <div className="lp-stat">
-                <span className="lp-stat-num"><AnimatedCounter target={48000} suffix="+" /></span>
+                <span className="lp-stat-num"><Counter target={48000} suffix="+" /></span>
                 <span className="lp-stat-label">Участников</span>
               </div>
               <div className="lp-stat-divider" />
               <div className="lp-stat">
-                <span className="lp-stat-num"><AnimatedCounter target={350} suffix="+" /></span>
+                <span className="lp-stat-num"><Counter target={350} suffix="+" /></span>
                 <span className="lp-stat-label">Брендов</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ═══════════ FEATURES ═══════════ */}
+        {/* ═══ FEATURES ═══ */}
         <section className="lp-section" style={{ paddingTop: 160, paddingBottom: 160 }}>
           <div className="lp-container">
             <SectionLabel>Возможности</SectionLabel>
@@ -334,15 +333,18 @@ export default function LandingPage() {
               Всё для создания<br /> интерактивных челленджей
             </h2>
             <div className="lp-features-grid">
-              {[
-                { num: '01', title: 'Конструктор заданий', desc: 'Многоэтапные квесты с загрузкой фото, ответами и проверкой. Создайте за 15 минут.' },
-                { num: '02', title: 'Геймификация', desc: 'Очки, достижения, рейтинги. Участники соревнуются за первые места и реальные награды.' },
-                { num: '03', title: 'Партнёрства', desc: 'Запускайте совместные челленджи с другими брендами. Делитесь аудиторией и бюджетом.' },
-                { num: '04', title: 'Аналитика', desc: 'Конверсия по этапам, активность участников,heatmap прохождения. Всё в реальном времени.' },
-                { num: '05', title: 'Монетизация', desc: 'Установите взнос за участие. Комиссия от 15% — деньги перечисляются после завершения.' },
-                { num: '06', title: 'Мобильный опыт', desc: 'Полноценное мобильное приложение. Участники проходят задания с телефона без ограничений.' },
-              ].map((f) => (
+              {([
+                { type: 'construct', num: '01', title: 'Конструктор заданий', desc: 'Многоэтапные квесты с загрузкой фото, ответами и проверкой. Создайте за 15 минут.' },
+                { type: 'gamify', num: '02', title: 'Геймификация', desc: 'Очки, достижения, рейтинги. Участники соревнуются за первые места и реальные награды.' },
+                { type: 'partner', num: '03', title: 'Партнёрства', desc: 'Запускайте совместные челленджи с другими брендами. Делитесь аудиторией и бюджетом.' },
+                { type: 'analytics', num: '04', title: 'Аналитика', desc: 'Конверсия по этапам, активность участников. Всё в реальном времени.' },
+                { type: 'monetize', num: '05', title: 'Монетизация', desc: 'Установите взнос за участие. Комиссия от 15% — деньги после завершения.' },
+                { type: 'mobile', num: '06', title: 'Мобильный опыт', desc: 'Полноценное мобильное приложение. Участники проходят задания с телефона.' },
+              ] as const).map((f) => (
                 <div key={f.num} className="lp-feature-card lp-reveal">
+                  <div className="lp-feature-illustration">
+                    <FeatureIllustration type={f.type as any} />
+                  </div>
                   <span className="lp-feature-num">{f.num}</span>
                   <h3>{f.title}</h3>
                   <p>{f.desc}</p>
@@ -352,18 +354,16 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══════════ HOW IT WORKS ═══════════ */}
+        {/* ═══ HOW IT WORKS ═══ */}
         <section className="lp-section lp-section--dark" style={{ paddingTop: 160, paddingBottom: 160 }}>
           <div className="lp-container">
             <SectionLabel>Как это работает</SectionLabel>
-            <h2 className="lp-section-title" ref={howRef}>
-              Три шага до запуска
-            </h2>
+            <h2 className="lp-section-title" ref={howRef}>Три шага до запуска</h2>
             <div className="lp-steps">
               {[
-                { step: '01', title: 'Создайте', desc: 'Используйте конструктор: добавьте этапы, задания, награды и правила. Визуальный редактор без кода.', accent: 'from creation' },
-                { step: '02', title: 'Запустите', desc: 'Опубликуйте в каталоге, поделитесь ссылкой или отправьте через Telegram и соцсети.', accent: 'via distribution' },
-                { step: '03', title: 'Анализируйте', desc: 'Отслеживайте прогресс, конверсию по этапам и общую статистику в дашборде.', accent: 'with analytics' },
+                { step: '01', title: 'Создайте', desc: 'Используйте конструктор: добавьте этапы, задания, награды и правила. Визуальный редактор без кода.' },
+                { step: '02', title: 'Запустите', desc: 'Опубликуйте в каталоге, поделитесь ссылкой или отправьте через Telegram и соцсети.' },
+                { step: '03', title: 'Анализируйте', desc: 'Отслеживайте прогресс, конверсию по этапам и общую статистику в дашборде.' },
               ].map((s, i) => (
                 <div key={s.step} className="lp-step lp-reveal" style={{ animationDelay: `${i * 0.15}s` }}>
                   <div className="lp-step-visual">
@@ -373,7 +373,6 @@ export default function LandingPage() {
                   <div className="lp-step-content">
                     <h3>{s.title}</h3>
                     <p>{s.desc}</p>
-                    <span className="lp-step-accent">{s.accent}</span>
                   </div>
                 </div>
               ))}
@@ -381,7 +380,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══════════ STATS ═══════════ */}
+        {/* ═══ STATS ═══ */}
         <section className="lp-section" style={{ paddingTop: 140, paddingBottom: 140 }}>
           <div className="lp-container">
             <div className="lp-stats-row" ref={statsRef}>
@@ -389,14 +388,11 @@ export default function LandingPage() {
                 { value: 2500, suffix: '+', label: 'Челленджей' },
                 { value: 48000, suffix: '+', label: 'Участников' },
                 { value: 92, suffix: '%', label: 'Конверсия' },
-                { value: 4.8, suffix: '/ 5', label: 'Рейтинг', decimals: 1 },
+                { value: 4.8, suffix: '/5', label: 'Рейтинг', isDecimal: true },
               ].map((s, i) => (
                 <div key={i} className="lp-stat-block lp-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
                   <span className="lp-stat-big">
-                    {s.decimals
-                      ? s.value.toFixed(s.decimals)
-                      : <AnimatedCounter target={s.value} />
-                    }
+                    {s.isDecimal ? '4.8' : <Counter target={s.value} />}
                     {s.suffix}
                   </span>
                   <span className="lp-stat-small">{s.label}</span>
@@ -406,22 +402,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══════════ SHOWCASE ═══════════ */}
+        {/* ═══ SHOWCASE ═══ */}
         <section className="lp-section lp-section--gradient" style={{ paddingTop: 160, paddingBottom: 160 }}>
           <div className="lp-container">
             <SectionLabel>Примеры</SectionLabel>
-            <h2 className="lp-section-title" ref={showcaseRef}>
-              Челленджи, которые<br />вдохновляют
-            </h2>
+            <h2 className="lp-section-title" ref={showcaseRef}>Челленджи, которые вдохновляют</h2>
             <div className="lp-showcase" ref={parallaxCards}>
               {[
-                { emoji: '🏃', title: 'Спортивный марафон', desc: '30 дней бега и ЗОЖ. Ежедневные задания, трекинг прогресса, призы от партнёров.', color: 'linear-gradient(135deg, #FF6B6B, #FF385C)' },
-                { emoji: '📚', title: 'Образовательный интенсив', desc: 'Новый навык за 14 дней. Проверка знаний, сертификаты, рейтинг участников.', color: 'linear-gradient(135deg, #4ECDC4, #44B09E)' },
-                { emoji: '🎨', title: 'Творческий конкурс', desc: 'Покажи талант. Жюри из экспертов, голосование аудитории, реальные призы.', color: 'linear-gradient(135deg, #A78BFA, #7C3AED)' },
-                { emoji: '🌍', title: 'Экологическая акция', desc: 'Собери мусор, посади дерево. Благотворительность с геймификацией и достижениями.', color: 'linear-gradient(135deg, #34D399, #059669)' },
+                { emoji: '🏃', title: 'Спортивный марафон', desc: '30 дней бега и ЗОЖ. Ежедневные задания, трекинг прогресса, призы от партнёров.', grad: 'linear-gradient(135deg, #FF6B6B, #FF385C)' },
+                { emoji: '📚', title: 'Образовательный интенсив', desc: 'Новый навык за 14 дней. Проверка знаний, сертификаты, рейтинг участников.', grad: 'linear-gradient(135deg, #4ECDC4, #44B09E)' },
+                { emoji: '🎨', title: 'Творческий конкурс', desc: 'Покажи талант. Жюри из экспертов, голосование аудитории, реальные призы.', grad: 'linear-gradient(135deg, #A78BFA, #7C3AED)' },
+                { emoji: '🌍', title: 'Экологическая акция', desc: 'Собери мусор, посади дерево. Благотворительность с геймификацией.', grad: 'linear-gradient(135deg, #34D399, #059669)' },
               ].map((c, i) => (
                 <div key={i} className="lp-showcase-card lp-reveal" style={{ animationDelay: `${i * 0.12}s` }}>
-                  <div className="lp-showcase-visual" style={{ background: c.color }}>
+                  <div className="lp-showcase-visual" style={{ background: c.grad }}>
                     <span className="lp-showcase-emoji">{c.emoji}</span>
                   </div>
                   <div className="lp-showcase-info">
@@ -434,20 +428,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══════════ PRICING ═══════════ */}
+        {/* ═══ PRICING ═══ */}
         <section className="lp-section" style={{ paddingTop: 160, paddingBottom: 160 }}>
           <div className="lp-container">
             <SectionLabel>Тарифы</SectionLabel>
-            <h2 className="lp-section-title" ref={pricingRef}>
-              Прозрачные цены<br />для каждого
-            </h2>
+            <h2 className="lp-section-title" ref={pricingRef}>Прозрачные цены для каждого</h2>
             <div className="lp-pricing-grid">
               {PUBLISH_TARIFFS.map((t, i) => (
-                <div
-                  key={t.id}
-                  className={`lp-price-card lp-reveal ${t.recommended ? 'lp-price-card--featured' : ''}`}
-                  style={{ animationDelay: `${i * 0.12}s` }}
-                >
+                <div key={t.id} className={`lp-price-card lp-reveal ${t.recommended ? 'lp-price-card--featured' : ''}`} style={{ animationDelay: `${i * 0.12}s` }}>
                   {t.recommended && <div className="lp-price-badge">Популярный</div>}
                   <h3>{t.name}</h3>
                   <div className="lp-price-amount">
@@ -461,18 +449,12 @@ export default function LandingPage() {
                   <ul className="lp-price-features">
                     {t.features.map((f, j) => (
                       <li key={j}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         {f}
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    href="/register"
-                    className={`lp-btn ${t.recommended ? 'lp-btn--primary' : 'lp-btn--outline'}`}
-                    style={{ width: '100%', justifyContent: 'center' }}
-                  >
+                  <Link href="/register" className={`lp-btn ${t.recommended ? 'lp-btn--primary' : 'lp-btn--outline'}`} style={{ width: '100%', justifyContent: 'center' }}>
                     {t.price === 0 ? 'Начать бесплатно' : 'Выбрать тариф'}
                   </Link>
                 </div>
@@ -481,13 +463,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══════════ FAQ ═══════════ */}
+        {/* ═══ FAQ ═══ */}
         <section className="lp-section lp-section--dark" style={{ paddingTop: 160, paddingBottom: 160 }}>
           <div className="lp-container" style={{ maxWidth: 760 }}>
             <SectionLabel>FAQ</SectionLabel>
-            <h2 className="lp-section-title" ref={faqRef}>
-              Частые вопросы
-            </h2>
+            <h2 className="lp-section-title" ref={faqRef}>Частые вопросы</h2>
             <div className="lp-faq-list">
               {[
                 { q: 'Что такое челлендж на NEWSY?', a: 'Челлендж — это интерактивное задание или серия заданий, которые участники выполняют за определённый срок. Спортивный марафон, образовательный интенсив, творческий конкурс — любая активность с геймификацией.' },
@@ -504,26 +484,18 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══════════ CTA ═══════════ */}
+        {/* ═══ CTA ═══ */}
         <section className="lp-section" style={{ paddingTop: 160, paddingBottom: 160 }}>
           <div className="lp-container" style={{ textAlign: 'center' }}>
             <div ref={ctaRef} className="lp-reveal">
-              <h2 className="lp-cta-title">
-                Готовы создать<br />свой первый челлендж?
-              </h2>
-              <p className="lp-cta-desc">
-                Присоединяйтесь к тысячам организаторов и участников.
-              </p>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <h2 className="lp-cta-title">Готовы создать свой первый челлендж?</h2>
+              <p className="lp-cta-desc">Присоединяйтесь к тысячам организаторов и участников.</p>
+              <div className="lp-hero-actions" style={{ justifyContent: 'center' }}>
                 <Link href="/register" className="lp-btn lp-btn--primary lp-btn--lg">
                   <span>Начать бесплатно</span>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </Link>
-                <Link href="/explore" className="lp-btn lp-btn--ghost lp-btn--lg">
-                  Смотреть каталог
-                </Link>
+                <Link href="/explore" className="lp-btn lp-btn--ghost lp-btn--lg">Смотреть каталог</Link>
               </div>
             </div>
           </div>
@@ -531,18 +503,17 @@ export default function LandingPage() {
       </div>
 
       <style>{`
-        /* ─── Base ─── */
+        /* ═══════════════ BASE ═══════════════ */
         .lp {
           --bg: #0a0a0a;
           --bg-elevated: #111111;
-          --bg-subtle: #161616;
           --surface: #1a1a1a;
           --border: rgba(255,255,255,0.06);
           --text: #f5f5f5;
           --text-muted: #888888;
           --text-dim: #555555;
           --brand: #FF385C;
-          --brand-glow: rgba(255, 56, 92, 0.25);
+          --brand-glow: rgba(255,56,92,0.25);
           --radius: 20px;
           font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
           background: var(--bg);
@@ -550,19 +521,15 @@ export default function LandingPage() {
           overflow-x: hidden;
         }
 
-        /* ─── Reveal animation ─── */
+        /* ═══════════════ REVEAL ═══════════════ */
         .lp-reveal {
           opacity: 0;
           transform: translateY(40px);
-          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
         }
-        .lp-reveal.revealed {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        .lp-reveal.revealed { opacity: 1; transform: translateY(0); }
 
-        /* ─── Hero ─── */
+        /* ═══════════════ HERO ═══════════════ */
         .lp-hero {
           position: relative;
           min-height: 100vh;
@@ -575,22 +542,18 @@ export default function LandingPage() {
           position: absolute;
           inset: 0;
           z-index: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .lp-hero-glow {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 800px;
-          height: 800px;
-          background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%);
-          filter: blur(80px);
-          opacity: 0.5;
-          animation: pulseGlow 6s ease-in-out infinite;
+        .lp-hero-visual-wrap {
+          width: 100%;
+          max-width: 900px;
+          opacity: 0.9;
         }
-        @keyframes pulseGlow {
-          0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-          50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+        .lp-hero-svg {
+          width: 100%;
+          height: auto;
         }
         .lp-hero-content {
           position: relative;
@@ -602,8 +565,8 @@ export default function LandingPage() {
         .lp-badge {
           display: inline-block;
           padding: 8px 20px;
-          background: rgba(255, 56, 92, 0.08);
-          border: 1px solid rgba(255, 56, 92, 0.2);
+          background: rgba(255,56,92,0.08);
+          border: 1px solid rgba(255,56,92,0.2);
           border-radius: 99px;
           font-size: 13px;
           font-weight: 700;
@@ -633,8 +596,37 @@ export default function LandingPage() {
           max-width: 560px;
           margin: 0 auto 40px;
         }
+        .lp-hero-actions {
+          display: flex;
+          gap: 16px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
 
-        /* ─── Hero Stats ─── */
+        /* ═══════════════ SVG FLOAT ANIMATIONS ═══════════════ */
+        @keyframes floatSlow {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-18px); }
+        }
+        @keyframes floatMed {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-12px) rotate(3deg); }
+        }
+        @keyframes floatFast {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(-2deg); }
+        }
+        .lp-float-slow { animation: floatSlow 8s ease-in-out infinite; }
+        .lp-float-med { animation: floatMed 6s ease-in-out infinite; }
+        .lp-float-fast { animation: floatFast 4s ease-in-out infinite; }
+
+        @keyframes progressSpin {
+          from { stroke-dashoffset: 252; }
+          to { stroke-dashoffset: 72; }
+        }
+        .lp-progress-ring { animation: progressSpin 2s ease-out forwards; }
+
+        /* ═══════════════ HERO STATS ═══════════════ */
         .lp-hero-stats {
           display: flex;
           align-items: center;
@@ -644,9 +636,7 @@ export default function LandingPage() {
           padding-top: 40px;
           border-top: 1px solid var(--border);
         }
-        .lp-stat {
-          text-align: center;
-        }
+        .lp-stat { text-align: center; }
         .lp-stat-num {
           display: block;
           font-size: 28px;
@@ -667,7 +657,7 @@ export default function LandingPage() {
           background: var(--border);
         }
 
-        /* ─── Buttons ─── */
+        /* ═══════════════ BUTTONS ═══════════════ */
         .lp-btn {
           display: inline-flex;
           align-items: center;
@@ -677,7 +667,7 @@ export default function LandingPage() {
           font-size: 15px;
           font-weight: 700;
           text-decoration: none;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
           cursor: pointer;
           border: none;
           white-space: nowrap;
@@ -716,13 +706,9 @@ export default function LandingPage() {
           border-radius: 16px;
         }
 
-        /* ─── Sections ─── */
-        .lp-section {
-          position: relative;
-        }
-        .lp-section--dark {
-          background: var(--bg-elevated);
-        }
+        /* ═══════════════ SECTIONS ═══════════════ */
+        .lp-section { position: relative; }
+        .lp-section--dark { background: var(--bg-elevated); }
         .lp-section--gradient {
           background: linear-gradient(180deg, var(--bg) 0%, var(--bg-elevated) 50%, var(--bg) 100%);
         }
@@ -730,6 +716,17 @@ export default function LandingPage() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 0 24px;
+        }
+        .lp-section-badge {
+          display: inline-block;
+          padding: 6px 16px;
+          background: rgba(255,56,92,0.08);
+          border: 1px solid rgba(255,56,92,0.15);
+          border-radius: 99px;
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--brand);
+          letter-spacing: 0.02em;
         }
         .lp-section-title {
           font-size: clamp(36px, 5vw, 64px);
@@ -741,7 +738,7 @@ export default function LandingPage() {
           text-align: center;
         }
 
-        /* ─── Features Grid ─── */
+        /* ═══════════════ FEATURES ═══════════════ */
         .lp-features-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -751,42 +748,50 @@ export default function LandingPage() {
           overflow: hidden;
         }
         .lp-feature-card {
-          padding: 48px 36px;
+          padding: 40px 32px;
           background: var(--bg);
           position: relative;
           transition: background 0.3s;
         }
-        .lp-feature-card:hover {
-          background: var(--surface);
+        .lp-feature-card:hover { background: var(--surface); }
+        .lp-feature-illustration {
+          height: 120px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .lp-feature-svg {
+          width: 160px;
+          height: 120px;
         }
         .lp-feature-num {
           display: block;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 800;
           color: var(--brand);
-          letter-spacing: 0.05em;
-          margin-bottom: 20px;
+          letter-spacing: 0.08em;
+          margin-bottom: 16px;
           font-variant-numeric: tabular-nums;
         }
         .lp-feature-card h3 {
-          font-size: 22px;
+          font-size: 20px;
           font-weight: 800;
-          margin: 0 0 12px 0;
+          margin: 0 0 10px 0;
           color: white;
           letter-spacing: -0.02em;
         }
         .lp-feature-card p {
-          font-size: 15px;
+          font-size: 14px;
           color: var(--text-muted);
           line-height: 1.6;
           margin: 0;
         }
 
-        /* ─── Steps ─── */
+        /* ═══════════════ STEPS ═══════════════ */
         .lp-steps {
           display: flex;
           flex-direction: column;
-          gap: 0;
           max-width: 700px;
           margin: 0 auto;
         }
@@ -796,9 +801,7 @@ export default function LandingPage() {
           padding: 48px 0;
           border-bottom: 1px solid var(--border);
         }
-        .lp-step:last-child {
-          border-bottom: none;
-        }
+        .lp-step:last-child { border-bottom: none; }
         .lp-step-visual {
           display: flex;
           flex-direction: column;
@@ -826,9 +829,7 @@ export default function LandingPage() {
           background: var(--border);
           min-height: 40px;
         }
-        .lp-step:last-child .lp-step-line {
-          display: none;
-        }
+        .lp-step:last-child .lp-step-line { display: none; }
         .lp-step-content h3 {
           font-size: 28px;
           font-weight: 800;
@@ -842,17 +843,8 @@ export default function LandingPage() {
           line-height: 1.6;
           margin: 0;
         }
-        .lp-step-accent {
-          display: inline-block;
-          margin-top: 16px;
-          font-size: 12px;
-          font-weight: 700;
-          color: var(--text-dim);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
 
-        /* ─── Stats Row ─── */
+        /* ═══════════════ STATS ═══════════════ */
         .lp-stats-row {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -867,9 +859,7 @@ export default function LandingPage() {
           text-align: center;
           transition: background 0.3s;
         }
-        .lp-stat-block:hover {
-          background: var(--surface);
-        }
+        .lp-stat-block:hover { background: var(--surface); }
         .lp-stat-big {
           display: block;
           font-size: clamp(32px, 4vw, 48px);
@@ -886,7 +876,7 @@ export default function LandingPage() {
           margin-top: 8px;
         }
 
-        /* ─── Showcase ─── */
+        /* ═══════════════ SHOWCASE ═══════════════ */
         .lp-showcase {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -897,11 +887,11 @@ export default function LandingPage() {
           border: 1px solid var(--border);
           border-radius: var(--radius);
           overflow: hidden;
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
         }
         .lp-showcase-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
           border-color: rgba(255,255,255,0.1);
         }
         .lp-showcase-visual {
@@ -909,20 +899,16 @@ export default function LandingPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          position: relative;
-          overflow: hidden;
         }
         .lp-showcase-emoji {
           font-size: 64px;
           filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
-          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
         }
         .lp-showcase-card:hover .lp-showcase-emoji {
           transform: scale(1.15) rotate(-5deg);
         }
-        .lp-showcase-info {
-          padding: 28px 32px;
-        }
+        .lp-showcase-info { padding: 28px 32px; }
         .lp-showcase-info h3 {
           font-size: 22px;
           font-weight: 800;
@@ -937,7 +923,7 @@ export default function LandingPage() {
           margin: 0;
         }
 
-        /* ─── Pricing ─── */
+        /* ═══════════════ PRICING ═══════════════ */
         .lp-pricing-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -960,9 +946,6 @@ export default function LandingPage() {
         .lp-price-card--featured {
           border-color: var(--brand);
           background: linear-gradient(180deg, rgba(255,56,92,0.05) 0%, var(--surface) 100%);
-        }
-        .lp-price-card--featured:hover {
-          border-color: var(--brand);
         }
         .lp-price-badge {
           position: absolute;
@@ -1021,14 +1004,13 @@ export default function LandingPage() {
           gap: 12px;
           font-size: 14px;
           color: var(--text-muted);
-          line-height: 1.4;
         }
         .lp-price-features li svg {
           color: var(--brand);
           flex-shrink: 0;
         }
 
-        /* ─── FAQ ─── */
+        /* ═══════════════ FAQ ═══════════════ */
         .lp-faq-list {
           display: flex;
           flex-direction: column;
@@ -1041,12 +1023,8 @@ export default function LandingPage() {
           overflow: hidden;
           transition: border-color 0.3s;
         }
-        .lp-faq-item:hover {
-          border-color: rgba(255,255,255,0.12);
-        }
-        .lp-faq-item[open] {
-          border-color: rgba(255,255,255,0.12);
-        }
+        .lp-faq-item:hover,
+        .lp-faq-item[open] { border-color: rgba(255,255,255,0.12); }
         .lp-faq-item summary {
           padding: 22px 28px;
           font-size: 16px;
@@ -1081,7 +1059,7 @@ export default function LandingPage() {
           margin: 0;
         }
 
-        /* ─── CTA ─── */
+        /* ═══════════════ CTA ═══════════════ */
         .lp-cta-title {
           font-size: clamp(36px, 5vw, 56px);
           font-weight: 900;
@@ -1096,84 +1074,38 @@ export default function LandingPage() {
           margin: 0 0 40px 0;
         }
 
-        /* ─── Responsive ─── */
+        /* ═══════════════ RESPONSIVE ═══════════════ */
         @media (max-width: 1024px) {
-          .lp-features-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .lp-pricing-grid {
-            grid-template-columns: 1fr;
-            max-width: 400px;
-            margin: 0 auto;
-          }
+          .lp-features-grid { grid-template-columns: repeat(2, 1fr); }
+          .lp-pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
         }
-
         @media (max-width: 768px) {
-          .lp-hero-content h1 {
-            font-size: clamp(36px, 10vw, 56px);
-          }
-          .lp-hero-stats {
-            flex-direction: column;
-            gap: 24px;
-          }
-          .lp-stat-divider {
-            width: 40px;
-            height: 1px;
-          }
-          .lp-features-grid {
-            grid-template-columns: 1fr;
-          }
-          .lp-step {
-            flex-direction: column;
-            gap: 20px;
-            padding: 32px 0;
-          }
-          .lp-step-visual {
-            flex-direction: row;
-          }
-          .lp-step-line {
-            width: 40px;
-            height: 1px;
-            min-height: unset;
-          }
-          .lp-stats-row {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .lp-showcase {
-            grid-template-columns: 1fr;
-          }
-          .lp-section-title {
-            margin-bottom: 48px;
-          }
+          .lp-hero-content h1 { font-size: clamp(36px, 10vw, 56px); }
+          .lp-hero-stats { flex-direction: column; gap: 24px; }
+          .lp-stat-divider { width: 40px; height: 1px; }
+          .lp-features-grid { grid-template-columns: 1fr; }
+          .lp-feature-illustration { height: 100px; }
+          .lp-step { flex-direction: column; gap: 20px; padding: 32px 0; }
+          .lp-step-visual { flex-direction: row; }
+          .lp-step-line { width: 40px; height: 1px; min-height: unset; }
+          .lp-stats-row { grid-template-columns: repeat(2, 1fr); }
+          .lp-showcase { grid-template-columns: 1fr; }
+          .lp-section-title { margin-bottom: 48px; }
         }
-
         @media (max-width: 480px) {
-          .lp-btn {
-            padding: 14px 24px;
-            font-size: 14px;
-          }
-          .lp-btn--lg {
-            padding: 16px 28px;
-          }
-          .lp-feature-card {
-            padding: 32px 24px;
-          }
+          .lp-btn { padding: 14px 24px; font-size: 14px; }
+          .lp-btn--lg { padding: 16px 28px; }
+          .lp-feature-card { padding: 32px 24px; }
         }
 
-        /* ─── Reduced motion ─── */
+        /* ═══════════════ REDUCED MOTION ═══════════════ */
         @media (prefers-reduced-motion: reduce) {
-          .lp-reveal {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
-          .lp-hero-glow {
-            animation: none;
-          }
+          .lp-reveal { opacity: 1; transform: none; transition: none; }
+          .lp-float-slow, .lp-float-med, .lp-float-fast { animation: none; }
+          .lp-progress-ring { animation: none; stroke-dashoffset: 72; }
           .lp-btn--primary:hover,
-          .lp-showcase-card:hover {
-            transform: none;
-          }
+          .lp-showcase-card:hover,
+          .lp-price-card:hover { transform: none; }
         }
       `}</style>
     </PageShell>
