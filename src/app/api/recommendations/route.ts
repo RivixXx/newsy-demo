@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     });
 
     const participatedCategories = [...new Set(
-      userParticipations.map(p => p.challenge.category).filter(Boolean)
+      userParticipations.map(p => p.challenge.category).filter((c): c is string => typeof c === 'string')
     )];
 
     // Получаем ID челленджей, в которых пользователь уже участвует
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       include: {
         organizer: { select: { name: true } },
         _count: { select: { participations: true } },
+        media: { take: 1 },
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
         include: {
           organizer: { select: { name: true } },
           _count: { select: { participations: true } },
+          media: { take: 1 },
         },
         orderBy: { participations: { _count: 'desc' } },
         take: limit - recommendations.length,

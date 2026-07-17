@@ -25,7 +25,7 @@ export async function GET() {
     });
 
     const balance = payouts
-      .filter(p => p.status === 'COMPLETED')
+      .filter(p => p.status === 'SUCCEEDED')
       .reduce((acc, p) => acc + p.amount, 0);
 
     return NextResponse.json({ balance, payouts });

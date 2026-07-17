@@ -43,7 +43,7 @@ async function getLeaderboard(challengeId: string) {
           completedSteps,
           totalSteps: progress.length || 1,
           completedAt: lastCompletedAt ? new Date(lastCompletedAt) : null,
-          joinedAt: p.joinedAt,
+          joinedAt: p.startedAt,
         };
       })
       .sort((a, b) => {

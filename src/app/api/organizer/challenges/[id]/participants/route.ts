@@ -38,7 +38,7 @@ export async function GET(
           select: { id: true, firstName: true, lastName: true, email: true },
         },
       },
-      orderBy: { joinedAt: 'asc' },
+      orderBy: { startedAt: 'asc' },
     });
 
     return NextResponse.json({ participants });

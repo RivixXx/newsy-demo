@@ -16,7 +16,7 @@ async function getRecommendations(userId?: string) {
     });
 
     const participatedCategories = [...new Set(
-      userParticipations.map(p => p.challenge.category).filter(Boolean)
+      userParticipations.map(p => p.challenge.category).filter((c): c is string => typeof c === 'string')
     )];
 
     const participatedChallengeIds = userParticipations.map(p => p.challengeId);

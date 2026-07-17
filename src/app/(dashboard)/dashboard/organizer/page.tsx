@@ -21,7 +21,13 @@ async function getOrganizerData(userId?: string) {
 
     const challenges = await prisma.challenge.findMany({
       where: { organizerId: member.organizerId, deletedAt: null },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        format: true,
+        status: true,
+        maxParticipants: true,
         _count: { select: { participations: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -143,7 +149,7 @@ export default async function OrganizerDashboardPage() {
                       </span>
                     </td>
                     <td style={styles.td}>
-                      {c._count.participants || 0}{c.maxParticipants ? ` / ${c.maxParticipants}` : ''}
+                      {c._count.participations || 0}{c.maxParticipants ? ` / ${c.maxParticipants}` : ''}
                     </td>
                     <td style={styles.td}>
                       <Link href={`/dashboard/organizer/${c.id}`} style={styles.actionLink}>

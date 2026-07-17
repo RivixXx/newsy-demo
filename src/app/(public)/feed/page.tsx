@@ -20,7 +20,6 @@ async function getFeedItems(): Promise<FeedItem[]> {
     const stepProgress = await prisma.stepProgress.findMany({
       where: {
         status: 'APPROVED',
-        submission: { not: null },
       },
       include: {
         userProgress: {
@@ -45,7 +44,7 @@ async function getFeedItems(): Promise<FeedItem[]> {
         challengeId: sp.userProgress.challengeId,
         stepTitle: sp.step.title || 'Этап',
         stepType: sp.step.type,
-        submission: typeof sp.submission === 'string' ? sp.submission : null,
+        submission: sp.submission != null ? String(sp.submission) : null,
         completedAt: sp.completedAt!,
       }));
   } catch {

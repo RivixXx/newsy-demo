@@ -13,6 +13,7 @@ async function getOrganizer(id: string) {
           where: { deletedAt: null, status: 'PUBLISHED' },
           include: {
             _count: { select: { participations: true } },
+            media: { take: 1 },
           },
           take: 10,
           orderBy: { createdAt: 'desc' },
