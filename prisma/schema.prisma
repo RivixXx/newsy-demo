@@ -448,8 +448,8 @@ model Achievement {
   icon            String?          // Emoji или имя иконки
   badgeUrl        String?
   category        String?          // Категория: progress, social, sport, education, art, eco, streak, special, organizer
-  isCustom        Boolean          @default(false) // Кастомное от организатора
-  isApproved      Boolean          @default(true)  // Одобрено модератором
+  isCustom        Boolean          @default(false)
+  isApproved      Boolean          @default(true)
   pointsRequired  Int?             @default(0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -543,7 +543,7 @@ model TeamMember {
   id              String         @id @default(uuid())
   teamId          String
   userId          String
-  role            String         @default('MEMBER') // CAPTAIN, MEMBER
+  role            String         @default("MEMBER")
   joinedAt        DateTime       @default(now())
 
   team            Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -576,7 +576,7 @@ model PrizeRedemption {
   userId          String
   prizeId         String
   pointsSpent     Int
-  status          String         @default('PENDING') // PENDING, DELIVERED, CANCELLED
+  status          String         @default("PENDING")
   createdAt       DateTime       @default(now())
   deliveredAt     DateTime?
 
@@ -863,7 +863,7 @@ model Report {
   userId        String?
   reason        String
   description   String?
-  status        String   @default("PENDING") // PENDING, REVIEWED, RESOLVED, DISMISSED
+  status        String   @default("PENDING")
   resolvedAt    DateTime?
   resolvedBy    String?
   createdAt     DateTime @default(now())
