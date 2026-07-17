@@ -20,7 +20,7 @@ async function getAnalytics(challengeId: string, userId?: string) {
       where: { id: challengeId, organizerId: member.organizerId, deletedAt: null },
       include: {
         participations: {
-          include: { user: { select: { region: true, createdAt: true } } },
+          include: { user: { select: { createdAt: true } } },
         },
         steps: { orderBy: { order: 'asc' } },
         _count: { select: { participations: true } },
@@ -39,17 +39,17 @@ async function getAnalytics(challengeId: string, userId?: string) {
       }).length;
     });
 
-    // География
+    // География (пока все "Не указан" — region нет в User)
     const regions: Record<string, number> = {};
-    challenge.participations.forEach(p => {
-      const region = p.user.region || 'Не указан';
+    challenge.participations.forEach(() => {
+      const region = 'Не указан';
       regions[region] = (regions[region] || 0) + 1;
     });
 
     // Динамика регистрации по дням
     const dailyRegistrations: Record<string, number> = {};
     challenge.participations.forEach(p => {
-      const date = new Date(p.joinedAt).toISOString().slice(0, 10);
+      const date = new Date(p.startedAt).toISOString().slice(0, 10);
       dailyRegistrations[date] = (dailyRegistrations[date] || 0) + 1;
     });
 
