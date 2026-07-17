@@ -23,7 +23,7 @@ async function getFinances(userId?: string) {
     });
 
     const balance = payouts
-      .filter(p => p.status === 'COMPLETED')
+      .filter(p => p.status === 'SUCCEEDED')
       .reduce((acc, p) => acc + p.amount, 0);
 
     return { balance, payouts };
