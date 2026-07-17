@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
 import { PageShell } from '@/shared/components/page-shell';
+import { ScrollVideo } from '@/shared/components/scroll-video';
 
 /* ─── Scroll reveal hook ─── */
 function useReveal(threshold = 0.15) {
@@ -323,6 +324,19 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ═══ SCROLL VIDEO ═══ */}
+        <section className="lp-section" style={{ paddingTop: 80 }}>
+          <div className="lp-container">
+            <div style={{ textAlign: 'center', marginBottom: 60 }}>
+              <SectionLabel>Демонстрация</SectionLabel>
+              <h2 className="lp-section-title" style={{ marginBottom: 0 }}>
+                Увидьте NEWSY в действии
+              </h2>
+            </div>
+          </div>
+          <ScrollVideo src="/newsy-showcase.mp4" />
         </section>
 
         {/* ═══ FEATURES ═══ */}
