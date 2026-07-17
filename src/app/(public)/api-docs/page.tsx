@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { ArrowLeft, Code, Database, Users, Trophy, Calendar, MapPin } from 'lucide-react';
