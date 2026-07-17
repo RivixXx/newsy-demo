@@ -1,784 +1,541 @@
 'use client';
 
-import React, { useRef, useState, useEffect, lazy, Suspense, useMemo } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal } from 'lucide-react';
-import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
-import { PageShell } from '@/shared/components/page-shell';
-import { PageSpinner } from '@/shared/components/spinner';
-import { AnnouncementPopup } from '@/shared/components/announcement-popup';
-import { useRegion } from '@/shared/components/region-provider';
-import { type ModalChallenge } from '@/shared/components/challenge-modal';
-import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
-import { useChallenges } from '@/shared/hooks/use-challenges';
-import { useFavorites } from '@/shared/hooks/use-favorites';
+import { ArrowRight, Zap, Users, BarChart3, Trophy, MapPin, Sparkles } from 'lucide-react';
+import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
 
-const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
-
-const CATEGORY_LABELS: Record<string, string> = {
-  sport: 'Спорт',
-  education: 'Обучение',
-  quest: 'Квесты',
-  art: 'Искусство',
-  tech: 'Технологии',
-};
-const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
-const CATEGORIES_ALL = ['Все подряд', ...CATEGORY_KEYS];
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  'Все подряд': <IconBolt size={16} />,
-  sport: <IconRun size={16} />,
-  education: <IconSchool size={16} />,
-  quest: <IconRoute size={16} />,
-  art: <IconPalette size={16} />,
-  tech: <IconCpu size={16} />,
-};
-
-function toModalChallenge(c: CatalogChallenge): ModalChallenge {
-  return {
-    id: c.id,
-    title: c.title,
-    organizer: c.organizer,
-    category: c.category,
-    imageUrl: c.imageUrl,
-    participantsCount: c.participantsCount,
-    maxParticipants: c.maxParticipants,
-    endDate: c.endDate,
-    location: c.location,
-    achievement: c.achievement,
-    reward: c.reward,
-    description: c.description,
-    requirements: c.requirements,
-    refundPolicy: c.refundPolicy,
-    isJoined: false,
-    stages: [],
-  };
-}
-
-// ─── Карточка ─────────────────────────────────────────────────────────────
-function CatalogCard({ challenge, onOpen, isAdmin, isFav, onToggleFav }: {
-  challenge: CatalogChallenge;
-  onOpen: (c: CatalogChallenge) => void;
-  isAdmin?: boolean;
-  isFav: boolean;
-  onToggleFav: (id: string) => void;
-}) {
-  const [animating, setAnimating] = useState(false);
-  const availableSlots = challenge.maxParticipants - challenge.participantsCount;
-  const isNew = challenge.badges?.includes('new');
-
-  const handleFavClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setAnimating(true);
-    onToggleFav(challenge.id);
-    setTimeout(() => setAnimating(false), 400);
-  };
-
+export default function LandingPage() {
   return (
-    <div className="catalog-card" onClick={() => onOpen(challenge)}>
-      <div className="card-image-box">
-        <img src={challenge.imageUrl} alt={challenge.title} className="card-bg-img" />
-        <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {CATEGORY_LABELS[challenge.category] || challenge.category}</span>
-        {isNew && (
-          <span style={{
-            position: 'absolute', top: 12, left: 12,
-            background: 'linear-gradient(135deg, #16a34a, #15803d)',
-            color: 'white', padding: '4px 10px', borderRadius: 99,
-            fontSize: 10, fontWeight: 800, letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-          }}>Новый</span>
-        )}
-        <button
-          className={`card-heart ${isFav ? 'liked' : ''} ${animating ? 'animating' : ''}`}
-          onClick={handleFavClick}
-        >
-          <Heart size={17} fill={isFav ? '#FF385C' : 'none'} color={isFav ? '#FF385C' : '#111'} />
-          {animating && <span className="heart-particles">{'✨'.repeat(5)}</span>}
-        </button>
-      </div>
-      <div className="card-body">
-        <div className="card-top">
-          <h3 className="card-title">{challenge.title}</h3>
-          <p className="card-organizer">{challenge.organizer}</p>
-        </div>
-        <div className="card-bottom">
-          <div className="card-tags">
-            <span className="card-tag achievement" title="Достижение за выполнение">🏆 {challenge.achievement}</span>
-            <span className="card-tag reward" title="Награда за выполнение">🎁 {challenge.reward}</span>
+    <div className="landing">
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-inner">
+          <div className="hero-badge">
+            <Sparkles size={14} /> Платформа для организаторов и участников
           </div>
-          <div className="card-footer">
-            <span className="card-slots">
-              <span className={availableSlots <= 5 ? 'few' : ''}>{availableSlots}</span> мест из {challenge.maxParticipants}
-            </span>
-            <span className="card-date">до {challenge.endDate}</span>
+          <h1 className="hero-title">
+            Создавай и запускай<br />
+            <span className="gradient-text">марафоны, конкурсы, квесты</span><br />
+            за 15 минут
+          </h1>
+          <p className="hero-sub">
+            NEWSY — место, где бренды, НКО и HR создают интерактивные челленджи,
+            а участники выполняют задания, соревнуются и получают награды.
+          </p>
+          <div className="hero-actions">
+            <Link href="/register" className="btn-primary">
+              Создать челлендж <ArrowRight size={18} />
+            </Link>
+            <Link href="/explore" className="btn-secondary">
+              Участвовать
+            </Link>
           </div>
         </div>
-      </div>
+        <div className="hero-visual">
+          <div className="mock-card mc-1">
+            <div className="mc-img" />
+            <div className="mc-body">
+              <div className="mc-title" />
+              <div className="mc-sub" />
+            </div>
+          </div>
+          <div className="mock-card mc-2">
+            <div className="mc-img" />
+            <div className="mc-body">
+              <div className="mc-title" />
+              <div className="mc-sub" />
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <style jsx>{`
-        .catalog-card {
-          width: 300px;
-          flex-shrink: 0;
-          background: rgba(255,255,255,0.65);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.85);
-          border-radius: 20px;
-          overflow: hidden;
-          box-shadow: 0 6px 24px rgba(31,38,135,0.07);
-          cursor: pointer;
-          transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
-          user-select: none;
-          -webkit-user-drag: none;
-        }
-        .catalog-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 16px 40px rgba(31,38,135,0.14);
-        }
-        .card-image-box {
-          height: 180px;
-          position: relative;
-          overflow: hidden;
-        }
-        .card-bg-img {
-          width: 100%; height: 100%;
-          object-fit: cover;
-          transition: transform 0.5s ease;
-        }
-        .catalog-card:hover .card-bg-img { transform: scale(1.06); }
-        .card-category-pill {
-          position: absolute; bottom: 12px; left: 12px;
-          background: rgba(255,255,255,0.92);
-          padding: 4px 10px; border-radius: 99px;
-          font-size: 11px; font-weight: 700;
-          backdrop-filter: blur(4px);
-        }
-        .card-heart {
-          position: absolute; top: 12px; right: 12px;
-          width: 34px; height: 34px; border-radius: 50%;
-          background: rgba(255,255,255,0.92);
-          border: none; display: grid; place-items: center;
-          cursor: pointer; z-index: 1;
-          transition: transform 0.15s, background 0.2s;
-        }
-        .card-heart:hover { transform: scale(1.15); }
-        .card-heart.liked { background: rgba(255,56,92,0.1); }
-        .card-heart.animating { animation: heartBounce 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-        .heart-particles {
-          position: absolute; top: -8px; right: -8px;
-          font-size: 14px; pointer-events: none;
-          animation: particleBurst 0.5s ease-out forwards;
-        }
-        @keyframes heartBounce {
-          0% { transform: scale(1); }
-          40% { transform: scale(1.35); }
-          100% { transform: scale(1); }
-        }
-        @keyframes particleBurst {
-          0% { opacity: 1; transform: scale(0.5); }
-          100% { opacity: 0; transform: scale(1.5) translateY(-12px); }
-        }
-        .card-body {
-          padding: 16px; display: flex;
-          flex-direction: column; gap: 10px;
-          height: 180px;
-        }
-        .card-top {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          min-height: 0;
-        }
-        .card-bottom {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          flex-shrink: 0;
-        }
-        .card-title {
-          font-size: 15px; font-weight: 800;
-          color: #111; margin: 0; line-height: 1.3;
-          display: -webkit-box; -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical; overflow: hidden;
-        }
-        .card-organizer {
-          font-size: 12px; color: #888; font-weight: 600; margin: 0;
-        }
-        .card-tags { display: flex; flex-direction: column; gap: 6px; }
-        .card-tag {
-          padding: 5px 10px; border-radius: 8px;
-          font-size: 12px; font-weight: 700;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .card-tag.achievement { background: #fef3c7; color: #92400e; }
-        .card-tag.reward { background: #dcfce7; color: #166534; }
-        .card-footer {
-          display: flex; justify-content: space-between;
-          align-items: center; padding-top: 10px;
-          border-top: 1px solid rgba(0,0,0,0.06);
-          font-size: 12px; color: #888;
-        }
-        .card-slots { font-weight: 700; }
-        .card-slots .few { color: #ef4444; }
-        .card-date { font-weight: 600; }
-      `}</style>
-    </div>
-  );
-}
+      {/* ДЛЯ КОГО */}
+      <section className="audience">
+        <h2 className="section-title">Для кого NEWSY?</h2>
+        <div className="audience-grid">
+          <div className="audience-card">
+            <div className="ac-icon" style={{ background: 'linear-gradient(135deg, #FF385C, #ff6b8a)' }}>
+              <Zap size={28} color="white" />
+            </div>
+            <h3>Для организаторов</h3>
+            <p>Бренды, НКО, HR — создавайте челленджи для вовлечения аудитории, найма сотрудников или благотворительных акций.</p>
+            <ul>
+              <li>Конструктор за 15 минут</li>
+              <li>Аналитика участников</li>
+              <li>Монетизация и тарифы</li>
+            </ul>
+          </div>
+          <div className="audience-card">
+            <div className="ac-icon" style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }}>
+              <Users size={28} color="white" />
+            </div>
+            <h3>Для участников</h3>
+            <p>Находите интересные челленджи, выполняйте задания, получайте достижения и соревнуйтесь с другими.</p>
+            <ul>
+              <li>Бесплатные и платные ЧИ</li>
+              <li>Достижения и награды</li>
+              <li>Чат с другими участниками</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-// ─── Карусель с направлением ───────────────────────────────────────────────
-function CarouselSection({
-  title,
-  challenges,
-  onOpen,
-  direction = 'right',
-  isAdmin,
-  isFavFn,
-  onToggleFav,
-}: {
-  title: string;
-  challenges: CatalogChallenge[];
-  onOpen: (c: CatalogChallenge) => void;
-  direction?: 'left' | 'right';
-  isAdmin?: boolean;
-  isFavFn: (id: string) => boolean;
-  onToggleFav: (id: string) => void;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+      {/* КАК РАБОТАЕТ */}
+      <section className="how-it-works">
+        <h2 className="section-title">Как работает NEWSY?</h2>
+        <div className="steps-grid">
+          <div className="step">
+            <div className="step-num">1</div>
+            <h3>Создайте</h3>
+            <p>Используйте конструктор для создания челленджей с этапами, наградами и правилами.</p>
+          </div>
+          <div className="step-arrow">→</div>
+          <div className="step">
+            <div className="step-num">2</div>
+            <h3>Запустите</h3>
+            <p>Опубликуйте челлендж, пригласите участников через соцсети или Telegram.</p>
+          </div>
+          <div className="step-arrow">→</div>
+          <div className="step">
+            <div className="step-num">3</div>
+            <h3>Анализируйте</h3>
+            <p>Отслеживайте прогресс участников, конверсию по этапам и общую статистику.</p>
+          </div>
+        </div>
+      </section>
 
-  // Медленный автоскролл с чередованием направления
-  React.useEffect(() => {
-    if (isDragging || isHovered) return;
-    const STEP = 1; // пикселей за тик
-    const INTERVAL = 30; // мс — очень плавно
-    const id = setInterval(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-      if (direction === 'right') {
-        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
-          el.scrollLeft = 0;
-        } else {
-          el.scrollLeft += STEP;
-        }
-      } else {
-        if (el.scrollLeft <= 1) {
-          el.scrollLeft = el.scrollWidth - el.clientWidth;
-        } else {
-          el.scrollLeft -= STEP;
-        }
-      }
-    }, INTERVAL);
-    return () => clearInterval(id);
-  }, [isDragging, isHovered, direction]);
+      {/* ПРИМЕРЫ */}
+      <section className="examples">
+        <h2 className="section-title">Примеры челленджей</h2>
+        <div className="examples-grid">
+          <div className="example-card">
+            <div className="ec-icon">🏃</div>
+            <h3>Спортивный марафон</h3>
+            <p>30-дневный марафон с ежедневными заданиями по бегу и ЗОЖ.</p>
+          </div>
+          <div className="example-card">
+            <div className="ec-icon">📚</div>
+            <h3>Образовательный интенсив</h3>
+            <p>Изучите новый навык за 2 недели с проверкой знаний.</p>
+          </div>
+          <div className="example-card">
+            <div className="ec-icon">🎨</div>
+            <h3>Творческий конкурс</h3>
+            <p>Покажите свои таланты и выиграйте призы от спонсоров.</p>
+          </div>
+          <div className="example-card">
+            <div className="ec-icon">🌍</div>
+            <h3>Экологическая акция</h3>
+            <p>Участвуйте в благотворительных акциях и получайте достижения.</p>
+          </div>
+        </div>
+      </section>
 
-  const scrollBy = (dir: 'left' | 'right') => {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 324 : -324, behavior: 'smooth' });
-  };
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setStartX(e.pageX - (scrollRef.current?.offsetLeft ?? 0));
-    setScrollLeft(scrollRef.current?.scrollLeft ?? 0);
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    e.preventDefault();
-    scrollRef.current.scrollLeft = scrollLeft - (e.pageX - (scrollRef.current.offsetLeft) - startX) * 2;
-  };
-
-  return (
-    <section className="carousel-section">
-      <h2 className="carousel-title">{title}</h2>
-      <div
-        className="carousel-wrapper"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => { setIsHovered(false); setIsDragging(false); }}
-      >
-        <button className="carousel-btn prev" onClick={() => scrollBy('left')}>
-          <ChevronLeft size={20} color="#222" />
-        </button>
-        <div
-          className={`carousel-track ${isDragging ? 'dragging' : ''}`}
-          ref={scrollRef}
-          onMouseDown={onMouseDown}
-          onMouseUp={() => setIsDragging(false)}
-          onMouseMove={onMouseMove}
-        >
-          {challenges.map((c, i) => (
-            <CatalogCard key={`${c.id}-${i}`} challenge={c} onOpen={onOpen} isAdmin={isAdmin} isFav={isFavFn(c.id)} onToggleFav={onToggleFav} />
+      {/* ТАРИФЫ */}
+      <section className="pricing">
+        <h2 className="section-title">Тарифы для организаторов</h2>
+        <div className="pricing-grid">
+          {PUBLISH_TARIFFS.map((tariff, i) => (
+            <div key={tariff.id} className={`price-card ${tariff.recommended ? 'featured' : ''}`}>
+              {tariff.recommended && <div className="popular">Популярный</div>}
+              <h3>{tariff.name}</h3>
+              <div className="price">
+                {tariff.price === 0 ? 'Бесплатно' : `${tariff.price.toLocaleString('ru-RU')} ₽`}
+                {tariff.price > 0 && <span>/мес</span>}
+              </div>
+              <ul>
+                {tariff.features.map((f, j) => (
+                  <li key={j}>{f}</li>
+                ))}
+              </ul>
+              <Link href="/register" className={tariff.recommended ? 'btn-primary-sm' : 'btn-outline'}>
+                {tariff.price === 0 ? 'Начать' : 'Выбрать'}
+              </Link>
+            </div>
           ))}
         </div>
-        <button className="carousel-btn next" onClick={() => scrollBy('right')}>
-          <ChevronRight size={20} color="#222" />
-        </button>
-      </div>
+      </section>
 
-      <style jsx>{`
-        .carousel-section { display: flex; flex-direction: column; gap: 20px; width: 100%; }
-        .carousel-title { font-size: 22px; font-weight: 800; color: #111; margin: 0; }
-        .carousel-wrapper { position: relative; display: flex; align-items: center; }
-        .carousel-track {
-          display: flex; gap: 20px;
-          overflow-x: auto; overflow-y: visible;
-          padding: 8px 4px 32px;
-          scrollbar-width: none;
-          cursor: grab;
-        }
-        .carousel-track.dragging { cursor: grabbing; }
-        .carousel-track::-webkit-scrollbar { display: none; }
-        .carousel-btn {
-          position: absolute;
-          width: 38px; height: 38px;
-          background: white; border: 1px solid #e5e7eb;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          border-radius: 50%; display: grid; place-items: center;
-          cursor: pointer; z-index: 10;
-          transition: transform 0.2s, box-shadow 0.2s;
-          flex-shrink: 0;
-        }
-        .carousel-btn:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
-        .carousel-btn.prev { left: -18px; }
-        .carousel-btn.next { right: -18px; }
-      `}</style>
-    </section>
-  );
-}
-
-// ─── Главный компонент ─────────────────────────────────────────────────────
-export default function PublicHomePage() {
-  const { challenges, loading, isAdmin } = useChallenges();
-  const { region, isLoaded, setRegion } = useRegion();
-  const { isFavorite, toggleFavorite, favoritesCount } = useFavorites();
-  const [activeCategory, setActiveCategory] = useState('Все подряд');
-  const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
-
-  // Filter by region: show challenges with no region (online/everywhere) or matching user's region
-  const regionFiltered = useMemo(() => {
-    if (!region) return challenges;
-    const matched = challenges.filter(c => !c.region || c.region === region);
-    // If nothing matches this region, show all (user probably typed a custom city)
-    return matched.length > 0 ? matched : challenges;
-  }, [challenges, region]);
-
-  const filtered = regionFiltered.filter(c => {
-    const matchCat = activeCategory === 'Все подряд' || c.category === activeCategory;
-    return matchCat;
-  });
-
-  const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
-
-  if (activeCategory === 'Все подряд') {
-    const recommended = regionFiltered.filter(c => c.isRecommended);
-    if (recommended.length) sections.push({ title: 'Рекомендовано', challenges: recommended, direction: 'right' });
-    CATEGORY_KEYS.forEach((key, i) => {
-      const group = regionFiltered.filter(c => c.category === key);
-      if (group.length) sections.push({ title: CATEGORY_LABELS[key], challenges: group, direction: i % 2 === 0 ? 'left' : 'right' });
-    });
-  }
-
-  if (loading) {
-    return (
-      <PageShell variant="public">
-        <PageSpinner text="Загружаем челленджи..." />
-      </PageShell>
-    );
-  }
-
-  return (
-    <PageShell variant="public">
-      {/* Попап-баннер */}
-      <AnnouncementPopup />
-
-      {/* Модальное окно ЧЕ */}
-      {selectedChallenge && (
-        <Suspense fallback={null}>
-          <ChallengeModal
-            challenge={toModalChallenge(selectedChallenge)}
-            onClose={() => setSelectedChallenge(null)}
-          />
-        </Suspense>
-      )}
-
-      <main className="catalog-main">
-
-        {/* Категории */}
-        <div className="categories-scroll">
-            {CATEGORIES_ALL.map(cat => (
-              <button
-                key={cat}
-                className={`cat-pill ${activeCategory === cat ? 'active' : ''}`}
-                onClick={() => setActiveCategory(cat)}
-              >
-                {CATEGORY_ICONS[cat]} {cat === 'Все подряд' ? cat : CATEGORY_LABELS[cat]}
-              </button>
-            ))}
-          </div>
-
-        {/* Контент */}
-        <div className="catalog-content">
-          {challenges.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: '#111', margin: '0 0 8px' }}>Челленджи пока не добавлены</h3>
-              <p style={{ fontSize: 14, color: '#888', margin: 0 }}>Скоро здесь появятся интересные активности</p>
-            </div>
-          ) : activeCategory === 'Все подряд' ? (
-            // Несколько секций с чередованием направления
-            <div className="sections-list">
-              {sections.map((sec, idx) => (
-                <CarouselSection
-                  key={sec.title}
-                  title={sec.title}
-                  challenges={sec.challenges}
-                  onOpen={c => setSelectedChallenge(c)}
-                  direction={idx % 2 === 0 ? 'right' : 'left'}
-                  isAdmin={isAdmin}
-                  isFavFn={isFavorite}
-                  onToggleFav={toggleFavorite}
-                />
-              ))}
-            </div>
-          ) : (
-            // Сетка по категории / поиск
-            <>
-              <p className="results-count">
-                {filtered.length > 0
-                  ? `Найдено: ${filtered.length} ${filtered.length === 1 ? 'челендж' : 'челенджей'}`
-                  : 'Ничего не найдено'}
-              </p>
-              <div className="grid-layout">
-                {filtered.map(c => (
-                  <CatalogCard key={c.id} challenge={c} onOpen={ch => setSelectedChallenge(ch)} isAdmin={isAdmin} isFav={isFavorite(c.id)} onToggleFav={toggleFavorite} />
-                ))}
-              </div>
-            </>
-          )}
+      {/* FAQ */}
+      <section className="faq">
+        <h2 className="section-title">Частые вопросы</h2>
+        <div className="faq-list">
+          <details>
+            <summary>Что такое челлендж на NEWSY?</summary>
+            <p>Челлендж — это интерактивное задание или серия заданий, которые участники выполняют за определённый срок. Это может быть спортивный марафон, образовательный интенсив, творческий конкурс или экологическая акция.</p>
+          </details>
+          <details>
+            <summary>Сколько стоит создание челленджа?</summary>
+            <p>Базовый тариф бесплатный — вы можете создать 1 челлендж с участием до 50 человек. Профессиональные тарифы начинаются от 2 990 ₽/мес.</p>
+          </details>
+          <details>
+            <summary>Можно ли участвовать бесплатно?</summary>
+            <p>Да! Многие челленджи на NEWSY бесплатные. Платные челленджи используются организаторами для покрытия расходов на призы и логистику.</p>
+          </details>
+          <details>
+            <summary>Как работает монетизация?</summary>
+            <p>Организаторы могут установить взнос за участие. NEWSY удерживает комиссию (по умолчанию 15%) и перечисляет остаток организатору после завершения челленджа.</p>
+          </details>
         </div>
-      </main>
+      </section>
+
+      {/* CTA */}
+      <section className="final-cta">
+        <h2>Готовы создать свой первый челлендж?</h2>
+        <p>Присоединяйтесь к тысячам организаторов и участников на NEWSY.</p>
+        <div className="cta-actions">
+          <Link href="/register" className="btn-primary">
+            Начать бесплатно <ArrowRight size={18} />
+          </Link>
+          <Link href="/explore" className="btn-secondary">
+            Смотреть каталог
+          </Link>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="footer">
+        <div className="footer-inner">
+          <div className="footer-brand">
+            <img src="/icon.png" alt="NEWSY" width={32} height={32} />
+            <span>NEWSY</span>
+          </div>
+          <div className="footer-links">
+            <Link href="/explore">Каталог</Link>
+            <Link href="/feed">Лента</Link>
+            <Link href="/stories">Stories</Link>
+            <Link href="/live">Live</Link>
+            <Link href="/api-docs">API</Link>
+            <Link href="/pricing">Тарифы</Link>
+            <Link href="/register">Регистрация</Link>
+            <Link href="/login">Вход</Link>
+          </div>
+          <p className="footer-copy">© 2026 NEWSY. Все права защищены.</p>
+        </div>
+      </footer>
 
       <style jsx>{`
-        .catalog-main {
-          max-width: 1440px;
-          margin: 0 auto;
-          padding: 32px 40px 80px;
-          display: flex;
-          flex-direction: column;
-          gap: 40px;
-        }
+        .landing { font-family: system-ui, -apple-system, sans-serif; }
 
-        /* Header */
-        .page-header {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .header-top {
+        /* HERO */
+        .hero {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 80px 40px 60px;
+          gap: 60px;
         }
-
-        .page-title {
-          font-size: clamp(28px, 4vw, 40px);
-          font-weight: 900;
-          margin: 0;
-          color: #111;
-          letter-spacing: -1px;
-        }
-
-        .title-accent {
-          color: #FF385C;
-        }
-
-        /* Search Zone */
-        .search-zone {
-          display: flex;
-          gap: 14px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .search-box {
-          flex: 1;
-          min-width: 240px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          background: white;
-          border: 1.5px solid #e5e7eb;
-          border-radius: 16px;
-          padding: 12px 16px;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .search-box:focus-within {
-          border-color: #FF385C;
-          box-shadow: 0 0 0 3px rgba(255,56,92,0.1);
-        }
-
-        .search-input {
-          flex: 1;
-          border: none;
-          outline: none;
-          font-size: 15px;
-          color: #111;
-          background: transparent;
-        }
-
-        .search-input::placeholder { color: #aaa; }
-
-        .search-clear {
-          border: none;
-          background: none;
-          color: #aaa;
-          cursor: pointer;
-          font-size: 14px;
-          padding: 0 4px;
-        }
-
-        .search-right {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .location-hint {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 13px;
-          color: #666;
-          font-weight: 600;
-          white-space: nowrap;
-        }
-
-        .filter-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 18px;
-          border-radius: 14px;
-          border: 1.5px solid #e5e7eb;
-          background: white;
-          font-size: 14px;
-          font-weight: 700;
-          color: #333;
-          cursor: pointer;
-          transition: border-color 0.2s, background 0.2s;
-          white-space: nowrap;
-        }
-
-        .filter-btn:hover {
-          border-color: #FF385C;
-          background: #fff5f7;
-        }
-
-        /* Categories */
-        .categories-scroll {
-          display: flex;
-          gap: 10px;
-          overflow-x: auto;
-          padding-bottom: 4px;
-          scrollbar-width: none;
-          justify-content: center;
-          flex-wrap: wrap;
-        }
-
-        .categories-scroll::-webkit-scrollbar { display: none; }
-
-        .cat-pill {
-          display: flex;
+        .hero-inner { flex: 1; max-width: 580px; }
+        .hero-badge {
+          display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 10px 18px;
+          padding: 6px 14px;
+          background: rgba(255,56,92,0.08);
+          border: 1px solid rgba(255,56,92,0.15);
           border-radius: 99px;
-          border: 1.5px solid #e5e7eb;
-          background: white;
-          font-size: 14px;
-          font-weight: 700;
-          color: #444;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: all 0.2s;
-          flex-shrink: 0;
-        }
-
-        .cat-pill:hover { border-color: #FF385C; color: #FF385C; }
-
-        .cat-pill.active {
-          background: #111;
-          border-color: #111;
-          color: white;
-        }
-
-        /* Filter Panel */
-        .filter-panel {
-          background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 16px;
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-        }
-
-        .filter-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .filter-label {
           font-size: 13px;
           font-weight: 700;
-          color: #333;
-          min-width: 120px;
+          color: #FF385C;
+          margin-bottom: 24px;
         }
-
-        .filter-range {
-          display: flex;
+        .hero-title {
+          font-size: clamp(36px, 5vw, 56px);
+          font-weight: 900;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          margin: 0 0 20px 0;
+          color: #111;
+        }
+        .gradient-text {
+          background: linear-gradient(135deg, #FF385C, #ff6b8a);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .hero-sub {
+          font-size: 17px;
+          color: #666;
+          line-height: 1.6;
+          margin: 0 0 32px 0;
+        }
+        .hero-actions { display: flex; gap: 12px; margin-bottom: 40px; }
+        .btn-primary {
+          display: inline-flex;
           align-items: center;
           gap: 8px;
+          padding: 14px 28px;
+          background: #FF385C;
+          color: white;
+          border-radius: 14px;
+          font-weight: 800;
+          font-size: 15px;
+          text-decoration: none;
+          transition: background 0.2s;
         }
-
-        .filter-input {
-          padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid #e5e7eb;
-          font-size: 14px;
-          outline: none;
-          width: 140px;
+        .btn-primary:hover { background: #E31C5F; }
+        .btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 14px 28px;
+          background: white;
+          color: #111;
+          border: 2px solid #e5e5e5;
+          border-radius: 14px;
+          font-weight: 800;
+          font-size: 15px;
+          text-decoration: none;
           transition: border-color 0.2s;
         }
+        .btn-secondary:hover { border-color: #FF385C; color: #FF385C; }
+        .hero-stats { display: flex; gap: 40px; }
+        .stat strong { display: block; font-size: 24px; font-weight: 900; color: #111; }
+        .stat span { font-size: 13px; color: #888; font-weight: 600; }
 
-        .filter-input:focus {
-          border-color: #FF385C;
+        .hero-visual {
+          flex: 1;
+          max-width: 480px;
+          position: relative;
+          height: 400px;
+        }
+        .mock-card {
+          position: absolute;
+          width: 260px;
+          background: white;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        .mc-1 { top: 0; right: 0; transform: rotate(3deg); }
+        .mc-2 { bottom: 0; left: 0; transform: rotate(-2deg); }
+        .mc-img { height: 120px; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); }
+        .mc-body { padding: 16px; }
+        .mc-title { height: 16px; background: #f3f4f6; border-radius: 4px; margin-bottom: 8px; width: 80%; }
+        .mc-sub { height: 12px; background: #f3f4f6; border-radius: 4px; width: 60%; }
+
+        /* SECTIONS COMMON */
+        .section-title {
+          text-align: center;
+          font-size: clamp(28px, 3vw, 40px);
+          font-weight: 900;
+          margin: 0 0 48px 0;
+          letter-spacing: -0.02em;
         }
 
-        .filter-dash {
-          color: #aaa;
-          font-weight: 600;
+        /* AUDIENCE */
+        .audience {
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: 80px 40px;
+        }
+        .audience-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        .audience-card {
+          padding: 36px;
+          background: white;
+          border-radius: 24px;
+          border: 1px solid #f0f0f0;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+        }
+        .ac-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+        .audience-card h3 { font-size: 22px; font-weight: 800; margin: 0 0 12px 0; }
+        .audience-card p { font-size: 15px; color: #666; line-height: 1.6; margin: 0 0 16px 0; }
+        .audience-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+        .audience-card li { font-size: 14px; color: #555; padding-left: 20px; position: relative; }
+        .audience-card li::before { content: '✓'; position: absolute; left: 0; color: #22c55e; font-weight: 700; }
+
+        /* HOW IT WORKS */
+        .how-it-works {
+          background: #faf9f7;
+          padding: 80px 40px;
+        }
+        .steps-grid {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 24px;
+          max-width: 900px;
+          margin: 0 auto;
+        }
+        .step {
+          flex: 1;
+          text-align: center;
+          padding: 32px 24px;
+          background: white;
+          border-radius: 20px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+        .step-num {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: #FF385C;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          font-weight: 900;
+          margin: 0 auto 16px;
+        }
+        .step h3 { font-size: 18px; font-weight: 800; margin: 0 0 8px 0; }
+        .step p { font-size: 14px; color: #666; line-height: 1.5; margin: 0; }
+        .step-arrow { font-size: 24px; color: #ccc; font-weight: 300; }
+
+        /* EXAMPLES */
+        .examples {
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: 80px 40px;
+        }
+        .examples-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .example-card {
+          padding: 24px;
+          background: white;
+          border-radius: 16px;
+          border: 1px solid #f0f0f0;
+          text-align: center;
+        }
+        .ec-icon { font-size: 36px; margin-bottom: 12px; }
+        .example-card h3 { font-size: 16px; font-weight: 800; margin: 0 0 8px 0; }
+        .example-card p { font-size: 13px; color: #666; line-height: 1.5; margin: 0; }
+
+        /* PRICING */
+        .pricing {
+          background: #faf9f7;
+          padding: 80px 40px;
+        }
+        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
+        .price-card {
+          background: white;
+          border-radius: 20px;
+          padding: 32px;
+          border: 2px solid #f0f0f0;
+          position: relative;
+        }
+        .price-card.featured { border-color: #FF385C; }
+        .popular {
+          position: absolute;
+          top: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #FF385C;
+          color: white;
+          padding: 4px 16px;
+          border-radius: 99px;
+          font-size: 12px;
+          font-weight: 800;
+        }
+        .price-card h3 { font-size: 20px; font-weight: 800; margin: 0 0 8px 0; }
+        .price { font-size: 32px; font-weight: 900; margin: 0 0 20px 0; }
+        .price span { font-size: 14px; font-weight: 600; color: #888; }
+        .price-card ul { list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 10px; }
+        .price-card li { font-size: 14px; color: #555; padding-left: 24px; position: relative; }
+        .price-card li::before { content: '✓'; position: absolute; left: 0; color: #22c55e; font-weight: 700; }
+        .btn-outline {
+          display: block;
+          text-align: center;
+          padding: 12px 24px;
+          border: 2px solid #e5e5e5;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 14px;
+          color: #111;
+          text-decoration: none;
+          transition: border-color 0.2s;
+        }
+        .btn-outline:hover { border-color: #FF385C; color: #FF385C; }
+        .btn-primary-sm {
+          display: block;
+          text-align: center;
+          padding: 12px 24px;
+          background: #FF385C;
+          color: white;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 14px;
+          text-decoration: none;
         }
 
-        .filter-check {
+        /* FAQ */
+        .faq { max-width: 700px; margin: 0 auto; padding: 80px 40px; }
+        .faq-list { display: flex; flex-direction: column; gap: 12px; }
+        details {
+          background: white;
+          border: 1px solid #f0f0f0;
+          border-radius: 14px;
+          overflow: hidden;
+        }
+        summary {
+          padding: 18px 20px;
+          font-weight: 700;
+          font-size: 15px;
+          cursor: pointer;
+          list-style: none;
+        }
+        summary::-webkit-details-marker { display: none; }
+        details p { padding: 0 20px 18px; font-size: 14px; color: #666; line-height: 1.6; margin: 0; }
+
+        /* CTA */
+        .final-cta {
+          text-align: center;
+          padding: 80px 40px;
+          background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+          color: white;
+        }
+        .final-cta h2 { font-size: clamp(28px, 3vw, 40px); font-weight: 900; margin: 0 0 12px 0; }
+        .final-cta p { font-size: 16px; color: rgba(255,255,255,0.6); margin: 0 0 32px 0; }
+        .cta-actions { display: flex; gap: 12px; justify-content: center; }
+        .cta-actions .btn-secondary { border-color: rgba(255,255,255,0.2); color: white; background: transparent; }
+        .cta-actions .btn-secondary:hover { border-color: white; }
+
+        /* FOOTER */
+        .footer {
+          padding: 32px 40px;
+          border-top: 1px solid #f0f0f0;
+        }
+        .footer-inner {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .footer-brand {
           display: flex;
           align-items: center;
           gap: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          color: #333;
-          cursor: pointer;
+          font-weight: 900;
+          font-size: 18px;
         }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { font-size: 14px; color: #666; text-decoration: none; font-weight: 600; }
+        .footer-links a:hover { color: #FF385C; }
+        .footer-copy { font-size: 13px; color: #aaa; margin: 0; }
 
-        .filter-check input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          accent-color: #FF385C;
-        }
-
-        .filter-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 10px;
-          padding-top: 8px;
-          border-top: 1px solid #f0f0f0;
-        }
-
-        .filter-reset {
-          padding: 10px 20px;
-          border-radius: 10px;
-          border: 1px solid #e5e7eb;
-          background: white;
-          font-size: 14px;
-          font-weight: 700;
-          color: #666;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-
-        .filter-reset:hover {
-          background: #f5f5f5;
-        }
-
-        .filter-apply {
-          padding: 10px 24px;
-          border-radius: 10px;
-          border: none;
-          background: #FF385C;
-          font-size: 14px;
-          font-weight: 700;
-          color: white;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-
-        .filter-apply:hover {
-          background: #E31C5F;
-        }
-
-        /* Content */
-        .catalog-content {}
-
-        .sections-list {
-          display: flex;
-          flex-direction: column;
-          gap: 48px;
-          align-items: center;
-        }
-
-        .results-count {
-          font-size: 14px;
-          color: #888;
-          font-weight: 600;
-          margin: 0 0 20px 0;
-        }
-
-        .grid-layout {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
-        }
-
-        @media (max-width: 900px) {
-          .catalog-main { padding: 20px 16px 60px; }
-          .header-top { flex-direction: column; align-items: flex-start; }
-          .page-title { font-size: 26px; }
-          .search-zone { flex-direction: column; align-items: stretch; }
-          .search-right { justify-content: space-between; }
-          .card-image-box { height: 150px; }
-        }
-
-        @media (max-width: 640px) {
-          .catalog-main { padding: 16px 12px 60px; gap: 28px; }
-          .page-title { font-size: 22px; letter-spacing: -0.5px; }
-          .search-box { min-width: 0; }
-          .search-input { font-size: 14px; }
-          .filter-panel { padding: 16px; gap: 12px; }
-          .filter-row { flex-direction: column; align-items: stretch; }
-          .filter-label { min-width: 0; }
-          .filter-input { width: 100%; }
-          .filter-actions { flex-direction: column; }
-          .filter-reset, .filter-apply { width: 100%; text-align: center; }
-          .grid-layout { gap: 14px; }
-          .cat-pill { padding: 8px 14px; font-size: 13px; }
-          .carousel-title { font-size: 18px; }
-        }
-
-        @media (max-width: 480px) {
-          .page-title { font-size: 20px; }
-          .categories-scroll { gap: 8px; }
-          .cat-pill { padding: 7px 12px; font-size: 12px; }
+        @media (max-width: 768px) {
+          .hero { flex-direction: column; padding: 40px 20px; text-align: center; }
+          .hero-actions { justify-content: center; }
+          .hero-stats { justify-content: center; }
+          .hero-visual { display: none; }
+          .audience-grid { grid-template-columns: 1fr; }
+          .steps-grid { flex-direction: column; }
+          .step-arrow { transform: rotate(90deg); }
+          .examples-grid { grid-template-columns: 1fr 1fr; }
+          .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+          .footer-inner { flex-direction: column; gap: 16px; text-align: center; }
         }
       `}</style>
-    </PageShell>
+    </div>
   );
 }

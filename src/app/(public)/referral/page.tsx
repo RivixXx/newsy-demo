@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Users, Copy, Check, Gift, Zap, Star, ChevronRight } from 'lucide-react';
+import { Users, Copy, Check, Gift, Zap, Star, ChevronRight, Send, MessageCircle, QrCode } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { useSession } from '@/shared/components/session-provider';
 
@@ -61,6 +61,26 @@ export default function ReferralPage() {
                 </button>
               </div>
               <p className="ref-hint">Скопируйте и отправьте друзьям</p>
+
+              {/* Шеринг */}
+              <div className="ref-share-row">
+                <a
+                  href={`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к NEWSY! Челленджи, конкурсы, награды.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ref-share-btn telegram"
+                >
+                  <Send size={16} /> Telegram
+                </a>
+                <a
+                  href={`https://vk.com/share.php?url=${encodeURIComponent(referralLink)}&title=${encodeURIComponent('Присоединяйся к NEWSY!')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ref-share-btn vk"
+                >
+                  <MessageCircle size={16} /> VK
+                </a>
+              </div>
             </div>
 
             <div className="ref-stats">
@@ -138,6 +158,17 @@ export default function ReferralPage() {
           .ref-copy { width: 42px; height: 42px; border-radius: 10px; border: 1.5px solid #e4e4e7; background: white; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; color: #71717a; transition: all 0.2s; }
           .ref-copy:hover { border-color: #FF385C; color: #FF385C; }
           .ref-hint { font-size: 12px; color: #aaa; margin: 8px 0 0; }
+          .ref-share-row { display: flex; gap: 8px; margin-top: 14px; }
+          .ref-share-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 16px; border-radius: 10px;
+            font-size: 13px; font-weight: 700; text-decoration: none;
+            transition: all 0.2s;
+          }
+          .ref-share-btn.telegram { background: #0088cc; color: white; }
+          .ref-share-btn.telegram:hover { background: #006da3; }
+          .ref-share-btn.vk { background: #4a76a8; color: white; }
+          .ref-share-btn.vk:hover { background: #3d6490; }
           .ref-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 32px; }
           .ref-stat { background: white; border-radius: 16px; padding: 20px; border: 1px solid #f0f0f0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
           .ref-stat-icon { width: 40px; height: 40px; border-radius: 12px; background: #FF385C15; color: #FF385C; display: grid; place-items: center; }

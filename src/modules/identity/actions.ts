@@ -41,7 +41,7 @@ export async function loginAction(
     return { error: 'Проверьте логин, пароль и способ входа.' };
   }
 
-  const rl = rateLimit(`login:${credentialsResult.data.identifier}`, { windowMs: 300_000, max: 5 });
+  const rl = await rateLimit(`login:${credentialsResult.data.identifier}`, { windowMs: 300_000, max: 5 });
   if (!rl.allowed) {
     return { error: `Слишком много попыток. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
   }
@@ -50,7 +50,7 @@ export async function loginAction(
     const authService = createAuthService(prisma);
     const session = await authService.login(credentialsResult.data);
     await setAuthSession(session);
-    redirect('/');
+    redirect('/explore');
   } catch (error) {
     if (isRedirect(error)) throw error;
     return { error: error instanceof Error ? error.message : 'Не удалось выполнить вход.' };
@@ -134,7 +134,7 @@ export async function registerAction(
     }
   }
 
-  const rl = rateLimit(`register:${email}`, { windowMs: 600_000, max: 3 });
+  const rl = await rateLimit(`register:${email}`, { windowMs: 600_000, max: 3 });
   if (!rl.allowed) {
     return { error: `Слишком много регистраций. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
   }
@@ -175,6 +175,48 @@ export async function registerAction(
 
     const user = await prisma.user.create({ data: userData as any });
 
+    // Если пользователь — организатор, создаём Organizer + OrganizerMember
+    const userRole = (formData.get('userRole') as string) || 'participant';
+    if (userRole === 'organizer') {
+      // Маппинг AccountType → OrganizerType
+      const ORGANIZER_TYPE_MAP: Record<string, string> = {
+        IP: 'BRAND', SELF_EMPLOYED: 'BRAND', OOO: 'BRAND', AO: 'BRAND',
+      };
+      const organizerType = ORGANIZER_TYPE_MAP[accountType] || 'OTHER';
+      const organizerName = platformName || companyName || `${firstName} ${lastName}`;
+
+      // Транзакция для целостности данных
+      await prisma.$transaction(async (tx) => {
+        const organizer = await tx.organizer.create({
+          data: {
+            name: organizerName,
+            type: organizerType as any,
+            inn,
+            status: 'PENDING',
+          },
+        });
+
+        await tx.organizerMember.create({
+          data: {
+            organizerId: organizer.id,
+            userId: user.id,
+            roleInOrganizer: 'OWNER',
+          },
+        });
+
+        // Добавляем роль organizer
+        const organizerRole = await tx.role.findUnique({ where: { key: 'organizer' } });
+        if (organizerRole) {
+          await tx.userRole.create({
+            data: {
+              userId: user.id,
+              roleId: organizerRole.id,
+            },
+          });
+        }
+      });
+    }
+
     // Генерируем токен верификации и отправляем письмо
     try {
       const token = generateVerificationToken();
@@ -198,5 +240,29 @@ export async function registerAction(
   } catch (error) {
     if (isRedirect(error)) throw error;
     return { error: error instanceof Error ? error.message : 'Ошибка регистрации.' };
+  }
+}
+
+export async function requestPasswordResetAction(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const email = readFormValue(formData, 'email').trim().toLowerCase();
+
+  if (!email) {
+    return { error: 'Введите email' };
+  }
+
+  const rl = await rateLimit(`password-reset:${email}`, { windowMs: 600_000, max: 3 });
+  if (!rl.allowed) {
+    return { error: `Слишком много запросов. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
+  }
+
+  try {
+    const authService = createAuthService(prisma);
+    await authService.requestPasswordReset({ identifier: email, provider: 'email' });
+    return { success: 'Если email зарегистрирован, мы отправили ссылку для сброса пароля.' };
+  } catch (error) {
+    return { success: 'Если email зарегистрирован, мы отправили ссылку для сброса пароля.' };
   }
 }

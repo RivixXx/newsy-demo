@@ -172,8 +172,14 @@ model User {
   subscriptions         UserSubscription[]
   chatMessages          ChatMessage[]
   emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
   referredByUser          ReferralEvent[] @relation("ReferralEventsAsReferrer")
   referredUser            ReferralEvent[] @relation("ReferralEventsAsReferred")
+  reports                 Report[]
+  teamsAsCaptain          Team[]
+  teamMemberships         TeamMember[]
+  userPromos               UserPromoCode[]
+  prizeRedemptions         PrizeRedemption[]
 
   @@index([status])
   @@index([deletedAt])
@@ -243,6 +249,8 @@ model Organizer {
   description String?
   contactEmail String?
   contactPhone String?
+  isVerified  Boolean              @default(false)
+  verifiedAt  DateTime?
   status      OrganizerStatus      @default(PENDING)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
@@ -307,6 +315,13 @@ model Challenge {
   entryFee        Float                  @default(0)
   publishPrice    Float?                 @default(1000.00)
   rejectionReason String?
+  // Branded Challenge fields
+  brandLogoUrl    String?                // URL логотипа бренда
+  brandPrimaryColor String?              // Основной цвет бренда
+  brandSecondaryColor String?            // Дополнительный цвет бренда
+  brandBannerUrl  String?                // Баннер для страницы ЧИ
+  sponsorName     String?                // Название спонсора
+  sponsorUrl      String?                // Ссылка на спонсора
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   deletedAt       DateTime?
@@ -322,6 +337,8 @@ model Challenge {
   chatMessages    ChatMessage[]
   coOrganizers    ChallengeOrganizer[]
   rewards         ChallengeReward[]
+  teams           Team[]
+  promoCodes      PromoCode[]
 
   @@index([organizerId])
   @@index([status])
@@ -339,6 +356,9 @@ model Step {
   config          Json?            // Validation rules, correct answers, etc.
   criteria        String?          // Критерии приёма этапа организатором
   rewardPoints    Int              @default(0)
+  // A/B testing fields
+  variant         String?          // "A" or "B" — вариант для A/B теста
+  parentStepId    String?          // ID родительского этапа (для A/B пар)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -347,6 +367,7 @@ model Step {
 
   @@index([challengeId])
   @@index([order])
+  @@index([parentStepId])
 }
 
 model ChallengeMedia {
@@ -426,6 +447,7 @@ model Achievement {
   description     String?
   icon            String?          // Emoji или имя иконки
   badgeUrl        String?
+  category        String?          // Категория: progress, social, sport, education, art, eco, streak, special, organizer
   isCustom        Boolean          @default(false) // Кастомное от организатора
   isApproved      Boolean          @default(true)  // Одобрено модератором
   pointsRequired  Int?             @default(0)
@@ -451,6 +473,40 @@ model ChallengeReward {
   @@index([achievementId])
 }
 
+model PromoCode {
+  id              String           @id @default(uuid())
+  challengeId     String
+  code            String           @unique
+  description     String?
+  discountPercent Int?             // Скидка в процентах
+  discountAmount  Float?           // Скидка в деньгах
+  maxUses         Int              @default(100)
+  usedCount       Int              @default(0)
+  validUntil      DateTime?
+  createdAt       DateTime         @default(now())
+
+  challenge       Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userPromos      UserPromoCode[]
+
+  @@index([challengeId])
+  @@index([code])
+}
+
+model UserPromoCode {
+  id              String           @id @default(uuid())
+  userId          String
+  promoCodeId     String
+  earnedAt        DateTime         @default(now())
+  usedAt          DateTime?
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode       PromoCode        @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promoCodeId])
+  @@index([userId])
+  @@index([promoCodeId])
+}
+
 model UserAchievement {
   id              String           @id @default(uuid())
   userId          String
@@ -463,6 +519,73 @@ model UserAchievement {
   @@unique([userId, achievementId])
   @@index([userId])
   @@index([achievementId])
+}
+
+model Team {
+  id              String         @id @default(uuid())
+  challengeId     String
+  name            String
+  captainId       String
+  inviteCode      String         @unique
+  maxMembers      Int            @default(10)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  challenge       Challenge      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  captain         User           @relation(fields: [captainId], references: [id], onDelete: Cascade)
+  members         TeamMember[]
+
+  @@index([challengeId])
+  @@index([inviteCode])
+}
+
+model TeamMember {
+  id              String         @id @default(uuid())
+  teamId          String
+  userId          String
+  role            String         @default('MEMBER') // CAPTAIN, MEMBER
+  joinedAt        DateTime       @default(now())
+
+  team            Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Prize {
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  imageUrl        String?
+  cost            Int            // Стоимость в баллах
+  stock           Int            @default(100)
+  sponsorId       String?        // ID спонсора (организатора)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  redemptions     PrizeRedemption[]
+
+  @@index([isActive])
+}
+
+model PrizeRedemption {
+  id              String         @id @default(uuid())
+  userId          String
+  prizeId         String
+  pointsSpent     Int
+  status          String         @default('PENDING') // PENDING, DELIVERED, CANCELLED
+  createdAt       DateTime       @default(now())
+  deliveredAt     DateTime?
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prize           Prize          @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, prizeId])
+  @@index([userId])
+  @@index([prizeId])
 }
 
 model SearchSession {
@@ -694,10 +817,26 @@ model EmailVerificationToken {
   @@index([email])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
 enum ReferralEventType {
   REGISTRATION
   FIRST_CHALLENGE
   PAYMENT
+  ORGANIZER_REFERRAL
 }
 
 model ReferralEvent {
@@ -715,4 +854,23 @@ model ReferralEvent {
   @@index([referrerId])
   @@index([referredId])
   @@index([eventType])
+}
+
+model Report {
+  id            String   @id @default(uuid())
+  reporterId    String
+  challengeId   String?
+  userId        String?
+  reason        String
+  description   String?
+  status        String   @default("PENDING") // PENDING, REVIEWED, RESOLVED, DISMISSED
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  createdAt     DateTime @default(now())
+
+  reporter      User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([challengeId])
+  @@index([status])
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, ArrowLeft, Trophy, Clock, Gift } from 'lucide-react';
+import { Users, ArrowLeft, Trophy, Clock, Gift, Flag } from 'lucide-react';
 import { ShareButtons } from '@/shared/components/share-buttons';
 import styles from './challenge-detail.module.css';
 
@@ -40,7 +40,7 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
       <section className={styles.heroSection}>
         <div className={styles.heroBg}>
           <img
-            src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1600&q=80"
+            src="/images/challenge-placeholder.svg"
             alt="Challenge"
           />
           <div className={styles.heroOverlay} />
@@ -136,6 +136,40 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
             </div>
 
             <ShareButtons challengeId={challengeId} title="Утренний забег на 5км — NEWSY" compact />
+
+            <div className={styles.actionLinks}>
+              <a
+                href={`/challenges/${challengeId}/leaderboard`}
+                className={styles.leaderboardLink}
+              >
+                <Trophy size={14} /> Рейтинг участников
+              </a>
+              <button
+                className={styles.reportBtn}
+                onClick={async () => {
+                  const reason = prompt('Причина жалобы:');
+                  if (!reason) return;
+                  const description = prompt('Дополнительная информация (необязательно):');
+                  try {
+                    const res = await fetch('/api/reports', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ challengeId, reason, description }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      alert('Жалоба отправлена. Спасибо!');
+                    } else {
+                      alert(data.error || 'Ошибка');
+                    }
+                  } catch {
+                    alert('Ошибка сети');
+                  }
+                }}
+              >
+                <Flag size={14} /> Пожаловаться
+              </button>
+            </div>
           </div>
 
           <div className={styles.stepsColumn}>

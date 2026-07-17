@@ -74,6 +74,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
+  // Залогиненные пользователи на "/" → перенаправляем на каталог
+  if (isLoggedIn && pathname === '/') {
+    return NextResponse.redirect(new URL('/explore', request.url));
+  }
+
   if (!isLoggedIn && PROTECTED.some((p) => pathname.startsWith(p))) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
@@ -92,5 +97,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register', '/'],
 };

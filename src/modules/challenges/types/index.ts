@@ -1,6 +1,6 @@
 export type ChallengeCategory = 'Sport' | 'Education' | 'Quest' | 'Art' | 'Tech';
 
-export type StepType = 'Question' | 'Photo' | 'Location' | 'Action';
+export type StepType = 'Question' | 'Photo' | 'Location' | 'Action' | 'VideoStory';
 
 export interface ChallengeStep {
   id: string;
@@ -12,6 +12,9 @@ export interface ChallengeStep {
   correctOptionIndex?: number; // For 'Question' type
   locationLabel?: string; // For 'Location' type
   coordinates?: { lat: number; lng: number }; // For 'Location' type
+  // A/B testing
+  variant?: 'A' | 'B';
+  parentStepId?: string;
 }
 
 export interface Challenge {
@@ -34,4 +37,15 @@ export interface Challenge {
   reward?: string;
   maxParticipants?: number;
   endDate?: string;
+  format?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  // Branded Challenge fields
+  brandLogoUrl?: string;
+  brandPrimaryColor?: string;
+  brandSecondaryColor?: string;
+  brandBannerUrl?: string;
+  sponsorName?: string;
+  sponsorUrl?: string;
 }

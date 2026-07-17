@@ -10,17 +10,25 @@ import {
   Save, 
   ChevronLeft,
   Image as ImageIcon,
-  Users,
   Info,
-  Zap
+  Zap,
+  Globe,
+  MapPin,
+  Trophy,
+  Gift,
+  Map,
+  LayoutTemplate,
+  X,
 } from 'lucide-react';
 import { ChallengeStep, Challenge, ChallengeCategory } from '../types';
 import { StepEditor } from './step-editor';
 import { ChallengeCard } from './challenge-card';
+import { CHALLENGE_TEMPLATES, type ChallengeTemplate } from '@/shared/data/challenge-templates';
 
 export const ChallengeConstructor: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const [previewDevice, setPreviewDevice] = useState<'mobile' | 'desktop'>('mobile');
+  const [showTemplates, setShowTemplates] = useState(false);
   
   const [challenge, setChallenge] = useState<Partial<Challenge>>({
     title: '',
@@ -28,10 +36,12 @@ export const ChallengeConstructor: React.FC = () => {
     category: 'Quest',
     imageUrl: '',
     steps: [],
-    isCooperative: false,
-    partnerBrands: [],
-    pointsReward: 0,
     organizer: 'Your Brand',
+    format: 'ONLINE',
+    address: '',
+    achievement: '',
+    reward: '',
+    brandPrimaryColor: '#FF385C',
   });
 
   const updateChallenge = (updates: Partial<Challenge>) => {
@@ -60,17 +70,38 @@ export const ChallengeConstructor: React.FC = () => {
     updateChallenge({ steps });
   };
 
+  const applyTemplate = (template: ChallengeTemplate) => {
+    const steps: ChallengeStep[] = template.steps.map((s, i) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      type: s.type as any,
+      title: s.title,
+      description: s.description,
+      points: 10,
+    }));
+    setChallenge({
+      title: template.name,
+      description: template.description,
+      category: template.category as ChallengeCategory,
+      format: template.format,
+      steps,
+      achievement: template.achievement,
+      reward: template.reward,
+      organizer: 'Your Brand',
+    });
+    setShowTemplates(false);
+  };
+
   // Mock for preview
   const previewChallenge: Challenge = {
     id: 'preview',
     title: challenge.title || 'Название челенджа',
     organizer: challenge.organizer || 'Организатор',
     category: challenge.category || 'Quest',
-    pointsReward: challenge.steps?.reduce((acc, s) => acc + s.points, 0) || 0,
-    imageUrl: challenge.imageUrl || 'https://via.placeholder.com/600x400?text=Загрузите+Изображение',
+    pointsReward: 0,
+    imageUrl: challenge.imageUrl || '/images/challenge-placeholder.svg',
     participantsCount: 0,
     isJoined: false,
-    badges: challenge.isCooperative ? ['cooperative'] : [],
+    badges: [],
   };
 
   return (
@@ -100,6 +131,9 @@ export const ChallengeConstructor: React.FC = () => {
               <Eye size={18} /> Превью
             </button>
           </div>
+          <button className="save-btn secondary" onClick={() => setShowTemplates(true)}>
+            <LayoutTemplate size={18} /> Шаблон
+          </button>
           <button className="save-btn secondary">
             <Save size={18} /> В черновик
           </button>
@@ -178,6 +212,149 @@ export const ChallengeConstructor: React.FC = () => {
               </div>
             </section>
 
+            {/* Формат */}
+            <section className="editor-section">
+              <div className="section-header">
+                <Globe size={20} className="section-icon" />
+                <h2>Формат</h2>
+              </div>
+              <div className="card shadow-sm">
+                <div className="format-options">
+                  {[
+                    { value: 'ONLINE', label: 'Онлайн', icon: '🌐', desc: 'Участники выполняют задания удалённо' },
+                    { value: 'OFFLINE', label: 'Офлайн', icon: '📍', desc: 'Задания выполняются в конкретном месте' },
+                    { value: 'HYBRID', label: 'Гибрид', icon: '🔄', desc: 'Сочетание онлайн и офлайн заданий' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`format-option ${challenge.format === opt.value ? 'active' : ''}`}
+                      onClick={() => updateChallenge({ format: opt.value as 'ONLINE' | 'OFFLINE' | 'HYBRID' })}
+                    >
+                      <span className="format-icon">{opt.icon}</span>
+                      <span className="format-label">{opt.label}</span>
+                      <span className="format-desc">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                {challenge.format !== 'ONLINE' && (
+                  <div className="input-group">
+                    <label><MapPin size={14} /> Адрес проведения</label>
+                    <input 
+                      type="text" 
+                      value={challenge.address || ''}
+                      onChange={e => updateChallenge({ address: e.target.value })}
+                      placeholder="г. Москва, ул. Примерная, д. 1"
+                    />
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Награды */}
+            <section className="editor-section">
+              <div className="section-header">
+                <Trophy size={20} className="section-icon" />
+                <h2>Награды</h2>
+              </div>
+              <div className="card shadow-sm">
+                <div className="rewards-grid">
+                  <div className="input-group">
+                    <label><Trophy size={14} /> Достижение</label>
+                    <input 
+                      type="text" 
+                      value={challenge.achievement || ''}
+                      onChange={e => updateChallenge({ achievement: e.target.value })}
+                      placeholder="напр., Мастер спорта"
+                    />
+                    <p className="input-hint">Название достижения за выполнение челленджа</p>
+                  </div>
+                  <div className="input-group">
+                    <label><Gift size={14} /> Награда</label>
+                    <input 
+                      type="text" 
+                      value={challenge.reward || ''}
+                      onChange={e => updateChallenge({ reward: e.target.value })}
+                      placeholder="напр., Сертификат на 5000₽"
+                    />
+                    <p className="input-hint">Приз для лучших участников</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Брендирование */}
+            <section className="editor-section">
+              <div className="section-header">
+                <Zap size={20} className="section-icon" />
+                <h2>Брендирование</h2>
+                <span className="step-count" style={{ background: '#8b5cf6' }}>Premium</span>
+              </div>
+              <div className="card shadow-sm">
+                <div className="input-row">
+                  <div className="input-group">
+                    <label>Основной цвет</label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="color"
+                        value={challenge.brandPrimaryColor || '#FF385C'}
+                        onChange={e => updateChallenge({ brandPrimaryColor: e.target.value })}
+                        style={{ width: 40, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer' }}
+                      />
+                      <input
+                        type="text"
+                        value={challenge.brandPrimaryColor || '#FF385C'}
+                        onChange={e => updateChallenge({ brandPrimaryColor: e.target.value })}
+                        placeholder="#FF385C"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                  </div>
+                  <div className="input-group">
+                    <label>Дополнительный цвет</label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="color"
+                        value={challenge.brandSecondaryColor || '#ffffff'}
+                        onChange={e => updateChallenge({ brandSecondaryColor: e.target.value })}
+                        style={{ width: 40, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer' }}
+                      />
+                      <input
+                        type="text"
+                        value={challenge.brandSecondaryColor || '#ffffff'}
+                        onChange={e => updateChallenge({ brandSecondaryColor: e.target.value })}
+                        placeholder="#ffffff"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="input-group">
+                  <label>Название спонсора</label>
+                  <input
+                    type="text"
+                    value={challenge.sponsorName || ''}
+                    onChange={e => updateChallenge({ sponsorName: e.target.value })}
+                    placeholder="напр., Coca-Cola"
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Ссылка на спонсора</label>
+                  <input
+                    type="url"
+                    value={challenge.sponsorUrl || ''}
+                    onChange={e => updateChallenge({ sponsorUrl: e.target.value })}
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div className="image-upload-placeholder" style={{ height: 120 }}>
+                  <ImageIcon size={24} />
+                  <span>Логотип бренда</span>
+                  <p>Рекомендуется: 200x200px, PNG с прозрачным фоном</p>
+                </div>
+              </div>
+            </section>
+
             <section className="editor-section">
               <div className="section-header">
                 <Settings size={20} className="section-icon" />
@@ -200,37 +377,6 @@ export const ChallengeConstructor: React.FC = () => {
               </div>
             </section>
 
-            <section className="editor-section">
-              <div className="section-header">
-                <Users size={20} className="section-icon" />
-                <h2>Командные настройки</h2>
-              </div>
-              <div className="card shadow-sm cooperative-card">
-                <div className="toggle-row">
-                  <div className="toggle-info">
-                    <h3>Совместный челендж</h3>
-                    <p>Создавайте челенджи вместе с партнерами</p>
-                  </div>
-                  <label className="switch">
-                    <input 
-                      type="checkbox" 
-                      checked={challenge.isCooperative}
-                      onChange={e => updateChallenge({ isCooperative: e.target.checked })}
-                    />
-                    <span className="slider round"></span>
-                  </label>
-                </div>
-                {challenge.isCooperative && (
-                  <div className="input-group">
-                    <label>Бренды-партнеры</label>
-                    <input 
-                      type="text" 
-                      placeholder="Введите имя бренда и нажмите Enter..."
-                    />
-                  </div>
-                )}
-              </div>
-            </section>
           </div>
         ) : (
           <div className="preview-layout">
@@ -260,7 +406,7 @@ export const ChallengeConstructor: React.FC = () => {
                         <span className="p-step-num">{i + 1}</span>
                         <div className="p-step-body">
                           <strong>{step.title || 'Этап без названия'}</strong>
-                          <span>{step.points} баллов • {step.type}</span>
+                          <span>{step.type}</span>
                         </div>
                       </li>
                     ))}
@@ -271,6 +417,36 @@ export const ChallengeConstructor: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Модалка шаблонов */}
+      {showTemplates && (
+        <div className="templates-overlay" onClick={() => setShowTemplates(false)}>
+          <div className="templates-modal" onClick={e => e.stopPropagation()}>
+            <div className="templates-header">
+              <h2>Выберите шаблон</h2>
+              <button onClick={() => setShowTemplates(false)} className="templates-close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="templates-grid">
+              {CHALLENGE_TEMPLATES.map(template => (
+                <button
+                  key={template.id}
+                  className="template-card"
+                  onClick={() => applyTemplate(template)}
+                >
+                  <div className="template-name">{template.name}</div>
+                  <div className="template-desc">{template.description}</div>
+                  <div className="template-meta">
+                    <span>{template.steps.length} этапов</span>
+                    <span>{template.format}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .constructor-container {
@@ -558,80 +734,6 @@ export const ChallengeConstructor: React.FC = () => {
           background: var(--bg-accent);
         }
 
-        .cooperative-card {
-          gap: 16px;
-        }
-
-        .toggle-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .toggle-info h3 {
-          font-size: 16px;
-          font-weight: 700;
-          margin: 0;
-        }
-
-        .toggle-info p {
-          font-size: 14px;
-          color: var(--text-muted);
-          margin: 4px 0 0 0;
-        }
-
-        /* Switch Styles */
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 52px;
-          height: 28px;
-        }
-
-        .switch input {
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: var(--line);
-          transition: .4s;
-        }
-
-        .slider:before {
-          position: absolute;
-          content: "";
-          height: 20px;
-          width: 20px;
-          left: 4px;
-          bottom: 4px;
-          background-color: white;
-          transition: .4s;
-        }
-
-        input:checked + .slider {
-          background-color: var(--brand);
-        }
-
-        input:checked + .slider:before {
-          transform: translateX(24px);
-        }
-
-        .slider.round {
-          border-radius: 34px;
-        }
-
-        .slider.round:before {
-          border-radius: 50%;
-        }
-
         /* Preview Styles */
         .preview-layout {
           display: flex;
@@ -752,6 +854,151 @@ export const ChallengeConstructor: React.FC = () => {
           color: var(--text-muted);
         }
 
+        .format-options {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        }
+
+        .format-option {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          padding: 20px 16px;
+          border: 2px solid var(--line);
+          border-radius: var(--radius-lg);
+          background: var(--surface);
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+        }
+
+        .format-option:hover {
+          border-color: var(--brand);
+        }
+
+        .format-option.active {
+          border-color: var(--brand);
+          background: var(--bg-accent);
+        }
+
+        .format-icon {
+          font-size: 28px;
+        }
+
+        .format-label {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--text);
+        }
+
+        .format-desc {
+          font-size: 12px;
+          color: var(--text-muted);
+          line-height: 1.4;
+        }
+
+        .rewards-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+
+        .input-hint {
+          font-size: 12px;
+          color: var(--text-muted);
+          margin: 4px 0 0 0;
+        }
+
+        .templates-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.5);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+
+        .templates-modal {
+          background: var(--surface);
+          border-radius: 24px;
+          width: 100%;
+          max-width: 700px;
+          max-height: 80vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .templates-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 24px;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .templates-header h2 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 800;
+        }
+
+        .templates-close {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--text-muted);
+          padding: 4px;
+        }
+
+        .templates-grid {
+          padding: 16px;
+          overflow-y: auto;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 12px;
+        }
+
+        .template-card {
+          background: var(--bg-accent);
+          border: 2px solid var(--line);
+          border-radius: 16px;
+          padding: 16px;
+          cursor: pointer;
+          text-align: left;
+          transition: all 0.2s;
+        }
+
+        .template-card:hover {
+          border-color: var(--brand);
+          background: var(--surface);
+        }
+
+        .template-name {
+          font-size: 15px;
+          font-weight: 800;
+          margin-bottom: 6px;
+        }
+
+        .template-desc {
+          font-size: 13px;
+          color: var(--text-muted);
+          margin-bottom: 10px;
+          line-height: 1.4;
+        }
+
+        .template-meta {
+          display: flex;
+          gap: 12px;
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+
         @media (max-width: 800px) {
           .constructor-header {
             padding: 16px 20px;
@@ -767,6 +1014,12 @@ export const ChallengeConstructor: React.FC = () => {
           }
           .header-titles p {
             display: none;
+          }
+          .format-options {
+            grid-template-columns: 1fr;
+          }
+          .rewards-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>

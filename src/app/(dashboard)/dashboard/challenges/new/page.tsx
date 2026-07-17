@@ -71,7 +71,7 @@ const PRESET_ACHIEVEMENTS = [
 
 const ACHIEVEMENT_ICONS = ['🏆', '🎯', '🌟', '💪', '🎖️', '🏅', '🥇', '🥈', '🥉', '⭐', '✨', '🎪', '🎭', '🎬', '🎤', '🎵', '📚', '💻', '🎮', '🏃', '🚴', '🏊', '🧗', '♟️', '🎸', '🎹', '🖌️', '📷'];
 
-const PLACEHOLDER = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=800&q=80';
+const PLACEHOLDER = '/images/challenge-placeholder.svg';
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const WIZARD_STEPS = [

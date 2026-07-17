@@ -10,11 +10,12 @@ async function getStats(userId?: string) {
     const challengeCount = await prisma.challenge.count({ where: { deletedAt: null, status: 'PUBLISHED' } });
     const participationCount = userId ? await prisma.userProgress.count({ where: { userId } }) : 0;
     const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
-    
+    const achievementsCount = userId ? await prisma.userAchievement.count({ where: { userId } }) : 0;
+
     return {
       challengeCount,
       participationCount,
-      points: user?.points ?? 0,
+      achievementsCount,
       email: user?.email ?? user?.id ?? 'Гость'
     };
   } catch (e) {
@@ -22,7 +23,7 @@ async function getStats(userId?: string) {
     return {
       challengeCount: 12,
       participationCount: 3,
-      points: 450,
+      achievementsCount: 5,
       email: 'demo@newsy.ru'
     };
   }
@@ -56,20 +57,38 @@ export default async function DashboardPage() {
               <span>{stats.participationCount}</span>
             </div>
             <div style={styles.panel}>
-              <strong>Заработано баллов</strong>
-              <span>{stats.points}</span>
+              <strong>Мои достижения</strong>
+              <span>{stats.achievementsCount}</span>
             </div>
           </div>
 
           <div className="dash-actions" style={styles.actions}>
-            <Link href="/" style={styles.primaryAction}>
+            <Link href="/explore" style={styles.primaryAction}>
               Исследовать челенджи
             </Link>
             <Link href="/dashboard/profile" style={styles.secondaryAction}>
               Мой профиль
             </Link>
+            <Link href="/dashboard/daily" style={styles.secondaryAction}>
+              Сегодняшние задания
+            </Link>
+            <Link href="/dashboard/recommendations" style={styles.secondaryAction}>
+              Рекомендации
+            </Link>
+            <Link href="/dashboard/achievements" style={styles.secondaryAction}>
+              Достижения
+            </Link>
+            <Link href="/dashboard/shop" style={styles.secondaryAction}>
+              Магазин призов
+            </Link>
             <Link href="/dashboard/challenges/new" style={styles.secondaryAction}>
               Создать челендж
+            </Link>
+            <Link href="/dashboard/organizer" style={styles.secondaryAction}>
+              Дашборд организатора
+            </Link>
+            <Link href="/dashboard/partner" style={styles.secondaryAction}>
+              Партнёрская программа
             </Link>
             <Link href="/dashboard/analytics" style={styles.secondaryAction}>
               Аналитика
