@@ -84,7 +84,7 @@ export default async function FeedPage() {
   return (
     <PageShell variant="public">
       <div style={s.page}>
-        <Link href="/" style={s.back}>
+        <Link href="/explore" style={s.back}>
           <ArrowLeft size={16} /> На главную
         </Link>
 

@@ -41,7 +41,7 @@ export default function ExplorePage() {
 
   return (
     <div style={s.page}>
-      <Link href="/" style={s.back}><ChevronLeft size={16} /> На главную</Link>
+      <Link href="/welcome" style={s.back}><ChevronLeft size={16} /> На главную</Link>
 
       <header style={s.header}>
         <h1 style={s.h1}>Найди свой челлендж</h1>

@@ -138,7 +138,7 @@ export default function FavoritesPage() {
             <Heart size={56} color="#ddd" strokeWidth={1.5} />
             <h2>Сохраняйте понравившиеся</h2>
             <p>Нажимайте сердечко на карточках челленджей, чтобы добавить их сюда</p>
-            <Link href="/" className="fav-btn">Смотреть челленджи</Link>
+            <Link href="/explore" className="fav-btn">Смотреть челленджи</Link>
           </div>
         ) : (
           <div className="fav-grid">

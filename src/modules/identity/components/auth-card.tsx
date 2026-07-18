@@ -64,7 +64,7 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
         <div className="stars stars-lg" />
 
         <div style={s.brandBlock}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', marginBottom: 8 }}>
+          <Link href="/welcome" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', marginBottom: 8 }}>
             <img src="/icon.png" alt="" style={{ width: 48, height: 48 }} className="brand-logo" />
             <h1 className="brand-title" style={s.brandTitle}>NEWSY</h1>
           </Link>

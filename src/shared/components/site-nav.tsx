@@ -207,8 +207,8 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                       <DDItem href="/login" icon={<LogOut size={18} />} label="Войти" bold onClick={close} />
                       <DDItem href="/register" icon={<Plus size={18} />} label="Зарегистрироваться" onClick={close} />
                       <div className="dd-divider" />
-                      <DDItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
-                      <DDItem href="#" icon={<HelpCircle size={18} />} label="Помощь" onClick={close} />
+                      <DDItem href="/register" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
+                      <DDItem href="/help" icon={<HelpCircle size={18} />} label="Помощь" onClick={close} />
                     </>
                   )}
                 </div>

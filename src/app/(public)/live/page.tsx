@@ -32,7 +32,7 @@ export default function LivePage() {
 
   return (
     <div className="live-page">
-      <Link href="/" className="live-back">
+      <Link href="/explore" className="live-back">
         <ArrowLeft size={18} /> На главную
       </Link>
 

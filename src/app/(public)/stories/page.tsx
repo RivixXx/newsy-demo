@@ -77,7 +77,7 @@ export default function StoriesPage() {
 
   return (
     <div className="stories-page">
-      <Link href="/" className="stories-back">
+      <Link href="/explore" className="stories-back">
         <ArrowLeft size={18} /> На главную
       </Link>
 

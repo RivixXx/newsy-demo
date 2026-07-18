@@ -7,7 +7,7 @@ import { ArrowLeft, Code, Database, Users, Trophy, Calendar, MapPin } from 'luci
 export default function ApiDocsPage() {
   return (
     <div className="docs-page">
-      <Link href="/" className="docs-back">
+      <Link href="/explore" className="docs-back">
         <ArrowLeft size={18} /> На главную
       </Link>
 

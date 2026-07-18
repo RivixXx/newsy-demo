@@ -58,7 +58,7 @@ const PLANS = [
 export default function PricingPage() {
   return (
     <div className="pricing-page">
-      <Link href="/" className="back-link">
+      <Link href="/explore" className="back-link">
         <ArrowLeft size={18} /> На главную
       </Link>
 

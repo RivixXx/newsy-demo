@@ -47,7 +47,7 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
         </div>
 
         <div className={styles.heroContent}>
-          <Link href="/" className={styles.backLink}>
+          <Link href="/explore" className={styles.backLink}>
             <ArrowLeft size={20} /> В каталог
           </Link>
 

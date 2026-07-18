@@ -63,8 +63,8 @@ export function SiteFooter() {
             <div className="footer-col">
               <h4 className="footer-col-title">Для участников</h4>
               <Link href="/referral" className="footer-link">Реферальная программа</Link>
-              <Link href="/dashboard/challenges/new" className="footer-link">Как создать ЧИ</Link>
-              <Link href="/dashboard/subscription" className="footer-link">Тарифы</Link>
+              <Link href="/pricing" className="footer-link">Как создать ЧИ</Link>
+              <Link href="/pricing" className="footer-link">Тарифы</Link>
               <Link href="/api-docs" className="footer-link">API</Link>
             </div>
             <div className="footer-col">

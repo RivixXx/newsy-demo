@@ -84,7 +84,7 @@ export default function PaymentStatusPage() {
 
         <div className="actions">
           {status === 'success' && (
-            <Link href="/" className="btn-primary">
+            <Link href="/explore" className="btn-primary">
               <Sparkles size={18} /> Перейти в каталог
             </Link>
           )}
