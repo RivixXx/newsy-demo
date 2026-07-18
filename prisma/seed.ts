@@ -164,13 +164,31 @@ async function main() {
       sortOrder: 1,
     },
     {
-      key: 'organizer_basic',
-      name: 'Организатор',
-      description: 'Для бизнеса — создание и продвижение челленджей',
+      key: 'organizer_starter',
+      name: 'Стартер',
+      description: 'Для начинающих организаторов',
+      price: 990,
+      interval: 'MONTHLY' as const,
+      features: ['1 челлендж в месяц', 'До 100 участников', 'Базовая аналитика', 'Email-поддержка'],
+      sortOrder: 2,
+    },
+    {
+      key: 'organizer_business',
+      name: 'Бизнес',
+      description: 'Для активных организаторов',
       price: 4990,
       interval: 'MONTHLY' as const,
-      features: ['Создание челленджей', 'До 500 участников', 'Брендирование', 'Аналитика охватов', 'Поддержка'],
-      sortOrder: 2,
+      features: ['10 челленджей в месяц', 'До 1000 участников', 'Расширенная аналитика', 'Приоритет в каталоге', 'Приоритетная поддержка'],
+      sortOrder: 3,
+    },
+    {
+      key: 'organizer_corporate',
+      name: 'Корпоратив',
+      description: 'Для крупных компаний',
+      price: 29000,
+      interval: 'MONTHLY' as const,
+      features: ['Безлимит челленджей', 'Безлимит участников', 'Полная аналитика + API', 'Топ позиция', 'Персональный менеджер', 'Интеграция с CRM'],
+      sortOrder: 4,
     },
   ];
 
@@ -265,6 +283,48 @@ async function main() {
       console.log('Starter challenge created: ch-guide-001 (DRAFT)');
     }
   }
+
+  // =============================================
+  // BASE ACHIEVEMENTS
+  // =============================================
+  const achievements = [
+    { key: 'first_step', name: 'Первый шаг', description: 'Завершите первый этап любого челленджа', icon: '👣', category: 'progress' },
+    { key: 'first_challenge', name: 'Новичок', description: 'Завершите свой первый челлендж', icon: '🎯', category: 'progress' },
+    { key: 'ten_challenges', name: 'Ветеран', description: 'Завершите 10 челленджей', icon: '🏅', category: 'progress' },
+    { key: 'speed_runner', name: 'Спидраннер', description: 'Завершите челлендж менее чем за 24 часа', icon: '⚡', category: 'special' },
+    { key: 'social_butterfly', name: 'Социальная бабочка', description: 'Пригласите 5 друзей через реферальную ссылку', icon: '🦋', category: 'social' },
+    { key: 'collector', name: 'Коллекционер', description: 'Наберите 10 различных достижений', icon: '💎', category: 'special' },
+    { key: 'marathoner', name: 'Марафонец', description: 'Участвуйте в 5 спортивных челленджах', icon: '🏃', category: 'sport' },
+    { key: 'scholar', name: 'Учёный', description: 'Завершите 5 образовательных челленджей', icon: '📚', category: 'education' },
+    { key: 'artist', name: 'Творец', description: 'Завершите 3 творческих конкурса', icon: '🎨', category: 'art' },
+    { key: 'eco_warrior', name: 'Эко-воин', description: 'Участвуйте в 3 экологических акциях', icon: '🌍', category: 'eco' },
+    { key: 'team_player', name: 'Командный игрок', description: 'Вступите в команду и завершите челлендж', icon: '🤝', category: 'social' },
+    { key: 'streak_7', name: 'Неделя без перерыва', description: 'Выполняйте задания 7 дней подряд', icon: '🔥', category: 'streak' },
+    { key: 'streak_30', name: 'Месяц дисциплины', description: 'Выполняйте задания 30 дней подряд', icon: '💪', category: 'streak' },
+    { key: 'reviewer', name: 'Критик', description: 'Оставьте отзыв о 5 челленджах', icon: '✍️', category: 'social' },
+    { key: 'photographer', name: 'Фотограф', description: 'Загрузите 50 фотографий в челленджи', icon: '📷', category: 'special' },
+    { key: 'top_10', name: 'Топ-10', description: 'Войдите в топ-10 любого рейтинга', icon: '🏆', category: 'special' },
+    { key: 'early_bird', name: 'Ранняя пташка', description: 'Запишитесь на челлендж в первый день', icon: '🐦', category: 'special' },
+    { key: 'organizer', name: 'Организатор', description: 'Создайте свой первый челлендж', icon: '🎪', category: 'organizer' },
+    { key: 'brand_partner', name: 'Партнёр бренда', description: 'Верифицируйтесь как организатор', icon: '✅', category: 'organizer' },
+    { key: 'viral', name: 'Вирусный', description: 'Ваш челлендж наберет 100 участников', icon: '📈', category: 'organizer' },
+  ];
+
+  for (const achievement of achievements) {
+    await prisma.achievement.upsert({
+      where: { key: achievement.key },
+      update: {},
+      create: {
+        key: achievement.key,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        category: achievement.category,
+      },
+    });
+  }
+
+  console.log('Achievements seeded:', achievements.length);
 }
 
 main()

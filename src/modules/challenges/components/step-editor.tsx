@@ -88,24 +88,14 @@ export const StepEditor: React.FC<StepEditorProps> = ({
           </div>
         </div>
 
-        <div className="row">
-          <div className="input-group flex-2">
-            <label>Заголовок</label>
-            <input 
-              type="text" 
-              value={step.title} 
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="напр., Сделай фото на фоне памятника"
-            />
-          </div>
-          <div className="input-group flex-1">
-            <label>Баллы</label>
-            <input 
-              type="number" 
-              value={step.points} 
-              onChange={(e) => handleChange('points', parseInt(e.target.value) || 0)}
-            />
-          </div>
+        <div className="input-group">
+          <label>Заголовок</label>
+          <input 
+            type="text" 
+            value={step.title} 
+            onChange={(e) => handleChange('title', e.target.value)}
+            placeholder="напр., Сделай фото на фоне памятника"
+          />
         </div>
 
         <div className="input-group">
@@ -248,14 +238,6 @@ export const StepEditor: React.FC<StepEditorProps> = ({
         textarea:focus {
           border-color: var(--brand);
         }
-
-        .row {
-          display: flex;
-          gap: 12px;
-        }
-
-        .flex-1 { flex: 1; }
-        .flex-2 { flex: 2; }
 
         .type-selector {
           display: grid;

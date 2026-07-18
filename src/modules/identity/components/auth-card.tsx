@@ -6,7 +6,7 @@ import { useActionState } from 'react';
 import {
   Mail, Lock, User, ArrowRight, Eye, EyeOff, Tag, Calendar,
   Building2, Landmark, Users, MapPin, Briefcase, Store,
-  ChevronLeft, Check, UserCircle,
+  ChevronLeft, Check, UserCircle, Trophy, Zap,
 } from 'lucide-react';
 import { loginAction, registerAction, type AuthActionState } from '@/modules/identity/actions';
 
@@ -25,6 +25,18 @@ const ACCOUNT_TYPES: AccountTypeOption[] = [
   { id: 'ooo', label: 'ООО', icon: <Building2 size={28} />, desc: 'Общество с ограниченной ответственностью' },
   { id: 'ao', label: 'АО', icon: <Landmark size={28} />, desc: 'Акционерное общество' },
   { id: 'self_employed', label: 'Самозанятый', icon: <Briefcase size={28} />, desc: 'НПД / самозанятость' },
+];
+
+type UserRoleOption = {
+  id: 'participant' | 'organizer';
+  label: string;
+  icon: React.ReactNode;
+  desc: string;
+};
+
+const USER_ROLES: UserRoleOption[] = [
+  { id: 'participant', label: 'Участвовать', icon: <Trophy size={28} />, desc: 'Находить и выполнять челленджи' },
+  { id: 'organizer', label: 'Запускать челленджи', icon: <Zap size={28} />, desc: 'Создавать конкурсы для аудитории' },
 ];
 
 const COMPANY_SIZES = [
@@ -125,24 +137,28 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
   const [state, formAction, isPending] = useActionState(action, {});
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
+  const [userRole, setUserRole] = useState<'participant' | 'organizer'>('participant');
   const [accountType, setAccountType] = useState('individual');
   const [formHeight, setFormHeight] = useState<number | 'auto'>('auto');
 
   const step0Ref = useRef<HTMLDivElement>(null);
   const step1Ref = useRef<HTMLDivElement>(null);
   const step2Ref = useRef<HTMLDivElement>(null);
+  const step3Ref = useRef<HTMLDivElement>(null);
   const stepFinalRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const isBusiness = IS_BUSINESS(accountType);
-  const maxStep = isBusiness ? 3 : 2;
+  const isOrganizer = userRole === 'organizer';
+  const isBusiness = isOrganizer && IS_BUSINESS(accountType);
+  const maxStep = isOrganizer ? (isBusiness ? 3 : 2) : 1;
 
   const getStepRef = useCallback((idx: number) => {
     if (idx === 0) return step0Ref;
     if (idx === 1) return step1Ref;
-    if (idx === 2 && isBusiness) return step2Ref;
+    if (idx === 2 && isOrganizer) return isBusiness ? step2Ref : stepFinalRef;
+    if (idx === 3 && isBusiness) return stepFinalRef;
     return stepFinalRef;
-  }, [isBusiness]);
+  }, [isOrganizer, isBusiness]);
 
   // Measure active step height on step change
   useEffect(() => {
@@ -186,34 +202,58 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         if (step < maxStep) { e.preventDefault(); goNext(); }
       }}>
         <input type="hidden" name="accountType" value={accountType} />
+        <input type="hidden" name="userRole" value={userRole} />
 
-        {/* ─── STEP 0: Account Type ─── */}
+        {/* ─── STEP 0: Role Selection ─── */}
         <div ref={step0Ref} style={{
           ...s.stepPane,
           opacity: step === 0 ? 1 : 0,
           transform: step === 0 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? -30 : 30}px) scale(0.97)`,
           pointerEvents: step === 0 ? 'auto' : 'none',
         }}>
-          <label style={{ ...s.label, marginBottom: 8 }}>Тип аккаунта</label>
+          <label style={{ ...s.label, marginBottom: 8 }}>Я хочу</label>
           <div style={s.accountTypeGrid}>
-            {ACCOUNT_TYPES.map((t) => (
-              <button key={t.id} type="button" onClick={() => setAccountType(t.id)}
-                style={{ ...s.accountTypeCard, ...(accountType === t.id ? s.accountTypeCardActive : {}) }}>
-                <span style={{ ...s.accountTypeIcon, color: accountType === t.id ? '#FF385C' : '#888' }}>{t.icon}</span>
-                <span style={s.accountTypeLabel}>{t.label}</span>
-                <span style={s.accountTypeDesc}>{t.desc}</span>
-                {accountType === t.id && <span style={s.accountTypeCheck}><Check size={14} /></span>}
+            {USER_ROLES.map((r) => (
+              <button key={r.id} type="button" onClick={() => setUserRole(r.id)}
+                style={{ ...s.accountTypeCard, ...(userRole === r.id ? s.accountTypeCardActive : {}) }}>
+                <span style={{ ...s.accountTypeIcon, color: userRole === r.id ? '#FF385C' : '#888' }}>{r.icon}</span>
+                <span style={s.accountTypeLabel}>{r.label}</span>
+                <span style={s.accountTypeDesc}>{r.desc}</span>
+                {userRole === r.id && <span style={s.accountTypeCheck}><Check size={14} /></span>}
               </button>
             ))}
           </div>
         </div>
 
-        {/* ─── STEP 1: Personal Info ─── */}
+        {/* ─── STEP 1: Account Type (organizer only) ─── */}
+        {isOrganizer && (
+          <div ref={step1Ref} style={{
+            ...s.stepPane,
+            opacity: step === 1 ? 1 : 0,
+            transform: step === 1 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
+            pointerEvents: step === 1 ? 'auto' : 'none',
+          }}>
+            <label style={{ ...s.label, marginBottom: 8 }}>Тип аккаунта</label>
+            <div style={s.accountTypeGrid}>
+              {ACCOUNT_TYPES.map((t) => (
+                <button key={t.id} type="button" onClick={() => setAccountType(t.id)}
+                  style={{ ...s.accountTypeCard, ...(accountType === t.id ? s.accountTypeCardActive : {}) }}>
+                  <span style={{ ...s.accountTypeIcon, color: accountType === t.id ? '#FF385C' : '#888' }}>{t.icon}</span>
+                  <span style={s.accountTypeLabel}>{t.label}</span>
+                  <span style={s.accountTypeDesc}>{t.desc}</span>
+                  {accountType === t.id && <span style={s.accountTypeCheck}><Check size={14} /></span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─── STEP 1 (participant) / STEP 2 (organizer): Personal Info ─── */}
         <div ref={step1Ref} style={{
           ...s.stepPane,
-          opacity: step === 1 ? 1 : 0,
-          transform: step === 1 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
-          pointerEvents: step === 1 ? 'auto' : 'none',
+          opacity: step === (isOrganizer ? 2 : 1) ? 1 : 0,
+          transform: step === (isOrganizer ? 2 : 1) ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
+          pointerEvents: step === (isOrganizer ? 2 : 1) ? 'auto' : 'none',
         }}>
           <div className="reg-name-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <InputField icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
@@ -235,13 +275,13 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
           </div>
         </div>
 
-        {/* ─── STEP 2: Business Info (conditional) ─── */}
+        {/* ─── STEP 2 (organizer) / STEP 3 (business): Business Info ─── */}
         {isBusiness && (
           <div ref={step2Ref} style={{
             ...s.stepPane,
-            opacity: step === 2 ? 1 : 0,
-            transform: step === 2 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
-            pointerEvents: step === 2 ? 'auto' : 'none',
+            opacity: step === (isOrganizer ? 3 : 2) ? 1 : 0,
+            transform: step === (isOrganizer ? 3 : 2) ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
+            pointerEvents: step === (isOrganizer ? 3 : 2) ? 'auto' : 'none',
           }}>
             <div style={s.businessStepHeader}>
               <Building2 size={20} color="#FF385C" />
@@ -268,7 +308,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
           </div>
         )}
 
-        {/* ─── STEP 2 (individual) / STEP 3 (business): Password ─── */}
+        {/* ─── Final Step: Password ─── */}
         <div ref={stepFinalRef} style={{
           ...s.stepPane,
           opacity: step === maxStep ? 1 : 0,
@@ -360,6 +400,10 @@ function LoginForm({ action }: { action: (state: AuthActionState, formData: Form
           {isPending ? 'Входим...' : 'Войти'} <ArrowRight size={18} />
         </button>
       </form>
+
+      <p style={{ ...s.footerText, marginTop: 12 }}>
+        <Link href="/forgot-password" style={s.footerLink}>Забыли пароль?</Link>
+      </p>
 
       <p style={s.footerText}>
         Нет аккаунта?{' '}

@@ -27,8 +27,26 @@ export async function generateMetadata({
       title: challenge.title,
       description: challenge.description,
       url: `https://chillenge-russia.ru/challenges/${id}`,
-      images: [{ url: challenge.imageUrl, width: 1200, height: 630 }],
+      images: [
+        {
+          url: `https://chillenge-russia.ru/api/og/${id}`,
+          width: 1200,
+          height: 630,
+          alt: challenge.title,
+        },
+        {
+          url: challenge.imageUrl,
+          width: 1200,
+          height: 630,
+        },
+      ],
       type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: challenge.title,
+      description: challenge.description.slice(0, 160),
+      images: [`https://chillenge-russia.ru/api/og/${id}`],
     },
   };
 }

@@ -404,3 +404,51 @@
     align-items: center;
   }
 }
+
+.reportBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.reportBtn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.actionLinks {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.leaderboardLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFD700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.leaderboardLink:hover {
+  border-color: #FFD700;
+  background: #FFFBEB;
+}

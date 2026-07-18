@@ -1,20 +1,16 @@
 import type { PrismaClient } from '@prisma/client';
 
+const REFERRAL_REWARDS = {
+  REGISTRATION: 100,      // +100 баллов за регистрацию приглашённого
+  FIRST_CHALLENGE: 200,   // +200 баллов за первое участие
+  PAYMENT_PERCENT: 0.10,  // 10% от первого платежа
+} as const;
+
 export interface ReferralService {
-  /**
-   * Записывает событие регистрации по реферальному коду.
-   * Вызывается при подтверждении email нового пользователя.
-   */
   trackRegistration(referredUserId: string, referralCode: string): Promise<void>;
-
-  /**
-   * Возвращает список рефералов пользователя.
-   */
+  trackFirstChallenge(userId: string): Promise<void>;
+  trackPayment(userId: string, amount: number): Promise<void>;
   getReferrals(userId: string): Promise<{ id: string; name: string; joinedAt: Date; event: string }[]>;
-
-  /**
-   * Возвращает количество рефералов и общее вознаграждение.
-   */
   getStats(userId: string): Promise<{ totalReferrals: number; totalReward: number }>;
 }
 
@@ -23,13 +19,11 @@ export function createReferralService(prisma: PrismaClient): ReferralService {
     async trackRegistration(referredUserId, referralCode) {
       if (!referralCode) return;
 
-      // Ищем реферера по коду
       const referrer = await prisma.user.findFirst({
         where: { referralCode, deletedAt: null },
       });
       if (!referrer || referrer.id === referredUserId) return;
 
-      // Проверяем, не было ли уже такого события
       const existing = await prisma.referralEvent.findUnique({
         where: {
           referrerId_referredId_eventType: {
@@ -41,14 +35,91 @@ export function createReferralService(prisma: PrismaClient): ReferralService {
       });
       if (existing) return;
 
-      // Записываем событие
       await prisma.referralEvent.create({
         data: {
           referrerId: referrer.id,
           referredId: referredUserId,
           eventType: 'REGISTRATION',
-          rewardAmount: 0, // Базовое вознаграждение — определяется бизнес-логикой
+          rewardAmount: REFERRAL_REWARDS.REGISTRATION,
         },
+      });
+
+      // Начисляем баллы рефереру
+      await prisma.user.update({
+        where: { id: referrer.id },
+        data: { points: { increment: REFERRAL_REWARDS.REGISTRATION } },
+      });
+    },
+
+    async trackFirstChallenge(userId) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user?.referredBy) return;
+
+      const referrer = await prisma.user.findFirst({
+        where: { referralCode: user.referredBy, deletedAt: null },
+      });
+      if (!referrer || referrer.id === userId) return;
+
+      const existing = await prisma.referralEvent.findUnique({
+        where: {
+          referrerId_referredId_eventType: {
+            referrerId: referrer.id,
+            referredId: userId,
+            eventType: 'FIRST_CHALLENGE',
+          },
+        },
+      });
+      if (existing) return;
+
+      await prisma.referralEvent.create({
+        data: {
+          referrerId: referrer.id,
+          referredId: userId,
+          eventType: 'FIRST_CHALLENGE',
+          rewardAmount: REFERRAL_REWARDS.FIRST_CHALLENGE,
+        },
+      });
+
+      await prisma.user.update({
+        where: { id: referrer.id },
+        data: { points: { increment: REFERRAL_REWARDS.FIRST_CHALLENGE } },
+      });
+    },
+
+    async trackPayment(userId, amount) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user?.referredBy) return;
+
+      const referrer = await prisma.user.findFirst({
+        where: { referralCode: user.referredBy, deletedAt: null },
+      });
+      if (!referrer || referrer.id === userId) return;
+
+      const existing = await prisma.referralEvent.findUnique({
+        where: {
+          referrerId_referredId_eventType: {
+            referrerId: referrer.id,
+            referredId: userId,
+            eventType: 'PAYMENT',
+          },
+        },
+      });
+      if (existing) return;
+
+      const rewardAmount = Math.round(amount * REFERRAL_REWARDS.PAYMENT_PERCENT);
+
+      await prisma.referralEvent.create({
+        data: {
+          referrerId: referrer.id,
+          referredId: userId,
+          eventType: 'PAYMENT',
+          rewardAmount,
+        },
+      });
+
+      await prisma.user.update({
+        where: { id: referrer.id },
+        data: { points: { increment: rewardAmount } },
       });
     },
 

@@ -24,7 +24,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '1', title: 'Бизнес-инкубатор: Собрать MVP за 48 часов', organizer: 'Сколково',
     category: 'tech',
-    imageUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 45, maxParticipants: 60, isJoined: false, badges: ['hot'], isRecommended: true,
     achievement: 'Стартап-пионер', reward: 'Бесплатный офис в Сколково на 1 мес.',
     location: 'Москва', region: 'Москва', endDate: '25 июля 2026',
@@ -36,7 +36,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '2', title: 'Привлечь 1000 подписчиков в ТГ без бюджета', organizer: 'Marketing Pro',
     category: 'education',
-    imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 320, maxParticipants: 500, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Мастер роста', reward: 'Курс по SMM (₽15 000)',
     location: 'Онлайн', endDate: '10 августа 2026',
@@ -48,7 +48,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '3', title: 'Пройти 5 IT-собеседований за неделю', organizer: 'HR Academy',
     category: 'education',
-    imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 150, maxParticipants: 200, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Железный кандидат', reward: 'Сертификат HR Academy',
     location: 'Москва / Онлайн', region: 'Москва', endDate: '5 августа 2026',
@@ -59,7 +59,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '4', title: 'Написать идеальный бизнес-план кофейни', organizer: 'Coffee Like',
     category: 'tech',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 85, maxParticipants: 100, isJoined: false, badges: ['cooperative'], isRecommended: true,
     achievement: 'Бизнес-визионер', reward: 'Франшиза Coffee Like на 3 месяца',
     location: 'Онлайн', endDate: '1 августа 2026',
@@ -70,7 +70,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '5', title: 'Марафон «Властелин Колец» (Режиссёрская версия)', organizer: 'КиноПоиск',
     category: 'quest',
-    imageUrl: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 1200, maxParticipants: 2000, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Хранитель Кольца', reward: 'Годовая подписка КиноПоиск HD',
     location: 'Онлайн', endDate: '20 июля 2026',
@@ -81,7 +81,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '6', title: 'Пройти Minecraft без урона', organizer: 'PlayStation RU',
     category: 'quest',
-    imageUrl: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 890, maxParticipants: 1000, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Легенда Minecraft', reward: 'PS5 Digital Edition',
     location: 'Онлайн', endDate: '31 июля 2026',
@@ -92,7 +92,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '7', title: 'Создать арт-объект из мусора', organizer: 'Эко-Движение',
     category: 'art',
-    imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 210, maxParticipants: 300, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Эко-художник', reward: 'Выставка в галерее Москвы',
     location: 'По всей России', endDate: '15 августа 2026',
@@ -103,7 +103,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '8', title: 'Выучить 100 слов на японском за неделю', organizer: 'LangMaster',
     category: 'education',
-    imageUrl: 'https://images.unsplash.com/photo-1528751014936-863e6e7a319c?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 67, maxParticipants: 200, isJoined: false, badges: ['hot'], isRecommended: false,
     achievement: 'Полиглот', reward: 'Курс японского языка (₽12 000)',
     location: 'Онлайн', endDate: '29 июля 2026',
@@ -114,7 +114,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '9', title: 'Провести мастер-класс для детей бесплатно', organizer: 'Добровольцы России',
     category: 'quest',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 78, maxParticipants: 150, isJoined: false, badges: ['cooperative'], isRecommended: true,
     achievement: 'Наставник', reward: 'Сертификат волонтёра РФ',
     location: 'Ваш город', endDate: '10 августа 2026',
@@ -125,7 +125,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '10', title: 'Запустить свой подкаст — первые 3 эпизода', organizer: 'Яндекс.Музыка',
     category: 'education',
-    imageUrl: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 95, maxParticipants: 200, isJoined: false, badges: ['hot'], isRecommended: false,
     achievement: 'Голос эпохи', reward: 'Промо на Яндекс.Музыке (100к слушателей)',
     location: 'Онлайн', endDate: '5 сентября 2026',
@@ -136,7 +136,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '11', title: 'Сфотографировать 30 закатов за месяц', organizer: 'Nikon Russia',
     category: 'art',
-    imageUrl: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 430, maxParticipants: 600, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Охотник за светом', reward: 'Фотоаппарат Nikon Z30',
     location: 'Весь мир', endDate: '31 августа 2026',
@@ -147,7 +147,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '12', title: 'Читать по 30 минут каждый день месяц', organizer: 'Литрес',
     category: 'education',
-    imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 512, maxParticipants: 1000, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Книжный червь', reward: 'Подписка Литрес на 6 месяцев',
     location: 'Онлайн', endDate: '31 июля 2026',
@@ -158,7 +158,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '13', title: 'Готовить новое блюдо каждую неделю', organizer: 'Шеф маркет',
     category: 'quest',
-    imageUrl: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 280, maxParticipants: 400, isJoined: false, badges: ['hot'], isRecommended: true,
     achievement: 'Шеф-исследователь', reward: 'Набор продуктов Шеф маркет на ₽10 000',
     location: 'Дома', endDate: '15 сентября 2026',
@@ -169,7 +169,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '14', title: 'Убрать мусор в ближайшем парке', organizer: 'ЭкоГород',
     category: 'quest',
-    imageUrl: 'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 560, maxParticipants: 1000, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Страж природы', reward: 'Скидка 30% в спортивных магазинах-партнёрах',
     location: 'Ваш город', endDate: '1 августа 2026',
@@ -180,7 +180,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '17', title: 'Утренний забег на 5км с Nike', organizer: 'Nike Run Club',
     category: 'sport',
-    imageUrl: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 120, maxParticipants: 200, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Утренний бегун', reward: 'Кроссовки Nike Air Max (на выбор)',
     location: 'Парк Горького, Москва', region: 'Москва', endDate: '27 июля 2026',
@@ -191,7 +191,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '18', title: 'Сделать 100 отжиманий за подход', organizer: 'Iron Gym',
     category: 'sport',
-    imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 42, maxParticipants: 100, isJoined: false, badges: ['hot'], isRecommended: false,
     achievement: 'Железная воля', reward: 'Годовой абонемент Iron Gym',
     location: 'Онлайн (видеозапись)', endDate: '10 августа 2026',
@@ -202,7 +202,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '19', title: 'Переплыть Волгу (марафон)', organizer: 'Russian Swim',
     category: 'sport',
-    imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 15, maxParticipants: 50, isJoined: false, badges: ['cooperative'], isRecommended: true,
     achievement: 'Покоритель Волги', reward: 'Экипировка Arena на ₽25 000',
     location: 'Волгоград', region: 'Волгоград', endDate: '3 августа 2026',
@@ -213,7 +213,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '20', title: 'Месяц йоги каждый день на закате', organizer: 'Yoga Place',
     category: 'sport',
-    imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 310, maxParticipants: 500, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Дух заката', reward: 'Коврик Manduka PRO + 3 мес. Yoga Place',
     location: 'Онлайн / Уличные площадки', endDate: '31 августа 2026',
@@ -224,7 +224,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   {
     id: '22', title: 'Собрать 10 стикеров в ТЦ Триумф', organizer: 'ТЦ Триумф',
     category: 'quest',
-    imageUrl: 'https://images.unsplash.com/photo-1519567281794-66f81156ba2a?auto=format&fit=crop&w=400&q=80',
+    imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 15, maxParticipants: 30, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Охотник за стикерами', reward: 'Сертификат ТЦ Триумф на ₽5 000',
     location: 'ТЦ Триумф, Москва', region: 'Москва', endDate: '28 июля 2026',
@@ -274,7 +274,7 @@ export async function getChallengeFromDb(id: string): Promise<CatalogChallenge |
       title: challenge.title,
       organizer: challenge.organizer.name,
       category: challenge.category || 'Другое',
-      imageUrl: challenge.media[0]?.url || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80',
+      imageUrl: challenge.media[0]?.url || '/images/challenge-placeholder.svg',
       participantsCount: challenge._count.participations,
       maxParticipants: 100,
       isJoined: false,

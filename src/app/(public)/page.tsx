@@ -1,782 +1,1179 @@
 'use client';
 
-import React, { useRef, useState, useEffect, lazy, Suspense, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Heart, Search, SlidersHorizontal } from 'lucide-react';
-import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
+import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
 import { PageShell } from '@/shared/components/page-shell';
-import { PageSpinner } from '@/shared/components/spinner';
-import { AnnouncementPopup } from '@/shared/components/announcement-popup';
-import { useRegion } from '@/shared/components/region-provider';
-import { type ModalChallenge } from '@/shared/components/challenge-modal';
-import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
-import { useChallenges } from '@/shared/hooks/use-challenges';
-import { useFavorites } from '@/shared/hooks/use-favorites';
 
-const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
+/* ─── Three.js hero scene ─── */
+function HeroScene() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
 
-const CATEGORY_LABELS: Record<string, string> = {
-  sport: 'Спорт',
-  education: 'Обучение',
-  quest: 'Квесты',
-  art: 'Искусство',
-  tech: 'Технологии',
-};
-const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
-const CATEGORIES_ALL = ['Все подряд', ...CATEGORY_KEYS];
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  'Все подряд': <IconBolt size={16} />,
-  sport: <IconRun size={16} />,
-  education: <IconSchool size={16} />,
-  quest: <IconRoute size={16} />,
-  art: <IconPalette size={16} />,
-  tech: <IconCpu size={16} />,
-};
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-function toModalChallenge(c: CatalogChallenge): ModalChallenge {
-  return {
-    id: c.id,
-    title: c.title,
-    organizer: c.organizer,
-    category: c.category,
-    imageUrl: c.imageUrl,
-    participantsCount: c.participantsCount,
-    maxParticipants: c.maxParticipants,
-    endDate: c.endDate,
-    location: c.location,
-    achievement: c.achievement,
-    reward: c.reward,
-    description: c.description,
-    requirements: c.requirements,
-    refundPolicy: c.refundPolicy,
-    isJoined: false,
-    stages: [],
-  };
-}
+    let w = 0;
+    let h = 0;
+    const particles: { x: number; y: number; z: number; r: number; vx: number; vy: number; vz: number; hue: number }[] = [];
 
-// ─── Карточка ─────────────────────────────────────────────────────────────
-function CatalogCard({ challenge, onOpen, isAdmin, isFav, onToggleFav }: {
-  challenge: CatalogChallenge;
-  onOpen: (c: CatalogChallenge) => void;
-  isAdmin?: boolean;
-  isFav: boolean;
-  onToggleFav: (id: string) => void;
-}) {
-  const [animating, setAnimating] = useState(false);
-  const availableSlots = challenge.maxParticipants - challenge.participantsCount;
-  const isNew = challenge.badges?.includes('new');
+    const resize = () => {
+      const rect = canvas.parentElement!.getBoundingClientRect();
+      w = canvas.width = rect.width * 2;
+      h = canvas.height = rect.height * 2;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+    };
+    resize();
+    window.addEventListener('resize', resize);
 
-  const handleFavClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setAnimating(true);
-    onToggleFav(challenge.id);
-    setTimeout(() => setAnimating(false), 400);
-  };
+    // Create floating geometric shapes
+    for (let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * w - w / 2,
+        y: Math.random() * h - h / 2,
+        z: Math.random() * 400 + 100,
+        r: Math.random() * 30 + 8,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        vz: (Math.random() - 0.5) * 0.5,
+        hue: Math.random() * 30 + 350, // warm corals
+      });
+    }
+
+    let mouseX = 0;
+    let mouseY = 0;
+    const handleMouse = (e: MouseEvent) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 40;
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 40;
+    };
+    window.addEventListener('mousemove', handleMouse);
+
+    let time = 0;
+    const render = () => {
+      time += 0.005;
+      ctx.clearRect(0, 0, w, h);
+
+      // Sort by z for depth
+      particles.sort((a, b) => a.z - b.z);
+
+      for (const p of particles) {
+        // Animate
+        p.x += p.vx + Math.sin(time + p.vz) * 0.2;
+        p.y += p.vy + Math.cos(time * 0.7 + p.vx) * 0.15;
+        p.z += p.vz;
+
+        // Wrap around
+        if (p.z < 10) p.z = 500;
+        if (p.z > 500) p.z = 10;
+        if (p.x < -w / 2) p.x = w / 2;
+        if (p.x > w / 2) p.x = -w / 2;
+        if (p.y < -h / 2) p.y = h / 2;
+        if (p.y > h / 2) p.y = -h / 2;
+
+        // Perspective projection
+        const scale = 300 / p.z;
+        const px = w / 2 + (p.x + mouseX) * scale;
+        const py = h / 2 + (p.y + mouseY) * scale;
+        const pr = p.r * scale;
+
+        if (px < -50 || px > w + 50 || py < -50 || py > h + 50) continue;
+
+        // Draw shape
+        ctx.save();
+        ctx.globalAlpha = Math.min(0.6, scale * 0.8);
+
+        const hue = (p.hue + time * 20) % 360;
+        ctx.fillStyle = `hsla(${hue}, 70%, 55%, 1)`;
+        ctx.strokeStyle = `hsla(${hue}, 70%, 65%, 0.5)`;
+        ctx.lineWidth = 1;
+
+        // Draw different shapes
+        const sides = Math.floor(p.r) % 3 + 3; // 3-5 sides
+        ctx.beginPath();
+        for (let i = 0; i <= sides; i++) {
+          const angle = (i / sides) * Math.PI * 2 + time;
+          const x = px + Math.cos(angle) * pr;
+          const y = py + Math.sin(angle) * pr;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw connecting lines between nearby particles
+      ctx.save();
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const scaleA = 300 / a.z;
+          const scaleB = 300 / b.z;
+          const ax = w / 2 + (a.x + mouseX) * scaleA;
+          const ay = h / 2 + (a.y + mouseY) * scaleA;
+          const bx = w / 2 + (b.x + mouseX) * scaleB;
+          const by = h / 2 + (b.y + mouseY) * scaleB;
+          const dist = Math.hypot(ax - bx, ay - by);
+          if (dist < 120) {
+            ctx.globalAlpha = (1 - dist / 120) * 0.15;
+            ctx.strokeStyle = 'rgba(255, 120, 140, 1)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.restore();
+
+      animRef.current = requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouse);
+    };
+  }, []);
 
   return (
-    <div className="catalog-card" onClick={() => onOpen(challenge)}>
-      <div className="card-image-box">
-        <img src={challenge.imageUrl} alt={challenge.title} className="card-bg-img" />
-        <span className="card-category-pill">{CATEGORY_ICONS[challenge.category] ?? '✦'} {CATEGORY_LABELS[challenge.category] || challenge.category}</span>
-        {isNew && (
-          <span style={{
-            position: 'absolute', top: 12, left: 12,
-            background: 'linear-gradient(135deg, #16a34a, #15803d)',
-            color: 'white', padding: '4px 10px', borderRadius: 99,
-            fontSize: 10, fontWeight: 800, letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-          }}>Новый</span>
-        )}
-        <button
-          className={`card-heart ${isFav ? 'liked' : ''} ${animating ? 'animating' : ''}`}
-          onClick={handleFavClick}
-        >
-          <Heart size={17} fill={isFav ? '#FF385C' : 'none'} color={isFav ? '#FF385C' : '#111'} />
-          {animating && <span className="heart-particles">{'✨'.repeat(5)}</span>}
-        </button>
-      </div>
-      <div className="card-body">
-        <div className="card-top">
-          <h3 className="card-title">{challenge.title}</h3>
-          <p className="card-organizer">{challenge.organizer}</p>
-        </div>
-        <div className="card-bottom">
-          <div className="card-tags">
-            <span className="card-tag achievement" title="Достижение за выполнение">🏆 {challenge.achievement}</span>
-            <span className="card-tag reward" title="Награда за выполнение">🎁 {challenge.reward}</span>
-          </div>
-          <div className="card-footer">
-            <span className="card-slots">
-              <span className={availableSlots <= 5 ? 'few' : ''}>{availableSlots}</span> мест из {challenge.maxParticipants}
-            </span>
-            <span className="card-date">до {challenge.endDate}</span>
-          </div>
-        </div>
-      </div>
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+    />
+  );
+}
 
-      <style jsx>{`
-        .catalog-card {
-          width: 300px;
-          flex-shrink: 0;
-          background: rgba(255,255,255,0.65);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.85);
-          border-radius: 20px;
-          overflow: hidden;
-          box-shadow: 0 6px 24px rgba(31,38,135,0.07);
-          cursor: pointer;
-          transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
-          user-select: none;
-          -webkit-user-drag: none;
+/* ─── Scroll reveal hook ─── */
+function useReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('revealed');
+          obs.unobserve(el);
         }
-        .catalog-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 16px 40px rgba(31,38,135,0.14);
+      },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return ref;
+}
+
+/* ─── Parallax hook ─── */
+function useParallax(speed = 0.3) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const rect = el.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const viewCenter = window.innerHeight / 2;
+          const offset = (center - viewCenter) * speed;
+          el.style.transform = `translateY(${offset}px)`;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [speed]);
+
+  return ref;
+}
+
+/* ─── Counter animation ─── */
+function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number; suffix?: string; prefix?: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          let start = 0;
+          const duration = 2000;
+          const startTime = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.floor(eased * target));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+          obs.unobserve(el);
         }
-        .card-image-box {
-          height: 180px;
-          position: relative;
-          overflow: hidden;
-        }
-        .card-bg-img {
-          width: 100%; height: 100%;
-          object-fit: cover;
-          transition: transform 0.5s ease;
-        }
-        .catalog-card:hover .card-bg-img { transform: scale(1.06); }
-        .card-category-pill {
-          position: absolute; bottom: 12px; left: 12px;
-          background: rgba(255,255,255,0.92);
-          padding: 4px 10px; border-radius: 99px;
-          font-size: 11px; font-weight: 700;
-          backdrop-filter: blur(4px);
-        }
-        .card-heart {
-          position: absolute; top: 12px; right: 12px;
-          width: 34px; height: 34px; border-radius: 50%;
-          background: rgba(255,255,255,0.92);
-          border: none; display: grid; place-items: center;
-          cursor: pointer; z-index: 1;
-          transition: transform 0.15s, background 0.2s;
-        }
-        .card-heart:hover { transform: scale(1.15); }
-        .card-heart.liked { background: rgba(255,56,92,0.1); }
-        .card-heart.animating { animation: heartBounce 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-        .heart-particles {
-          position: absolute; top: -8px; right: -8px;
-          font-size: 14px; pointer-events: none;
-          animation: particleBurst 0.5s ease-out forwards;
-        }
-        @keyframes heartBounce {
-          0% { transform: scale(1); }
-          40% { transform: scale(1.35); }
-          100% { transform: scale(1); }
-        }
-        @keyframes particleBurst {
-          0% { opacity: 1; transform: scale(0.5); }
-          100% { opacity: 0; transform: scale(1.5) translateY(-12px); }
-        }
-        .card-body {
-          padding: 16px; display: flex;
-          flex-direction: column; gap: 10px;
-          height: 180px;
-        }
-        .card-top {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          min-height: 0;
-        }
-        .card-bottom {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          flex-shrink: 0;
-        }
-        .card-title {
-          font-size: 15px; font-weight: 800;
-          color: #111; margin: 0; line-height: 1.3;
-          display: -webkit-box; -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical; overflow: hidden;
-        }
-        .card-organizer {
-          font-size: 12px; color: #888; font-weight: 600; margin: 0;
-        }
-        .card-tags { display: flex; flex-direction: column; gap: 6px; }
-        .card-tag {
-          padding: 5px 10px; border-radius: 8px;
-          font-size: 12px; font-weight: 700;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .card-tag.achievement { background: #fef3c7; color: #92400e; }
-        .card-tag.reward { background: #dcfce7; color: #166534; }
-        .card-footer {
-          display: flex; justify-content: space-between;
-          align-items: center; padding-top: 10px;
-          border-top: 1px solid rgba(0,0,0,0.06);
-          font-size: 12px; color: #888;
-        }
-        .card-slots { font-weight: 700; }
-        .card-slots .few { color: #ef4444; }
-        .card-date { font-weight: 600; }
-      `}</style>
+      },
+      { threshold: 0.5 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [target]);
+
+  return (
+    <span ref={ref}>
+      {prefix}{count.toLocaleString('ru-RU')}{suffix}
+    </span>
+  );
+}
+
+/* ─── Section label ─── */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  const ref = useReveal();
+  return (
+    <div ref={ref} className="lp-reveal" style={{ marginBottom: 20 }}>
+      <span style={{
+        display: 'inline-block',
+        padding: '6px 16px',
+        background: 'rgba(255, 56, 92, 0.08)',
+        border: '1px solid rgba(255, 56, 92, 0.15)',
+        borderRadius: 99,
+        fontSize: 13,
+        fontWeight: 700,
+        color: '#FF385C',
+        letterSpacing: '0.02em',
+      }}>
+        {children}
+      </span>
     </div>
   );
 }
 
-// ─── Карусель с направлением ───────────────────────────────────────────────
-function CarouselSection({
-  title,
-  challenges,
-  onOpen,
-  direction = 'right',
-  isAdmin,
-  isFavFn,
-  onToggleFav,
-}: {
-  title: string;
-  challenges: CatalogChallenge[];
-  onOpen: (c: CatalogChallenge) => void;
-  direction?: 'left' | 'right';
-  isAdmin?: boolean;
-  isFavFn: (id: string) => boolean;
-  onToggleFav: (id: string) => void;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+/* ─── Main landing page ─── */
+export default function LandingPage() {
+  const heroRef = useReveal();
+  const featuresRef = useReveal();
+  const howRef = useReveal();
+  const statsRef = useReveal();
+  const showcaseRef = useReveal();
+  const pricingRef = useReveal();
+  const faqRef = useReveal();
+  const ctaRef = useReveal();
 
-  // Медленный автоскролл с чередованием направления
-  React.useEffect(() => {
-    if (isDragging || isHovered) return;
-    const STEP = 1; // пикселей за тик
-    const INTERVAL = 30; // мс — очень плавно
-    const id = setInterval(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-      if (direction === 'right') {
-        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
-          el.scrollLeft = 0;
-        } else {
-          el.scrollLeft += STEP;
-        }
-      } else {
-        if (el.scrollLeft <= 1) {
-          el.scrollLeft = el.scrollWidth - el.clientWidth;
-        } else {
-          el.scrollLeft -= STEP;
-        }
-      }
-    }, INTERVAL);
-    return () => clearInterval(id);
-  }, [isDragging, isHovered, direction]);
-
-  const scrollBy = (dir: 'left' | 'right') => {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 324 : -324, behavior: 'smooth' });
-  };
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setStartX(e.pageX - (scrollRef.current?.offsetLeft ?? 0));
-    setScrollLeft(scrollRef.current?.scrollLeft ?? 0);
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    e.preventDefault();
-    scrollRef.current.scrollLeft = scrollLeft - (e.pageX - (scrollRef.current.offsetLeft) - startX) * 2;
-  };
-
-  return (
-    <section className="carousel-section">
-      <h2 className="carousel-title">{title}</h2>
-      <div
-        className="carousel-wrapper"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => { setIsHovered(false); setIsDragging(false); }}
-      >
-        <button className="carousel-btn prev" onClick={() => scrollBy('left')}>
-          <ChevronLeft size={20} color="#222" />
-        </button>
-        <div
-          className={`carousel-track ${isDragging ? 'dragging' : ''}`}
-          ref={scrollRef}
-          onMouseDown={onMouseDown}
-          onMouseUp={() => setIsDragging(false)}
-          onMouseMove={onMouseMove}
-        >
-          {challenges.map((c, i) => (
-            <CatalogCard key={`${c.id}-${i}`} challenge={c} onOpen={onOpen} isAdmin={isAdmin} isFav={isFavFn(c.id)} onToggleFav={onToggleFav} />
-          ))}
-        </div>
-        <button className="carousel-btn next" onClick={() => scrollBy('right')}>
-          <ChevronRight size={20} color="#222" />
-        </button>
-      </div>
-
-      <style jsx>{`
-        .carousel-section { display: flex; flex-direction: column; gap: 20px; width: 100%; }
-        .carousel-title { font-size: 22px; font-weight: 800; color: #111; margin: 0; }
-        .carousel-wrapper { position: relative; display: flex; align-items: center; }
-        .carousel-track {
-          display: flex; gap: 20px;
-          overflow-x: auto; overflow-y: visible;
-          padding: 8px 4px 32px;
-          scrollbar-width: none;
-          cursor: grab;
-        }
-        .carousel-track.dragging { cursor: grabbing; }
-        .carousel-track::-webkit-scrollbar { display: none; }
-        .carousel-btn {
-          position: absolute;
-          width: 38px; height: 38px;
-          background: white; border: 1px solid #e5e7eb;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          border-radius: 50%; display: grid; place-items: center;
-          cursor: pointer; z-index: 10;
-          transition: transform 0.2s, box-shadow 0.2s;
-          flex-shrink: 0;
-        }
-        .carousel-btn:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
-        .carousel-btn.prev { left: -18px; }
-        .carousel-btn.next { right: -18px; }
-      `}</style>
-    </section>
-  );
-}
-
-// ─── Главный компонент ─────────────────────────────────────────────────────
-export default function PublicHomePage() {
-  const { challenges, loading, isAdmin } = useChallenges();
-  const { region, isLoaded, setRegion } = useRegion();
-  const { isFavorite, toggleFavorite, favoritesCount } = useFavorites();
-  const [activeCategory, setActiveCategory] = useState('Все подряд');
-  const [selectedChallenge, setSelectedChallenge] = useState<CatalogChallenge | null>(null);
-
-  // Filter by region: show challenges with no region (online/everywhere) or matching user's region
-  const regionFiltered = useMemo(() => {
-    if (!region) return challenges;
-    const matched = challenges.filter(c => !c.region || c.region === region);
-    // If nothing matches this region, show all (user probably typed a custom city)
-    return matched.length > 0 ? matched : challenges;
-  }, [challenges, region]);
-
-  const filtered = regionFiltered.filter(c => {
-    const matchCat = activeCategory === 'Все подряд' || c.category === activeCategory;
-    return matchCat;
-  });
-
-  const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
-
-  if (activeCategory === 'Все подряд') {
-    const recommended = regionFiltered.filter(c => c.isRecommended);
-    if (recommended.length) sections.push({ title: 'Рекомендовано', challenges: recommended, direction: 'right' });
-    CATEGORY_KEYS.forEach((key, i) => {
-      const group = regionFiltered.filter(c => c.category === key);
-      if (group.length) sections.push({ title: CATEGORY_LABELS[key], challenges: group, direction: i % 2 === 0 ? 'left' : 'right' });
-    });
-  }
-
-  if (loading) {
-    return (
-      <PageShell variant="public">
-        <PageSpinner text="Загружаем челленджи..." />
-      </PageShell>
-    );
-  }
+  const parallaxBg = useParallax(0.15);
+  const parallaxCards = useParallax(-0.1);
 
   return (
     <PageShell variant="public">
-      {/* Попап-баннер */}
-      <AnnouncementPopup />
-
-      {/* Модальное окно ЧЕ */}
-      {selectedChallenge && (
-        <Suspense fallback={null}>
-          <ChallengeModal
-            challenge={toModalChallenge(selectedChallenge)}
-            onClose={() => setSelectedChallenge(null)}
-          />
-        </Suspense>
-      )}
-
-      <main className="catalog-main">
-
-        {/* Категории */}
-        <div className="categories-scroll">
-            {CATEGORIES_ALL.map(cat => (
-              <button
-                key={cat}
-                className={`cat-pill ${activeCategory === cat ? 'active' : ''}`}
-                onClick={() => setActiveCategory(cat)}
-              >
-                {CATEGORY_ICONS[cat]} {cat === 'Все подряд' ? cat : CATEGORY_LABELS[cat]}
-              </button>
-            ))}
+      <div className="lp">
+        {/* ═══════════ HERO ═══════════ */}
+        <section className="lp-hero">
+          <div className="lp-hero-bg" ref={parallaxBg}>
+            <HeroScene />
+            <div className="lp-hero-glow" />
           </div>
-
-        {/* Контент */}
-        <div className="catalog-content">
-          {challenges.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: '#111', margin: '0 0 8px' }}>Челленджи пока не добавлены</h3>
-              <p style={{ fontSize: 14, color: '#888', margin: 0 }}>Скоро здесь появятся интересные активности</p>
+          <div className="lp-hero-content lp-reveal" ref={heroRef}>
+            <div className="lp-badge">Интерактивная платформа</div>
+            <h1>
+              Превращай рутину<br />
+              <span className="lp-gradient">в игру</span>
+            </h1>
+            <p>
+              Создавай челленджи с геймификацией. Бренды, HR, НКО — запускайте
+              интерактивные задания, а участники соревнуются и получают реальные награды.
+            </p>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Link href="/register" className="lp-btn lp-btn--primary">
+                <span>Создать челлендж</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </Link>
+              <Link href="/explore" className="lp-btn lp-btn--ghost">
+                Смотреть каталог
+              </Link>
             </div>
-          ) : activeCategory === 'Все подряд' ? (
-            // Несколько секций с чередованием направления
-            <div className="sections-list">
-              {sections.map((sec, idx) => (
-                <CarouselSection
-                  key={sec.title}
-                  title={sec.title}
-                  challenges={sec.challenges}
-                  onOpen={c => setSelectedChallenge(c)}
-                  direction={idx % 2 === 0 ? 'right' : 'left'}
-                  isAdmin={isAdmin}
-                  isFavFn={isFavorite}
-                  onToggleFav={toggleFavorite}
-                />
+            <div className="lp-hero-stats">
+              <div className="lp-stat">
+                <span className="lp-stat-num"><AnimatedCounter target={2500} suffix="+" /></span>
+                <span className="lp-stat-label">Челленджей создано</span>
+              </div>
+              <div className="lp-stat-divider" />
+              <div className="lp-stat">
+                <span className="lp-stat-num"><AnimatedCounter target={48000} suffix="+" /></span>
+                <span className="lp-stat-label">Участников</span>
+              </div>
+              <div className="lp-stat-divider" />
+              <div className="lp-stat">
+                <span className="lp-stat-num"><AnimatedCounter target={350} suffix="+" /></span>
+                <span className="lp-stat-label">Брендов</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ FEATURES ═══════════ */}
+        <section className="lp-section" style={{ paddingTop: 160, paddingBottom: 160 }}>
+          <div className="lp-container">
+            <SectionLabel>Возможности</SectionLabel>
+            <h2 className="lp-section-title" ref={featuresRef}>
+              Всё для создания<br /> интерактивных челленджей
+            </h2>
+            <div className="lp-features-grid">
+              {[
+                { num: '01', title: 'Конструктор заданий', desc: 'Многоэтапные квесты с загрузкой фото, ответами и проверкой. Создайте за 15 минут.' },
+                { num: '02', title: 'Геймификация', desc: 'Очки, достижения, рейтинги. Участники соревнуются за первые места и реальные награды.' },
+                { num: '03', title: 'Партнёрства', desc: 'Запускайте совместные челленджи с другими брендами. Делитесь аудиторией и бюджетом.' },
+                { num: '04', title: 'Аналитика', desc: 'Конверсия по этапам, активность участников,heatmap прохождения. Всё в реальном времени.' },
+                { num: '05', title: 'Монетизация', desc: 'Установите взнос за участие. Комиссия от 15% — деньги перечисляются после завершения.' },
+                { num: '06', title: 'Мобильный опыт', desc: 'Полноценное мобильное приложение. Участники проходят задания с телефона без ограничений.' },
+              ].map((f) => (
+                <div key={f.num} className="lp-feature-card lp-reveal">
+                  <span className="lp-feature-num">{f.num}</span>
+                  <h3>{f.title}</h3>
+                  <p>{f.desc}</p>
+                </div>
               ))}
             </div>
-          ) : (
-            // Сетка по категории / поиск
-            <>
-              <p className="results-count">
-                {filtered.length > 0
-                  ? `Найдено: ${filtered.length} ${filtered.length === 1 ? 'челендж' : 'челенджей'}`
-                  : 'Ничего не найдено'}
+          </div>
+        </section>
+
+        {/* ═══════════ HOW IT WORKS ═══════════ */}
+        <section className="lp-section lp-section--dark" style={{ paddingTop: 160, paddingBottom: 160 }}>
+          <div className="lp-container">
+            <SectionLabel>Как это работает</SectionLabel>
+            <h2 className="lp-section-title" ref={howRef}>
+              Три шага до запуска
+            </h2>
+            <div className="lp-steps">
+              {[
+                { step: '01', title: 'Создайте', desc: 'Используйте конструктор: добавьте этапы, задания, награды и правила. Визуальный редактор без кода.', accent: 'from creation' },
+                { step: '02', title: 'Запустите', desc: 'Опубликуйте в каталоге, поделитесь ссылкой или отправьте через Telegram и соцсети.', accent: 'via distribution' },
+                { step: '03', title: 'Анализируйте', desc: 'Отслеживайте прогресс, конверсию по этапам и общую статистику в дашборде.', accent: 'with analytics' },
+              ].map((s, i) => (
+                <div key={s.step} className="lp-step lp-reveal" style={{ animationDelay: `${i * 0.15}s` }}>
+                  <div className="lp-step-visual">
+                    <div className="lp-step-num">{s.step}</div>
+                    <div className="lp-step-line" />
+                  </div>
+                  <div className="lp-step-content">
+                    <h3>{s.title}</h3>
+                    <p>{s.desc}</p>
+                    <span className="lp-step-accent">{s.accent}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ STATS ═══════════ */}
+        <section className="lp-section" style={{ paddingTop: 140, paddingBottom: 140 }}>
+          <div className="lp-container">
+            <div className="lp-stats-row" ref={statsRef}>
+              {[
+                { value: 2500, suffix: '+', label: 'Челленджей' },
+                { value: 48000, suffix: '+', label: 'Участников' },
+                { value: 92, suffix: '%', label: 'Конверсия' },
+                { value: 4.8, suffix: '/ 5', label: 'Рейтинг', decimals: 1 },
+              ].map((s, i) => (
+                <div key={i} className="lp-stat-block lp-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
+                  <span className="lp-stat-big">
+                    {s.decimals
+                      ? s.value.toFixed(s.decimals)
+                      : <AnimatedCounter target={s.value} />
+                    }
+                    {s.suffix}
+                  </span>
+                  <span className="lp-stat-small">{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ SHOWCASE ═══════════ */}
+        <section className="lp-section lp-section--gradient" style={{ paddingTop: 160, paddingBottom: 160 }}>
+          <div className="lp-container">
+            <SectionLabel>Примеры</SectionLabel>
+            <h2 className="lp-section-title" ref={showcaseRef}>
+              Челленджи, которые<br />вдохновляют
+            </h2>
+            <div className="lp-showcase" ref={parallaxCards}>
+              {[
+                { emoji: '🏃', title: 'Спортивный марафон', desc: '30 дней бега и ЗОЖ. Ежедневные задания, трекинг прогресса, призы от партнёров.', color: 'linear-gradient(135deg, #FF6B6B, #FF385C)' },
+                { emoji: '📚', title: 'Образовательный интенсив', desc: 'Новый навык за 14 дней. Проверка знаний, сертификаты, рейтинг участников.', color: 'linear-gradient(135deg, #4ECDC4, #44B09E)' },
+                { emoji: '🎨', title: 'Творческий конкурс', desc: 'Покажи талант. Жюри из экспертов, голосование аудитории, реальные призы.', color: 'linear-gradient(135deg, #A78BFA, #7C3AED)' },
+                { emoji: '🌍', title: 'Экологическая акция', desc: 'Собери мусор, посади дерево. Благотворительность с геймификацией и достижениями.', color: 'linear-gradient(135deg, #34D399, #059669)' },
+              ].map((c, i) => (
+                <div key={i} className="lp-showcase-card lp-reveal" style={{ animationDelay: `${i * 0.12}s` }}>
+                  <div className="lp-showcase-visual" style={{ background: c.color }}>
+                    <span className="lp-showcase-emoji">{c.emoji}</span>
+                  </div>
+                  <div className="lp-showcase-info">
+                    <h3>{c.title}</h3>
+                    <p>{c.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ PRICING ═══════════ */}
+        <section className="lp-section" style={{ paddingTop: 160, paddingBottom: 160 }}>
+          <div className="lp-container">
+            <SectionLabel>Тарифы</SectionLabel>
+            <h2 className="lp-section-title" ref={pricingRef}>
+              Прозрачные цены<br />для каждого
+            </h2>
+            <div className="lp-pricing-grid">
+              {PUBLISH_TARIFFS.map((t, i) => (
+                <div
+                  key={t.id}
+                  className={`lp-price-card lp-reveal ${t.recommended ? 'lp-price-card--featured' : ''}`}
+                  style={{ animationDelay: `${i * 0.12}s` }}
+                >
+                  {t.recommended && <div className="lp-price-badge">Популярный</div>}
+                  <h3>{t.name}</h3>
+                  <div className="lp-price-amount">
+                    {t.price === 0 ? 'Бесплатно' : (
+                      <>
+                        <span className="lp-price-num">{t.price.toLocaleString('ru-RU')}</span>
+                        <span className="lp-price-currency"> ₽<span className="lp-price-period">/мес</span></span>
+                      </>
+                    )}
+                  </div>
+                  <ul className="lp-price-features">
+                    {t.features.map((f, j) => (
+                      <li key={j}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/register"
+                    className={`lp-btn ${t.recommended ? 'lp-btn--primary' : 'lp-btn--outline'}`}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    {t.price === 0 ? 'Начать бесплатно' : 'Выбрать тариф'}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ FAQ ═══════════ */}
+        <section className="lp-section lp-section--dark" style={{ paddingTop: 160, paddingBottom: 160 }}>
+          <div className="lp-container" style={{ maxWidth: 760 }}>
+            <SectionLabel>FAQ</SectionLabel>
+            <h2 className="lp-section-title" ref={faqRef}>
+              Частые вопросы
+            </h2>
+            <div className="lp-faq-list">
+              {[
+                { q: 'Что такое челлендж на NEWSY?', a: 'Челлендж — это интерактивное задание или серия заданий, которые участники выполняют за определённый срок. Спортивный марафон, образовательный интенсив, творческий конкурс — любая активность с геймификацией.' },
+                { q: 'Сколько стоит создание?', a: 'Базовый тариф бесплатный — 1 челлендж, до 50 участников. Профессиональные тарифы от 2 990 ₽/мес с расширенными возможностями.' },
+                { q: 'Можно ли участвовать бесплатно?', a: 'Да! Большинство челленджей на NEWSY бесплатные. Платные используются организаторами для покрытия расходов на призы и логистику.' },
+                { q: 'Как работает монетизация?', a: 'Организаторы устанавливают взнос за участие. Комиссия от 15%. Остаток перечисляется после завершения челленджа.' },
+              ].map((item, i) => (
+                <details key={i} className="lp-faq-item lp-reveal" style={{ animationDelay: `${i * 0.08}s` }}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ CTA ═══════════ */}
+        <section className="lp-section" style={{ paddingTop: 160, paddingBottom: 160 }}>
+          <div className="lp-container" style={{ textAlign: 'center' }}>
+            <div ref={ctaRef} className="lp-reveal">
+              <h2 className="lp-cta-title">
+                Готовы создать<br />свой первый челлендж?
+              </h2>
+              <p className="lp-cta-desc">
+                Присоединяйтесь к тысячам организаторов и участников.
               </p>
-              <div className="grid-layout">
-                {filtered.map(c => (
-                  <CatalogCard key={c.id} challenge={c} onOpen={ch => setSelectedChallenge(ch)} isAdmin={isAdmin} isFav={isFavorite(c.id)} onToggleFav={toggleFavorite} />
-                ))}
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link href="/register" className="lp-btn lp-btn--primary lp-btn--lg">
+                  <span>Начать бесплатно</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </Link>
+                <Link href="/explore" className="lp-btn lp-btn--ghost lp-btn--lg">
+                  Смотреть каталог
+                </Link>
               </div>
-            </>
-          )}
-        </div>
-      </main>
+            </div>
+          </div>
+        </section>
+      </div>
 
-      <style jsx>{`
-        .catalog-main {
-          max-width: 1440px;
-          margin: 0 auto;
-          padding: 32px 40px 80px;
-          display: flex;
-          flex-direction: column;
-          gap: 40px;
+      <style>{`
+        /* ─── Base ─── */
+        .lp {
+          --bg: #0a0a0a;
+          --bg-elevated: #111111;
+          --bg-subtle: #161616;
+          --surface: #1a1a1a;
+          --border: rgba(255,255,255,0.06);
+          --text: #f5f5f5;
+          --text-muted: #888888;
+          --text-dim: #555555;
+          --brand: #FF385C;
+          --brand-glow: rgba(255, 56, 92, 0.25);
+          --radius: 20px;
+          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+          background: var(--bg);
+          color: var(--text);
+          overflow-x: hidden;
         }
 
-        /* Header */
-        .page-header {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
+        /* ─── Reveal animation ─── */
+        .lp-reveal {
+          opacity: 0;
+          transform: translateY(40px);
+          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-reveal.revealed {
+          opacity: 1;
+          transform: translateY(0);
         }
 
-        .header-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-
-        .page-title {
-          font-size: clamp(28px, 4vw, 40px);
-          font-weight: 900;
-          margin: 0;
-          color: #111;
-          letter-spacing: -1px;
-        }
-
-        .title-accent {
-          color: #FF385C;
-        }
-
-        /* Search Zone */
-        .search-zone {
-          display: flex;
-          gap: 14px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .search-box {
-          flex: 1;
-          min-width: 240px;
+        /* ─── Hero ─── */
+        .lp-hero {
+          position: relative;
+          min-height: 100vh;
           display: flex;
           align-items: center;
-          gap: 10px;
-          background: white;
-          border: 1.5px solid #e5e7eb;
-          border-radius: 16px;
-          padding: 12px 16px;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .search-box:focus-within {
-          border-color: #FF385C;
-          box-shadow: 0 0 0 3px rgba(255,56,92,0.1);
-        }
-
-        .search-input {
-          flex: 1;
-          border: none;
-          outline: none;
-          font-size: 15px;
-          color: #111;
-          background: transparent;
-        }
-
-        .search-input::placeholder { color: #aaa; }
-
-        .search-clear {
-          border: none;
-          background: none;
-          color: #aaa;
-          cursor: pointer;
-          font-size: 14px;
-          padding: 0 4px;
-        }
-
-        .search-right {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .location-hint {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 13px;
-          color: #666;
-          font-weight: 600;
-          white-space: nowrap;
-        }
-
-        .filter-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 18px;
-          border-radius: 14px;
-          border: 1.5px solid #e5e7eb;
-          background: white;
-          font-size: 14px;
-          font-weight: 700;
-          color: #333;
-          cursor: pointer;
-          transition: border-color 0.2s, background 0.2s;
-          white-space: nowrap;
-        }
-
-        .filter-btn:hover {
-          border-color: #FF385C;
-          background: #fff5f7;
-        }
-
-        /* Categories */
-        .categories-scroll {
-          display: flex;
-          gap: 10px;
-          overflow-x: auto;
-          padding-bottom: 4px;
-          scrollbar-width: none;
           justify-content: center;
-          flex-wrap: wrap;
+          overflow: hidden;
         }
-
-        .categories-scroll::-webkit-scrollbar { display: none; }
-
-        .cat-pill {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 10px 18px;
+        .lp-hero-bg {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+        }
+        .lp-hero-glow {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 800px;
+          height: 800px;
+          background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%);
+          filter: blur(80px);
+          opacity: 0.5;
+          animation: pulseGlow 6s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        .lp-hero-content {
+          position: relative;
+          z-index: 1;
+          text-align: center;
+          max-width: 800px;
+          padding: 120px 24px 80px;
+        }
+        .lp-badge {
+          display: inline-block;
+          padding: 8px 20px;
+          background: rgba(255, 56, 92, 0.08);
+          border: 1px solid rgba(255, 56, 92, 0.2);
           border-radius: 99px;
-          border: 1.5px solid #e5e7eb;
-          background: white;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
-          color: #444;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: all 0.2s;
-          flex-shrink: 0;
+          color: var(--brand);
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          margin-bottom: 32px;
         }
-
-        .cat-pill:hover { border-color: #FF385C; color: #FF385C; }
-
-        .cat-pill.active {
-          background: #111;
-          border-color: #111;
+        .lp-hero-content h1 {
+          font-size: clamp(48px, 8vw, 96px);
+          font-weight: 900;
+          line-height: 1.0;
+          letter-spacing: -0.04em;
+          margin: 0 0 28px 0;
           color: white;
         }
-
-        /* Filter Panel */
-        .filter-panel {
-          background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 16px;
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        .lp-gradient {
+          background: linear-gradient(135deg, #FF385C 0%, #FF6B8A 50%, #FFA0B4 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .lp-hero-content p {
+          font-size: clamp(16px, 2vw, 20px);
+          color: var(--text-muted);
+          line-height: 1.6;
+          max-width: 560px;
+          margin: 0 auto 40px;
         }
 
-        .filter-row {
+        /* ─── Hero Stats ─── */
+        .lp-hero-stats {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 40px;
+          margin-top: 56px;
+          padding-top: 40px;
+          border-top: 1px solid var(--border);
+        }
+        .lp-stat {
+          text-align: center;
+        }
+        .lp-stat-num {
+          display: block;
+          font-size: 28px;
+          font-weight: 800;
+          color: white;
+          letter-spacing: -0.02em;
+        }
+        .lp-stat-label {
+          display: block;
+          font-size: 13px;
+          color: var(--text-dim);
+          font-weight: 500;
+          margin-top: 4px;
+        }
+        .lp-stat-divider {
+          width: 1px;
+          height: 40px;
+          background: var(--border);
+        }
+
+        /* ─── Buttons ─── */
+        .lp-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 16px 32px;
+          border-radius: 14px;
+          font-size: 15px;
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          cursor: pointer;
+          border: none;
+          white-space: nowrap;
+        }
+        .lp-btn--primary {
+          background: var(--brand);
+          color: white;
+          box-shadow: 0 0 0 0 var(--brand-glow);
+        }
+        .lp-btn--primary:hover {
+          background: #E31C5F;
+          box-shadow: 0 8px 32px var(--brand-glow);
+          transform: translateY(-2px);
+        }
+        .lp-btn--ghost {
+          background: rgba(255,255,255,0.05);
+          color: white;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .lp-btn--ghost:hover {
+          background: rgba(255,255,255,0.1);
+          border-color: rgba(255,255,255,0.2);
+        }
+        .lp-btn--outline {
+          background: transparent;
+          color: white;
+          border: 1px solid rgba(255,255,255,0.15);
+        }
+        .lp-btn--outline:hover {
+          border-color: var(--brand);
+          color: var(--brand);
+        }
+        .lp-btn--lg {
+          padding: 18px 40px;
+          font-size: 16px;
+          border-radius: 16px;
+        }
+
+        /* ─── Sections ─── */
+        .lp-section {
+          position: relative;
+        }
+        .lp-section--dark {
+          background: var(--bg-elevated);
+        }
+        .lp-section--gradient {
+          background: linear-gradient(180deg, var(--bg) 0%, var(--bg-elevated) 50%, var(--bg) 100%);
+        }
+        .lp-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+        }
+        .lp-section-title {
+          font-size: clamp(36px, 5vw, 64px);
+          font-weight: 900;
+          line-height: 1.05;
+          letter-spacing: -0.03em;
+          margin: 0 0 64px 0;
+          color: white;
+          text-align: center;
+        }
+
+        /* ─── Features Grid ─── */
+        .lp-features-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2px;
+          background: var(--border);
+          border-radius: var(--radius);
+          overflow: hidden;
+        }
+        .lp-feature-card {
+          padding: 48px 36px;
+          background: var(--bg);
+          position: relative;
+          transition: background 0.3s;
+        }
+        .lp-feature-card:hover {
+          background: var(--surface);
+        }
+        .lp-feature-num {
+          display: block;
+          font-size: 13px;
+          font-weight: 800;
+          color: var(--brand);
+          letter-spacing: 0.05em;
+          margin-bottom: 20px;
+          font-variant-numeric: tabular-nums;
+        }
+        .lp-feature-card h3 {
+          font-size: 22px;
+          font-weight: 800;
+          margin: 0 0 12px 0;
+          color: white;
+          letter-spacing: -0.02em;
+        }
+        .lp-feature-card p {
+          font-size: 15px;
+          color: var(--text-muted);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        /* ─── Steps ─── */
+        .lp-steps {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          max-width: 700px;
+          margin: 0 auto;
+        }
+        .lp-step {
+          display: flex;
+          gap: 32px;
+          padding: 48px 0;
+          border-bottom: 1px solid var(--border);
+        }
+        .lp-step:last-child {
+          border-bottom: none;
+        }
+        .lp-step-visual {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+          flex-shrink: 0;
+        }
+        .lp-step-num {
+          width: 56px;
+          height: 56px;
+          border-radius: 16px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 800;
+          color: var(--brand);
+          font-variant-numeric: tabular-nums;
+        }
+        .lp-step-line {
+          width: 1px;
+          flex: 1;
+          background: var(--border);
+          min-height: 40px;
+        }
+        .lp-step:last-child .lp-step-line {
+          display: none;
+        }
+        .lp-step-content h3 {
+          font-size: 28px;
+          font-weight: 800;
+          margin: 0 0 12px 0;
+          color: white;
+          letter-spacing: -0.02em;
+        }
+        .lp-step-content p {
+          font-size: 16px;
+          color: var(--text-muted);
+          line-height: 1.6;
+          margin: 0;
+        }
+        .lp-step-accent {
+          display: inline-block;
+          margin-top: 16px;
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--text-dim);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        /* ─── Stats Row ─── */
+        .lp-stats-row {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2px;
+          background: var(--border);
+          border-radius: var(--radius);
+          overflow: hidden;
+        }
+        .lp-stat-block {
+          padding: 48px 24px;
+          background: var(--bg);
+          text-align: center;
+          transition: background 0.3s;
+        }
+        .lp-stat-block:hover {
+          background: var(--surface);
+        }
+        .lp-stat-big {
+          display: block;
+          font-size: clamp(32px, 4vw, 48px);
+          font-weight: 900;
+          color: white;
+          letter-spacing: -0.03em;
+          font-variant-numeric: tabular-nums;
+        }
+        .lp-stat-small {
+          display: block;
+          font-size: 14px;
+          color: var(--text-muted);
+          font-weight: 500;
+          margin-top: 8px;
+        }
+
+        /* ─── Showcase ─── */
+        .lp-showcase {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px;
+        }
+        .lp-showcase-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-showcase-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          border-color: rgba(255,255,255,0.1);
+        }
+        .lp-showcase-visual {
+          height: 200px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+        }
+        .lp-showcase-emoji {
+          font-size: 64px;
+          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-showcase-card:hover .lp-showcase-emoji {
+          transform: scale(1.15) rotate(-5deg);
+        }
+        .lp-showcase-info {
+          padding: 28px 32px;
+        }
+        .lp-showcase-info h3 {
+          font-size: 22px;
+          font-weight: 800;
+          margin: 0 0 10px 0;
+          color: white;
+          letter-spacing: -0.02em;
+        }
+        .lp-showcase-info p {
+          font-size: 15px;
+          color: var(--text-muted);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        /* ─── Pricing ─── */
+        .lp-pricing-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          max-width: 1000px;
+          margin: 0 auto;
+        }
+        .lp-price-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 40px 32px;
+          position: relative;
+          transition: all 0.3s;
+        }
+        .lp-price-card:hover {
+          border-color: rgba(255,255,255,0.12);
+          transform: translateY(-4px);
+        }
+        .lp-price-card--featured {
+          border-color: var(--brand);
+          background: linear-gradient(180deg, rgba(255,56,92,0.05) 0%, var(--surface) 100%);
+        }
+        .lp-price-card--featured:hover {
+          border-color: var(--brand);
+        }
+        .lp-price-badge {
+          position: absolute;
+          top: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--brand);
+          color: white;
+          padding: 5px 18px;
+          border-radius: 99px;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.03em;
+          white-space: nowrap;
+        }
+        .lp-price-card h3 {
+          font-size: 20px;
+          font-weight: 800;
+          margin: 0 0 16px 0;
+          color: white;
+        }
+        .lp-price-amount {
+          margin: 0 0 32px 0;
+          min-height: 56px;
+          display: flex;
+          align-items: baseline;
+          gap: 2px;
+        }
+        .lp-price-num {
+          font-size: 48px;
+          font-weight: 900;
+          color: white;
+          letter-spacing: -0.03em;
+          line-height: 1;
+        }
+        .lp-price-currency {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--text-muted);
+        }
+        .lp-price-period {
+          font-size: 14px;
+          color: var(--text-dim);
+        }
+        .lp-price-features {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 32px 0;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .lp-price-features li {
           display: flex;
           align-items: center;
           gap: 12px;
-          flex-wrap: wrap;
+          font-size: 14px;
+          color: var(--text-muted);
+          line-height: 1.4;
+        }
+        .lp-price-features li svg {
+          color: var(--brand);
+          flex-shrink: 0;
         }
 
-        .filter-label {
-          font-size: 13px;
-          font-weight: 700;
-          color: #333;
-          min-width: 120px;
-        }
-
-        .filter-range {
+        /* ─── FAQ ─── */
+        .lp-faq-list {
           display: flex;
-          align-items: center;
-          gap: 8px;
+          flex-direction: column;
+          gap: 12px;
         }
-
-        .filter-input {
-          padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid #e5e7eb;
-          font-size: 14px;
-          outline: none;
-          width: 140px;
-          transition: border-color 0.2s;
+        .lp-faq-item {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          overflow: hidden;
+          transition: border-color 0.3s;
         }
-
-        .filter-input:focus {
-          border-color: #FF385C;
+        .lp-faq-item:hover {
+          border-color: rgba(255,255,255,0.12);
         }
-
-        .filter-dash {
-          color: #aaa;
-          font-weight: 600;
+        .lp-faq-item[open] {
+          border-color: rgba(255,255,255,0.12);
         }
-
-        .filter-check {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          color: #333;
-          cursor: pointer;
-        }
-
-        .filter-check input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          accent-color: #FF385C;
-        }
-
-        .filter-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 10px;
-          padding-top: 8px;
-          border-top: 1px solid #f0f0f0;
-        }
-
-        .filter-reset {
-          padding: 10px 20px;
-          border-radius: 10px;
-          border: 1px solid #e5e7eb;
-          background: white;
-          font-size: 14px;
-          font-weight: 700;
-          color: #666;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-
-        .filter-reset:hover {
-          background: #f5f5f5;
-        }
-
-        .filter-apply {
-          padding: 10px 24px;
-          border-radius: 10px;
-          border: none;
-          background: #FF385C;
-          font-size: 14px;
+        .lp-faq-item summary {
+          padding: 22px 28px;
+          font-size: 16px;
           font-weight: 700;
           color: white;
           cursor: pointer;
-          transition: background 0.15s;
-        }
-
-        .filter-apply:hover {
-          background: #E31C5F;
-        }
-
-        /* Content */
-        .catalog-content {}
-
-        .sections-list {
+          list-style: none;
           display: flex;
-          flex-direction: column;
-          gap: 48px;
           align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          transition: color 0.2s;
+        }
+        .lp-faq-item summary::-webkit-details-marker { display: none; }
+        .lp-faq-item summary::after {
+          content: '+';
+          font-size: 20px;
+          color: var(--text-dim);
+          transition: transform 0.3s;
+          flex-shrink: 0;
+        }
+        .lp-faq-item[open] summary::after {
+          transform: rotate(45deg);
+          color: var(--brand);
+        }
+        .lp-faq-item summary:hover { color: var(--brand); }
+        .lp-faq-item p {
+          padding: 0 28px 22px;
+          font-size: 15px;
+          color: var(--text-muted);
+          line-height: 1.7;
+          margin: 0;
         }
 
-        .results-count {
-          font-size: 14px;
-          color: #888;
-          font-weight: 600;
+        /* ─── CTA ─── */
+        .lp-cta-title {
+          font-size: clamp(36px, 5vw, 56px);
+          font-weight: 900;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
           margin: 0 0 20px 0;
+          color: white;
+        }
+        .lp-cta-desc {
+          font-size: 18px;
+          color: var(--text-muted);
+          margin: 0 0 40px 0;
         }
 
-        .grid-layout {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
+        /* ─── Responsive ─── */
+        @media (max-width: 1024px) {
+          .lp-features-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .lp-pricing-grid {
+            grid-template-columns: 1fr;
+            max-width: 400px;
+            margin: 0 auto;
+          }
         }
 
-        @media (max-width: 900px) {
-          .catalog-main { padding: 20px 16px 60px; }
-          .header-top { flex-direction: column; align-items: flex-start; }
-          .page-title { font-size: 26px; }
-          .search-zone { flex-direction: column; align-items: stretch; }
-          .search-right { justify-content: space-between; }
-          .card-image-box { height: 150px; }
-        }
-
-        @media (max-width: 640px) {
-          .catalog-main { padding: 16px 12px 60px; gap: 28px; }
-          .page-title { font-size: 22px; letter-spacing: -0.5px; }
-          .search-box { min-width: 0; }
-          .search-input { font-size: 14px; }
-          .filter-panel { padding: 16px; gap: 12px; }
-          .filter-row { flex-direction: column; align-items: stretch; }
-          .filter-label { min-width: 0; }
-          .filter-input { width: 100%; }
-          .filter-actions { flex-direction: column; }
-          .filter-reset, .filter-apply { width: 100%; text-align: center; }
-          .grid-layout { gap: 14px; }
-          .cat-pill { padding: 8px 14px; font-size: 13px; }
-          .carousel-title { font-size: 18px; }
+        @media (max-width: 768px) {
+          .lp-hero-content h1 {
+            font-size: clamp(36px, 10vw, 56px);
+          }
+          .lp-hero-stats {
+            flex-direction: column;
+            gap: 24px;
+          }
+          .lp-stat-divider {
+            width: 40px;
+            height: 1px;
+          }
+          .lp-features-grid {
+            grid-template-columns: 1fr;
+          }
+          .lp-step {
+            flex-direction: column;
+            gap: 20px;
+            padding: 32px 0;
+          }
+          .lp-step-visual {
+            flex-direction: row;
+          }
+          .lp-step-line {
+            width: 40px;
+            height: 1px;
+            min-height: unset;
+          }
+          .lp-stats-row {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .lp-showcase {
+            grid-template-columns: 1fr;
+          }
+          .lp-section-title {
+            margin-bottom: 48px;
+          }
         }
 
         @media (max-width: 480px) {
-          .page-title { font-size: 20px; }
-          .categories-scroll { gap: 8px; }
-          .cat-pill { padding: 7px 12px; font-size: 12px; }
+          .lp-btn {
+            padding: 14px 24px;
+            font-size: 14px;
+          }
+          .lp-btn--lg {
+            padding: 16px 28px;
+          }
+          .lp-feature-card {
+            padding: 32px 24px;
+          }
+        }
+
+        /* ─── Reduced motion ─── */
+        @media (prefers-reduced-motion: reduce) {
+          .lp-reveal {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+          .lp-hero-glow {
+            animation: none;
+          }
+          .lp-btn--primary:hover,
+          .lp-showcase-card:hover {
+            transform: none;
+          }
         }
       `}</style>
     </PageShell>

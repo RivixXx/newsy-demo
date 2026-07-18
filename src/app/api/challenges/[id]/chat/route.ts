@@ -72,7 +72,7 @@ export async function POST(
       return NextResponse.json({ error: 'Вы не участник этого челленджа' }, { status: 403 });
     }
 
-    const rl = rateLimit(`chat:${session.user.id}:${id}`, { windowMs: 60_000, max: 20 });
+    const rl = await rateLimit(`chat:${session.user.id}:${id}`, { windowMs: 60_000, max: 20 });
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Слишком много сообщений. Подождите.' }, { status: 429 });
     }

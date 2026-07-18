@@ -40,7 +40,7 @@ function verifyWebhookSignature(body: string, signature: string | null): boolean
 export async function POST(req: NextRequest) {
   try {
     // Rate limiting (глобальный для webhook-эндпоинта)
-    const rl = rateLimit('webhook:yookassa', { windowMs: 60_000, max: 120 });
+    const rl = await rateLimit('webhook:yookassa', { windowMs: 60_000, max: 120 });
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }

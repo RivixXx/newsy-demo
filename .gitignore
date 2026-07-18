@@ -37,3 +37,6 @@ public/uploads/
 
 # Deployment secrets
 DEPLOY.md
+
+# MiMoCode tool state
+.mimocode/

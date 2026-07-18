@@ -1,64 +1,88 @@
 /**
- * In-memory rate limiter.
+ * Rate limiter with Upstash Redis (distributed) or in-memory fallback.
  *
- * ⚠️ ВАЖНО: В serverless/multi-instance окружении (Vercel, Railway и т.д.)
- * каждый инстанс имеет отдельную Map, поэтому ограничения не работают глобально.
- *
- * Для production необходимо заменить на Redis/Upstash:
  * @see https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
- *
- * Пример замены:
- * ```ts
- * import { Ratelimit } from '@upstash/ratelimit';
- * import { Redis } from '@upstash/redis';
- *
- * const ratelimit = new Ratelimit({
- *   redis: Redis.fromEnv(),
- *   limiter: Ratelimit.slidingWindow(10, '10 s'),
- * });
- * ```
  */
 
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+interface RateLimitConfig {
+  windowMs: number;
+  max: number;
+}
+
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  retryAfterMs: number;
+}
+
+// In-memory fallback (dev / no Redis)
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
-const store = new Map<string, RateLimitEntry>();
+const memStore = new Map<string, RateLimitEntry>();
 
-function cleanup() {
+function memCleanup() {
   const now = Date.now();
-  for (const [key, entry] of store) {
-    if (entry.resetAt <= now) store.delete(key);
+  for (const [key, entry] of memStore) {
+    if (entry.resetAt <= now) memStore.delete(key);
   }
 }
 
-// Очищаем устаревшие записи каждую минуту
-setInterval(cleanup, 60_000).unref?.();
-
-// Предупреждаем в production о ненадёжности in-memory rate limiter
-if (process.env.NODE_ENV === 'production' && !process.env.UPSTASH_REDIS_REST_URL) {
-  console.warn(
-    '[rate-limit] WARNING: Using in-memory rate limiter in production. ' +
-      'This does NOT work correctly in serverless/multi-instance environments. ' +
-      'Please configure UPSTASH_REDIS_REST_URL for distributed rate limiting.'
-  );
+if (typeof setInterval !== 'undefined') {
+  setInterval(memCleanup, 60_000).unref?.();
 }
 
-export interface RateLimitConfig {
-  windowMs: number;
-  max: number;
+// Cache limiters by window to avoid creating new instances
+const limiterCache = new Map<string, Ratelimit>();
+
+function getLimiter(windowMs: number, max: number): Ratelimit {
+  const cacheKey = `${windowMs}:${max}`;
+  if (limiterCache.has(cacheKey)) return limiterCache.get(cacheKey)!;
+
+  const limiter = new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(max, `${windowMs} ms`),
+    analytics: false,
+    prefix: `ratelimit:${cacheKey}`,
+  });
+
+  limiterCache.set(cacheKey, limiter);
+  return limiter;
 }
 
-export function rateLimit(
+export async function rateLimit(
   key: string,
   config: RateLimitConfig,
-): { allowed: boolean; remaining: number; retryAfterMs: number } {
+): Promise<RateLimitResult> {
+  // Try Upstash Redis first
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (url && token) {
+    try {
+      const limiter = getLimiter(config.windowMs, config.max);
+      const { success, remaining, reset } = await limiter.limit(key);
+      return {
+        allowed: success,
+        remaining,
+        retryAfterMs: success ? 0 : reset - Date.now(),
+      };
+    } catch (err) {
+      console.error('[rate-limit] Upstash error, falling back to memory:', err);
+    }
+  }
+
+  // In-memory fallback
   const now = Date.now();
-  const entry = store.get(key);
+  const entry = memStore.get(key);
 
   if (!entry || entry.resetAt <= now) {
-    store.set(key, { count: 1, resetAt: now + config.windowMs });
+    memStore.set(key, { count: 1, resetAt: now + config.windowMs });
     return { allowed: true, remaining: config.max - 1, retryAfterMs: 0 };
   }
 
