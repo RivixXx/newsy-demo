@@ -43,8 +43,8 @@ export default async function OrganizerPublicPage({ params }: { params: Promise<
       <PageShell>
         <main style={styles.page}>
           <p style={styles.notFound}>Организатор не найден</p>
-          <Link href="/welcome" style={styles.backLink}>
-            <ArrowLeft size={16} /> Вернуться на главную
+          <Link href="/explore" style={styles.backLink}>
+            <ArrowLeft size={16} /> Вернуться в каталог
           </Link>
         </main>
       </PageShell>
@@ -54,8 +54,8 @@ export default async function OrganizerPublicPage({ params }: { params: Promise<
   return (
     <PageShell>
       <main style={styles.page}>
-        <Link href="/welcome" style={styles.backLink}>
-          <ArrowLeft size={16} /> Вернуться на главную
+        <Link href="/explore" style={styles.backLink}>
+          <ArrowLeft size={16} /> Вернуться в каталог
         </Link>
 
         {/* Профиль */}

@@ -63,7 +63,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="dash-actions" style={styles.actions}>
-            <Link href="/welcome" style={styles.primaryAction}>
+            <Link href="/explore" style={styles.primaryAction}>
               Исследовать челенджи
             </Link>
             <Link href="/dashboard/profile" style={styles.secondaryAction}>

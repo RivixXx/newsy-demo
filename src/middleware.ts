@@ -71,12 +71,17 @@ export async function middleware(request: NextRequest) {
   const isLoggedIn = Boolean(sessionCookie && (await verifySession(sessionCookie)));
 
   if (isLoggedIn && AUTH_ONLY.some((p) => pathname.startsWith(p))) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/explore', request.url));
   }
 
-  // Залогиненные пользователи на "/" → перенаправляем на каталог
-  if (isLoggedIn && pathname === '/') {
+  // Залогиненные пользователи на "/" или "/welcome" → каталог
+  if (isLoggedIn && (pathname === '/' || pathname === '/welcome')) {
     return NextResponse.redirect(new URL('/explore', request.url));
+  }
+
+  // Незарегестрированные на "/" → лендинг
+  if (!isLoggedIn && pathname === '/') {
+    return NextResponse.redirect(new URL('/welcome', request.url));
   }
 
   if (!isLoggedIn && PROTECTED.some((p) => pathname.startsWith(p))) {
@@ -97,5 +102,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register', '/'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register', '/', '/welcome'],
 };

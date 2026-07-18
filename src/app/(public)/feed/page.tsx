@@ -96,7 +96,7 @@ export default async function FeedPage() {
         {items.length === 0 ? (
           <div style={s.empty}>
             <p style={{ margin: '0 0 16px', fontSize: 16, color: '#888' }}>Пока нет активности</p>
-            <Link href="/welcome" style={s.cta}>Станьте первым!</Link>
+            <Link href="/explore" style={s.cta}>Станьте первым!</Link>
           </div>
         ) : (
           <div style={s.grid}>
