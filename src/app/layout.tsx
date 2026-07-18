@@ -48,6 +48,7 @@ export default async function RootLayout({
   return (
     <html lang="ru">
       <body>
+        <a href="#main-content" className="skip-link">Перейти к основному содержимому</a>
         <SessionProvider session={session}>
           <RegionProvider>
             <ToastProvider>

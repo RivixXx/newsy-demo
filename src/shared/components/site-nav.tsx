@@ -93,7 +93,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
   return (
     <>
       <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
-        <div className="nav-wrapper">
+        <nav className="nav-wrapper" aria-label="Основная навигация">
           <div className="nav-left">
             <Link href="/" className="brand">
               <img src="/icon.png" alt="NEWSY Logo" className="brand-logo" />
@@ -111,7 +111,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
           <div className="nav-right">
             {/* Region button */}
-            <button className="region-btn" onClick={changeRegion}>
+            <button className="region-btn" onClick={changeRegion} aria-label="Изменить регион">
               <MapPin size={15} />
               <span className="region-btn-text">{region || 'Весь мир'}</span>
             </button>
@@ -131,9 +131,9 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
             {session && (
               <div ref={notifRef} className="notif-wrap">
-                <button className="notif-btn" onClick={toggleNotifs}>
+                <button className="notif-btn" onClick={toggleNotifs} aria-label={`Уведомления${unreadCount > 0 ? `, ${unreadCount} новых` : ''}`} aria-expanded={showNotifs} aria-haspopup="true">
                   <Bell size={18} />
-                  {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                  {unreadCount > 0 && <span className="notif-badge" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                 </button>
 
                 {showNotifs && (
@@ -168,6 +168,9 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
               <button
                 className={`capsule-btn ${isMenuOpen ? 'open' : ''}`}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Меню навигации"
+                aria-expanded={isMenuOpen}
+                aria-haspopup="true"
               >
                 <Menu size={18} strokeWidth={2} color="#595959" />
                 {session ? (
@@ -215,7 +218,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
               )}
             </div>
           </div>
-        </div>
+        </nav>
       </header>
 
       <RegionModal isOpen={showModal} onSelect={setRegion} onSkip={skipRegion} />

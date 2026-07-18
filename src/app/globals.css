@@ -164,3 +164,21 @@ img, video {
 /* ── Spinner keyframes (global) ── */
 @keyframes spinner-spin { to { transform: rotate(360deg); } }
 @keyframes spinner-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* ── Skip link (a11y) ── */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #FF385C;
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}

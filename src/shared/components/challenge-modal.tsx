@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X, MapPin, Users, Calendar, Clock, Upload, Camera,
   Navigation, MessageSquare, Send, Trophy, Gift, ChevronDown,
@@ -76,10 +76,41 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const session = useSession();
   const { toast } = useToast();
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Escape key handler
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  }, [onClose]);
+
+  // Focus trap
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !modalRef.current) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
+    document.addEventListener('keydown', handleEscape);
+    setTimeout(() => closeButtonRef.current?.focus(), 50);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [handleEscape]);
 
   useEffect(() => {
     fetch(`/api/challenges/${challenge.id}`)
@@ -234,47 +265,66 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose} />
-      <div className="modal-shell">
+      <div className="modal-overlay" onClick={onClose} aria-hidden="true" />
+      <div
+        className="modal-shell"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        onKeyDown={handleKeyDown}
+      >
         <div className="modal-inner">
 
           {/* CLOSE */}
-          <button className="modal-close" onClick={onClose}>
-            <X size={20} />
+          <button className="modal-close" onClick={onClose} ref={closeButtonRef} aria-label="Закрыть модальное окно">
+            <X size={20} aria-hidden="true" />
           </button>
 
           {/* RIGHT PANE — Title + Stages */}
           <div className="modal-right">
             <div className="modal-title-block">
-              <h2 className="modal-title">{challenge.title}</h2>
+              <h2 className="modal-title" id="modal-title">{challenge.title}</h2>
               <p className="modal-organizer">Организатор: <strong>{challenge.organizer}</strong></p>
             </div>
 
             {/* TABS */}
-            <div className="modal-tabs">
+            <div className="modal-tabs" role="tablist" aria-label="Информация о челлендже">
               <button
                 className={`modal-tab ${activeTab === 'info' ? 'active' : ''}`}
                 onClick={() => setActiveTab('info')}
+                role="tab"
+                aria-selected={activeTab === 'info'}
+                id="tab-info"
+                aria-controls="panel-info"
               >
                 Этапы
               </button>
               <button
                 className={`modal-tab ${activeTab === 'chat' ? 'active' : ''}`}
                 onClick={() => setActiveTab('chat')}
+                role="tab"
+                aria-selected={activeTab === 'chat'}
+                id="tab-chat"
+                aria-controls="panel-chat"
               >
-                <MessageSquare size={14} /> Общий чат
+                <MessageSquare size={14} aria-hidden="true" /> Общий чат
               </button>
               <button
                 className={`modal-tab ${activeTab === 'gallery' ? 'active' : ''}`}
                 onClick={() => setActiveTab('gallery')}
+                role="tab"
+                aria-selected={activeTab === 'gallery'}
+                id="tab-gallery"
+                aria-controls="panel-gallery"
               >
-                <Camera size={14} /> Галерея
+                <Camera size={14} aria-hidden="true" /> Галерея
               </button>
             </div>
 
             {/* STAGES TAB */}
             {activeTab === 'info' && (
-              <div className="stages-list">
+              <div className="stages-list" role="tabpanel" id="panel-info" aria-labelledby="tab-info">
                 {loadingDetail ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 40 }}>
                     <Spinner size={32} />
@@ -291,6 +341,10 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                     <div
                       className="stage-header"
                       onClick={() => setExpandedStage(expandedStage === stage.id ? null : stage.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedStage(expandedStage === stage.id ? null : stage.id); } }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={expandedStage === stage.id}
                     >
                       <div className="stage-num"
                         style={{ background: getStageColor(stage) }}
@@ -379,7 +433,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
 
             {/* CHAT TAB */}
             {activeTab === 'chat' && (
-              <div className="chat-wrap">
+              <div className="chat-wrap" role="tabpanel" id="panel-chat" aria-labelledby="tab-chat">
                 <div className="chat-history">
                   {loadingChat ? (
                     <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Загрузка сообщений...</div>
@@ -400,12 +454,13 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                   <input
                     className="chat-input"
                     placeholder="Написать сообщение..."
+                    aria-label="Написать сообщение"
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendChat()}
                   />
-                  <button className="chat-send" onClick={handleSendChat}>
-                    <Send size={16} color="white" />
+                  <button className="chat-send" onClick={handleSendChat} aria-label="Отправить сообщение">
+                    <Send size={16} color="white" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -413,7 +468,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
 
             {/* GALLERY TAB */}
             {activeTab === 'gallery' && (
-              <div className="gallery-tab">
+              <div className="gallery-tab" role="tabpanel" id="panel-gallery" aria-labelledby="tab-gallery">
                 {galleryPhotos.length === 0 ? (
                   <div className="gallery-empty">
                     <Camera size={40} color="#ddd" />

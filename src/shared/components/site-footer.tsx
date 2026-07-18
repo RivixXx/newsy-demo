@@ -60,20 +60,20 @@ export function SiteFooter() {
           </div>
 
           <div className="footer-cols">
-            <div className="footer-col">
+            <nav className="footer-col" aria-label="Для участников">
               <h4 className="footer-col-title">Для участников</h4>
               <Link href="/referral" className="footer-link">Реферальная программа</Link>
               <Link href="/pricing" className="footer-link">Как создать ЧИ</Link>
               <Link href="/pricing" className="footer-link">Тарифы</Link>
               <Link href="/api-docs" className="footer-link">API</Link>
-            </div>
-            <div className="footer-col">
+            </nav>
+            <nav className="footer-col" aria-label="Поддержка">
               <h4 className="footer-col-title">Поддержка</h4>
               <Link href="/help" className="footer-link">Центр помощи</Link>
               <Link href="/terms" className="footer-link">Правила сервиса</Link>
               <Link href="/privacy" className="footer-link">Конфиденциальность</Link>
               <a href="mailto:support@chillenge-russia.ru" className="footer-link">Контакты</a>
-            </div>
+            </nav>
           </div>
         </div>
 
@@ -89,7 +89,9 @@ export function SiteFooter() {
             </div>
           ) : (
             <form className="fn-form" onSubmit={handleSubscribe}>
+              <label htmlFor="footer-email" className="sr-only">Email для подписки</label>
               <input
+                id="footer-email"
                 type="email"
                 placeholder="your@email.com"
                 className="fn-input"
@@ -97,8 +99,8 @@ export function SiteFooter() {
                 onChange={e => setEmail(e.target.value)}
                 required
               />
-              <button type="submit" className="fn-btn">
-                <Send size={16} />
+              <button type="submit" className="fn-btn" aria-label="Подписаться">
+                <Send size={16} aria-hidden="true" />
               </button>
             </form>
           )}
@@ -274,6 +276,12 @@ export function SiteFooter() {
         .footer-made { font-size: 12px; color: rgba(255,255,255,0.25); display: flex; align-items: center; gap: 4px; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .sr-only {
+          position: absolute; width: 1px; height: 1px;
+          padding: 0; margin: -1px; overflow: hidden;
+          clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+        }
 
         /* Responsive */
         @media (max-width: 1024px) {

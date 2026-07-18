@@ -366,8 +366,8 @@ function PasswordStep() {
         label="Пароль"
         type={showPass ? 'text' : 'password'}
         trailing={
-          <button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>
-            {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+          <button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn} aria-label={showPass ? 'Скрыть пароль' : 'Показать пароль'}>
+            {showPass ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
           </button>
         }
       />
@@ -391,7 +391,7 @@ function LoginForm({ action }: { action: (state: AuthActionState, formData: Form
 
       <form action={formAction} style={s.form}>
         <InputField icon={<Mail size={18} />} name="identifier" placeholder="demo@newsy.ru" label="Email или Телефон" />
-        <InputField icon={<Lock size={18} />} name="password" placeholder="••••••••" label="Пароль" type={showPass ? 'text' : 'password'} trailing={<button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>} />
+        <InputField icon={<Lock size={18} />} name="password" placeholder="••••••••" label="Пароль" type={showPass ? 'text' : 'password'} trailing={<button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn} aria-label={showPass ? 'Скрыть пароль' : 'Показать пароль'}>{showPass ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>} />
         <input type="hidden" name="provider" value="email" />
 
         {state.error && <p style={s.error}>{state.error}</p>}
@@ -419,9 +419,10 @@ function InputField({ icon, name, placeholder, label, type = 'text', trailing, m
   icon: React.ReactNode; name: string; placeholder: string; label: string; type?: string; trailing?: React.ReactNode; maxLength?: number;
 }) {
   const [focused, setFocused] = useState(false);
+  const inputId = `input-${name}`;
   return (
     <div style={s.inputGroup}>
-      <label style={s.label}>{label}</label>
+      <label htmlFor={inputId} style={s.label}>{label}</label>
       <div style={{
         ...s.inputWrap,
         borderColor: focused ? '#FF385C' : '#e5e7eb',
@@ -429,6 +430,7 @@ function InputField({ icon, name, placeholder, label, type = 'text', trailing, m
       }}>
         <span style={{ color: '#aaa', display: 'flex', alignItems: 'center' }}>{icon}</span>
         <input
+          id={inputId}
           name={name}
           type={type}
           placeholder={placeholder}
