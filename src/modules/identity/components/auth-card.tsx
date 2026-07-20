@@ -379,12 +379,22 @@ const css = `
   .auth-root {
     min-height: 100vh; width: 100%; position: relative; overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
-    background: #0a0a12;
+    background: #111;
   }
 
   /* ── Animated background ── */
   .auth-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  }
+  .auth-bg::before {
+    content: ''; position: absolute; inset: 0;
+    background: url('/auth-bg.jpg') center / cover no-repeat;
+    filter: blur(20px) brightness(0.4) saturate(1.2);
+    transform: scale(1.05);
+  }
+  .auth-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(10,10,18,0.5);
   }
   .orb {
     position: absolute; border-radius: 50%; filter: blur(100px);
@@ -457,15 +467,15 @@ const css = `
   /* ── Glass card ── */
   .glass-card {
     width: 100%; max-width: 460px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.07);
     backdrop-filter: blur(40px) saturate(150%);
     -webkit-backdrop-filter: blur(40px) saturate(150%);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 28px;
     padding: 36px;
     box-shadow:
-      0 8px 32px rgba(0,0,0,0.3),
-      inset 0 1px 0 rgba(255,255,255,0.06);
+      0 8px 32px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.08);
     animation: cardIn 0.5s cubic-bezier(0.16,1,0.3,1);
   }
   @keyframes cardIn {
@@ -476,8 +486,8 @@ const css = `
   /* ── Tabs ── */
   .tab-bar {
     display: flex; position: relative;
-    background: rgba(255,255,255,0.04); border-radius: 14px; padding: 4px;
-    margin-bottom: 32px; border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.06); border-radius: 14px; padding: 4px;
+    margin-bottom: 32px; border: 1px solid rgba(255,255,255,0.08);
   }
   .tab-btn {
     flex: 1; padding: 12px 0; font-size: 14px; font-weight: 700;
@@ -490,10 +500,10 @@ const css = `
   .tab-slider {
     position: absolute; top: 4px; left: 4px;
     width: calc(50% - 4px); height: calc(100% - 8px);
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
     border-radius: 11px;
     transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
   }
 
   /* ── Form wrapper ── */
@@ -524,22 +534,22 @@ const css = `
   /* ── Fields ── */
   .field-group { display: flex; flex-direction: column; gap: 6px; }
   .field-label {
-    font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4);
+    font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5);
     text-transform: uppercase; letter-spacing: 0.06em;
   }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .input-wrap {
     display: flex; align-items: center; gap: 10px;
     padding: 0 14px; height: 48px; border-radius: 12px;
-    background: rgba(255,255,255,0.04);
-    border: 1.5px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.1);
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   }
-  .input-wrap:hover { border-color: rgba(255,255,255,0.15); }
+  .input-wrap:hover { border-color: rgba(255,255,255,0.2); }
   .input-wrap--focus {
     border-color: #FF385C !important;
-    box-shadow: 0 0 0 3px rgba(255,56,92,0.15);
-    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 0 3px rgba(255,56,92,0.2);
+    background: rgba(255,255,255,0.08);
   }
   .input-icon { color: rgba(255,255,255,0.25); display: flex; flex-shrink: 0; }
   .field-input {
@@ -562,14 +572,14 @@ const css = `
   .choice-card {
     position: relative; display: flex; flex-direction: column; align-items: center;
     gap: 6px; padding: 18px 12px; border-radius: 14px;
-    background: rgba(255,255,255,0.03);
-    border: 1.5px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
     cursor: pointer; text-align: center; color: white;
     transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
   }
   .choice-card:hover {
-    border-color: rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.08);
     transform: translateY(-2px);
   }
   .choice-card--active {
@@ -603,7 +613,7 @@ const css = `
 
   /* ── Progress ── */
   .progress-track {
-    height: 3px; background: rgba(255,255,255,0.06); border-radius: 99px;
+    height: 3px; background: rgba(255,255,255,0.08); border-radius: 99px;
     margin-bottom: 10px; overflow: hidden;
   }
   .progress-fill {
@@ -613,7 +623,7 @@ const css = `
   .step-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
   .dot {
     width: 7px; height: 7px; border-radius: 50%;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.15);
     transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
   }
   .dot--active { background: #FF385C; }
@@ -656,12 +666,12 @@ const css = `
 
   .back-btn {
     display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 20px;
-    border-radius: 12px; background: rgba(255,255,255,0.04);
-    border: 1.5px solid rgba(255,255,255,0.08);
-    font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.5);
+    border-radius: 12px; background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.6);
     cursor: pointer; transition: all 0.2s;
   }
-  .back-btn:hover { border-color: rgba(255,255,255,0.2); color: white; }
+  .back-btn:hover { border-color: rgba(255,255,255,0.25); color: white; }
 
   /* ── Nav row ── */
   .nav-row { display: flex; align-items: center; margin-top: 16px; }
@@ -669,13 +679,13 @@ const css = `
   /* ── Footer links ── */
   .forgot-link {
     display: block; text-align: center; font-size: 13px; font-weight: 600;
-    color: rgba(255,255,255,0.35); text-decoration: none; margin-top: 16px;
+    color: rgba(255,255,255,0.45); text-decoration: none; margin-top: 16px;
     transition: color 0.15s;
   }
   .forgot-link:hover { color: #FF385C; }
 
   .switch-text {
-    text-align: center; font-size: 14px; color: rgba(255,255,255,0.35);
+    text-align: center; font-size: 14px; color: rgba(255,255,255,0.45);
     margin-top: 24px;
   }
   .switch-link {
