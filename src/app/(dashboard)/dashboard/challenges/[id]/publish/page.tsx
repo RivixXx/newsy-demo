@@ -40,6 +40,7 @@ export default function PublishPage() {
         const res = await fetch('/api/payments/confirm-mock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ challengeId: params.id }),
         });
         const data = await res.json();
@@ -55,6 +56,7 @@ export default function PublishPage() {
       const res = await fetch('/api/payments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ challengeId: params.id }),
       });
       const data = await res.json();
@@ -90,7 +92,7 @@ export default function PublishPage() {
         ) : (
           <>
             <header className="pub-header">
-              <Link href={`/dashboard/challenges/${params.id}`} className="pub-back">
+              <Link href="/dashboard" className="pub-back">
                 <ChevronLeft size={18} /> Назад
               </Link>
               <h1>Публикация челленджа</h1>
