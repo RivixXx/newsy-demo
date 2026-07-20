@@ -4,15 +4,20 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
-import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Trophy, Target, Flame } from 'lucide-react';
+import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Crown, Flame, Trophy, Target } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
-import { ProfileHero } from './components/profile-hero';
-import { StatsGrid } from './components/stats-grid';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { ProfileEditModal } from './components/profile-edit-modal';
 import { ActivityCalendar } from './components/activity-calendar';
 import { AchievementShowcase } from './components/achievement-showcase';
 import { ActivityFeed } from './components/activity-feed';
-import { ProfileEditModal } from './components/profile-edit-modal';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
 
 interface ProfileData {
@@ -36,7 +41,6 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const session = useSession();
-  const [tab, setTab] = useState<'overview' | 'settings'>('overview');
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -85,7 +89,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <PageShell>
-        <div className="pf-page">
+        <div className="flex items-center justify-center min-h-[60vh]">
           <PageSpinner text="Загружаем профиль..." />
         </div>
       </PageShell>
@@ -100,127 +104,217 @@ export default function ProfilePage() {
     memberSince: '', activity: [], calendar: [],
   };
 
+  const initials = data.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
+
   return (
     <PageShell>
       {selectedChallenge && (
         <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
       )}
 
-      <div className="pf-page">
-        <ProfileHero
-          name={data.name}
-          email={data.email}
-          level={data.level}
-          points={data.points}
-          streak={data.streak}
-          isOrganizer={isOrganizer}
-          gender={data.gender}
-          birthDate={data.birthDate}
-          avatarUrl={data.avatarUrl}
-        />
-
-        {/* Bio */}
-        <div className="pf-card">
-          <div className="pf-card-header">
-            <h3 className="pf-card-title">О себе</h3>
-            <button className="pf-btn pf-btn--ghost" onClick={() => setEditOpen(true)}>
-              <Edit3 size={14} /> Редактировать
-            </button>
-          </div>
-          {data.bio ? (
-            <p className="pf-bio">{data.bio}</p>
-          ) : (
-            <p className="pf-bio pf-bio--empty">Расскажите о себе — чего вы хотите достичь, какие у вас интересы</p>
-          )}
-        </div>
-
-        {/* Stats */}
-        <StatsGrid
-          activeChallenges={data.activeChallenges}
-          completedChallenges={data.completedChallenges}
-          achievements={data.achievements}
-          points={data.points}
-        />
-
-        {/* Organizer favorites */}
-        {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
-          <div className="pf-card">
-            <div className="pf-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Heart size={16} style={{ color: 'var(--primary)' }} />
-                <h3 className="pf-card-title" style={{ margin: 0 }}>Избранное в ваших челленджах</h3>
-              </div>
-              <span className="pf-badge">{favStats.totalFavorites} добавлений</span>
-            </div>
-            <div className="pf-fav-list">
-              {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
-                <div key={c.id} className="pf-fav-item">
-                  <span className="pf-fav-title">{c.title}</span>
-                  <span className="pf-fav-count">
-                    <Heart size={12} fill="var(--primary)" color="var(--primary)" />
-                    {c.favoritesCount}
-                  </span>
+      <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+        {/* Profile Header Card */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-20 w-20 border-2 border-primary/20">
+                <AvatarImage src={data.avatarUrl} alt={data.name} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold tracking-tight">{data.name}</h1>
+                  <Badge variant="secondary" className="gap-1">
+                    <Crown className="h-3 w-3" />
+                    Ур. {data.level.level}
+                  </Badge>
                 </div>
-              ))}
+                <p className="text-muted-foreground text-sm mt-1">{data.email}</p>
+                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  {data.gender && <span>{data.gender === 'male' ? 'Мужчина' : 'Женщина'}</span>}
+                  {isOrganizer && <Badge variant="outline" className="text-xs">Организатор</Badge>}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                <Edit3 className="h-4 w-4" />
+                Редактировать
+              </Button>
             </div>
-          </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-4 gap-4 mt-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{data.points}</div>
+                <div className="text-xs text-muted-foreground">Очков</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{data.streak}</div>
+                <div className="text-xs text-muted-foreground">Серия дней</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{data.completedChallenges}</div>
+                <div className="text-xs text-muted-foreground">Завершено</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{data.achievements}</div>
+                <div className="text-xs text-muted-foreground">Достижений</div>
+              </div>
+            </div>
+
+            {/* XP Progress */}
+            <div className="mt-6 space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">{data.level.name}</span>
+                <span className="font-medium">{data.level.xp}/{data.level.xpNeeded} XP</span>
+              </div>
+              <Progress value={data.level.progress} className="h-2" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bio Card */}
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-sm font-semibold mb-2">О себе</h3>
+            {data.bio ? (
+              <p className="text-sm text-muted-foreground">{data.bio}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Расскажите о себе — чего вы хотите достичь</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Organizer Favorites */}
+        {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-primary" />
+                  Избранное в ваших челленджах
+                </h3>
+                <Badge variant="secondary">{favStats.totalFavorites}</Badge>
+              </div>
+              <div className="space-y-2">
+                {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
+                  <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <span className="text-sm font-medium truncate">{c.title}</span>
+                    <span className="text-sm font-bold text-primary flex items-center gap-1">
+                      <Heart className="h-3 w-3 fill-primary" />
+                      {c.favoritesCount}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Tabs */}
-        <div className="pf-tabs">
-          <button className={`pf-tab ${tab === 'overview' ? 'pf-tab--active' : ''}`} onClick={() => setTab('overview')}>
-            <Target size={14} /> Обзор
-          </button>
-          <button className={`pf-tab ${tab === 'settings' ? 'pf-tab--active' : ''}`} onClick={() => setTab('settings')}>
-            <Settings size={14} /> Настройки
-          </button>
-        </div>
+        <Tabs defaultValue="overview">
+          <TabsList className="w-full">
+            <TabsTrigger value="overview" className="flex-1 gap-2">
+              <Target className="h-4 w-4" />
+              Обзор
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 gap-2">
+              <Settings className="h-4 w-4" />
+              Настройки
+            </TabsTrigger>
+          </TabsList>
 
-        {tab === 'overview' && (
-          <div className="pf-tab-content">
-            <div className="pf-grid">
-              <div className="pf-grid-col">
-                <ActivityCalendar days={data.calendar} />
-                <AchievementShowcase count={data.achievements} />
-              </div>
-              <div className="pf-grid-col">
+          <TabsContent value="overview" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-sm font-semibold mb-4">Активность</h3>
+                  <ActivityCalendar days={data.calendar} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-sm font-semibold mb-4">Достижения</h3>
+                  <AchievementShowcase count={data.achievements} />
+                </CardContent>
+              </Card>
+            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="text-sm font-semibold mb-4">Последняя активность</h3>
                 <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
-              </div>
-            </div>
-          </div>
-        )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {tab === 'settings' && (
-          <div className="pf-tab-content">
-            <div className="pf-settings-list">
-              <div className="pf-setting">
-                <div className="pf-setting-icon" style={{ background: 'oklch(0.897 0.196 126.665 / 0.15)', color: 'oklch(0.453 0.124 130.933)' }}><Bell size={18} /></div>
-                <div className="pf-setting-body"><h4>Уведомления</h4><p>Управление уведомлениями</p></div>
-              </div>
-              <div className="pf-setting">
-                <div className="pf-setting-icon" style={{ background: 'oklch(0.525 0.223 3.958 / 0.1)', color: 'var(--primary)' }}><Shield size={18} /></div>
-                <div className="pf-setting-body"><h4>Безопасность</h4><p>Пароль, двухфакторная аутентификация</p></div>
-              </div>
-              <Link href="/dashboard/subscription" className="pf-setting">
-                <div className="pf-setting-icon" style={{ background: 'oklch(0.648 0.2 131.684 / 0.1)', color: 'oklch(0.648 0.2 131.684)' }}><CreditCard size={18} /></div>
-                <div className="pf-setting-body"><h4>Подписка</h4><p>Управление тарифом и оплатой</p></div>
-              </Link>
-              <div className="pf-setting">
-                <div className="pf-setting-icon" style={{ background: 'oklch(0.768 0.233 130.85 / 0.1)', color: 'oklch(0.768 0.233 130.85)' }}><Eye size={18} /></div>
-                <div className="pf-setting-body"><h4>Приватность</h4><p>Видимость профиля</p></div>
-              </div>
-              <div className="pf-setting">
-                <div className="pf-setting-icon" style={{ background: 'oklch(0.525 0.223 3.958 / 0.08)', color: 'var(--primary)' }}><Heart size={18} /></div>
-                <div className="pf-setting-body"><h4>Избранное</h4><p>Сохранённые челенджи</p></div>
-              </div>
-            </div>
-            <div className="pf-danger">
-              <form action={logoutAction}>
-                <button type="submit" className="pf-btn pf-btn--danger"><LogOut size={16} /> Выйти из аккаунта</button>
-              </form>
-            </div>
-          </div>
-        )}
+          <TabsContent value="settings" className="space-y-4 mt-4">
+            <Card>
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Bell className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold">Уведомления</h4>
+                    <p className="text-xs text-muted-foreground">Управление уведомлениями</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold">Безопасность</h4>
+                    <p className="text-xs text-muted-foreground">Пароль, двухфакторная аутентификация</p>
+                  </div>
+                </div>
+                <Separator />
+                <Link href="/dashboard/subscription" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold">Подписка</h4>
+                    <p className="text-xs text-muted-foreground">Управление тарифом и оплатой</p>
+                  </div>
+                </Link>
+                <Separator />
+                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Eye className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold">Приватность</h4>
+                    <p className="text-xs text-muted-foreground">Видимость профиля</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold">Избранное</h4>
+                    <p className="text-xs text-muted-foreground">Сохранённые челенджи</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive/20">
+              <CardContent className="pt-6">
+                <form action={logoutAction}>
+                  <Button type="submit" variant="destructive" className="w-full gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Выйти из аккаунта
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <ProfileEditModal
@@ -236,114 +330,6 @@ export default function ProfilePage() {
         }}
         onSave={refetchProfile}
       />
-
-      <style>{css}</style>
     </PageShell>
   );
 }
-
-const css = `
-  .pf-page {
-    max-width: 900px; margin: 0 auto;
-    padding: 20px clamp(12px, 3vw, 24px) 60px;
-    display: flex; flex-direction: column; gap: 16px;
-  }
-
-  /* Card */
-  .pf-card {
-    background: var(--card, #fff); border: 1px solid var(--border, #e5e5e5);
-    border-radius: var(--radius, 0); padding: 20px 24px;
-  }
-  .pf-card-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .pf-card-title {
-    font-size: 15px; font-weight: 700; margin: 0;
-    color: var(--foreground, #1c1917);
-  }
-  .pf-bio { font-size: 14px; color: var(--muted-foreground, #78716c); line-height: 1.6; margin: 0; }
-  .pf-bio--empty { font-style: italic; color: var(--muted-foreground, #78716c); opacity: 0.6; }
-
-  /* Badge */
-  .pf-badge {
-    padding: 3px 10px; border-radius: 99px;
-    background: var(--primary, #e76f51); color: var(--primary-foreground, #fff);
-    font-size: 11px; font-weight: 700;
-  }
-
-  /* Tabs */
-  .pf-tabs { display: flex; gap: 6px; }
-  .pf-tab {
-    display: flex; align-items: center; gap: 6px;
-    padding: 10px 18px; border-radius: var(--radius, 0);
-    border: 1px solid var(--border, #e5e5e5);
-    background: var(--card, #fff); color: var(--muted-foreground, #78716c);
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .pf-tab:hover { border-color: var(--primary, #e76f51); color: var(--primary, #e76f51); }
-  .pf-tab--active {
-    background: var(--primary, #e76f51); border-color: var(--primary, #e76f51);
-    color: var(--primary-foreground, #fff);
-  }
-
-  .pf-tab-content { animation: pfFade 0.3s ease; }
-  @keyframes pfFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .pf-grid-col { display: flex; flex-direction: column; gap: 16px; }
-
-  /* Settings */
-  .pf-settings-list { display: flex; flex-direction: column; gap: 8px; }
-  .pf-setting {
-    display: flex; align-items: center; gap: 14px;
-    padding: 16px 18px; border-radius: var(--radius, 0);
-    background: var(--card, #fff); border: 1px solid var(--border, #e5e5e5);
-    cursor: pointer; transition: all 0.15s;
-    text-decoration: none; color: inherit;
-  }
-  .pf-setting:hover { box-shadow: 0 2px 8px oklch(0 0 0 / 0.05); transform: translateX(4px); }
-  .pf-setting-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    display: grid; place-items: center; flex-shrink: 0;
-  }
-  .pf-setting-body h4 { font-size: 14px; font-weight: 700; color: var(--foreground, #1c1917); margin: 0; }
-  .pf-setting-body p { font-size: 12px; color: var(--muted-foreground, #78716c); margin: 2px 0 0; }
-
-  .pf-danger { margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--border, #e5e5e5); }
-
-  /* Buttons */
-  .pf-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: var(--radius, 0);
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    transition: all 0.15s; border: none;
-  }
-  .pf-btn--ghost {
-    background: transparent; border: 1px solid var(--border, #e5e5e5);
-    color: var(--muted-foreground, #78716c);
-  }
-  .pf-btn--ghost:hover { border-color: var(--primary, #e76f51); color: var(--primary, #e76f51); }
-  .pf-btn--danger {
-    background: oklch(0.577 0.245 27.325 / 0.08); border: 1px solid oklch(0.577 0.245 27.325 / 0.2);
-    color: oklch(0.577 0.245 27.325);
-  }
-  .pf-btn--danger:hover { background: oklch(0.577 0.245 27.325 / 0.15); }
-
-  /* Favorites */
-  .pf-fav-list { display: flex; flex-direction: column; gap: 6px; }
-  .pf-fav-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 14px; border-radius: var(--radius, 0);
-    background: var(--muted, #f5f5f4); transition: background 0.15s;
-  }
-  .pf-fav-item:hover { background: var(--accent, #f5f5f4); }
-  .pf-fav-title { font-size: 13px; font-weight: 600; color: var(--foreground, #1c1917); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pf-fav-count {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 13px; font-weight: 800; color: var(--primary, #e76f51); flex-shrink: 0;
-  }
-
-  @media (max-width: 768px) { .pf-grid { grid-template-columns: 1fr; } }
-`;
