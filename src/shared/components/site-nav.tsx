@@ -235,13 +235,13 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
         .nav-wrapper {
           width: 100%; margin: 0 auto;
           padding: 0 clamp(16px, 3vw, 40px);
-          display: grid; grid-template-columns: auto 1fr auto;
+          display: grid; grid-template-columns: 1fr auto 1fr;
           align-items: center; height: 72px;
           gap: 16px;
         }
 
         /* Brand */
-        .nav-left { display: flex; align-items: center; }
+        .nav-left { display: flex; align-items: center; justify-content: start; }
         .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
         .brand-logo { width: 36px; height: 36px; object-fit: contain; }
         .brand-name { color: #FF385C; font-size: 26px; font-weight: 900; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
