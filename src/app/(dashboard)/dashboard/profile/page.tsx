@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
-import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3 } from 'lucide-react';
+import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Trophy, Target, Flame } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { ProfileHero } from './components/profile-hero';
@@ -47,10 +47,7 @@ export default function ProfilePage() {
     fetch('/api/user/profile-stats')
       .then(r => r.json())
       .then(d => {
-        if (d.error || !d.level) {
-          setLoading(false);
-          return;
-        }
+        if (d.error || !d.level) { setLoading(false); return; }
         setProfileData(d);
         setLoading(false);
       })
@@ -75,18 +72,11 @@ export default function ProfilePage() {
   };
 
   const refetchProfile = () => {
-    fetch('/api/user/profile-stats')
-      .then(r => r.json())
-      .then(d => setProfileData(d))
-      .catch(() => {});
+    fetch('/api/user/profile-stats').then(r => r.json()).then(d => setProfileData(d)).catch(() => {});
   };
 
-  // Загрузка статистики избранного для организаторов
   useEffect(() => {
-    fetch('/api/organizer/favorites-stats')
-      .then(r => r.json())
-      .then(d => setFavStats(d))
-      .catch(() => {});
+    fetch('/api/organizer/favorites-stats').then(r => r.json()).then(d => setFavStats(d)).catch(() => {});
   }, []);
 
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
@@ -95,7 +85,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <PageShell>
-        <div className="profile-page">
+        <div className="pf-page">
           <PageSpinner text="Загружаем профиль..." />
         </div>
       </PageShell>
@@ -110,16 +100,13 @@ export default function ProfilePage() {
     memberSince: '', activity: [], calendar: [],
   };
 
-  const handleProfileSave = () => {
-    refetchProfile();
-  };
-
   return (
     <PageShell>
       {selectedChallenge && (
         <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
       )}
-      <div className="profile-page">
+
+      <div className="pf-page">
         <ProfileHero
           name={data.name}
           email={data.email}
@@ -132,20 +119,22 @@ export default function ProfilePage() {
           avatarUrl={data.avatarUrl}
         />
 
-        {/* Bio + Edit button */}
-        <div className="bio-section">
-          <div className="bio-content">
-            {data.bio ? (
-              <p className="bio-text">{data.bio}</p>
-            ) : (
-              <p className="bio-empty">Расскажите о себе — чего вы хотите достичь, какие у вас интересы</p>
-            )}
+        {/* Bio */}
+        <div className="pf-card">
+          <div className="pf-card-header">
+            <h3 className="pf-card-title">О себе</h3>
+            <button className="pf-btn pf-btn--ghost" onClick={() => setEditOpen(true)}>
+              <Edit3 size={14} /> Редактировать
+            </button>
           </div>
-          <button className="bio-edit-btn" onClick={() => setEditOpen(true)}>
-            <Edit3 size={14} /> Редактировать
-          </button>
+          {data.bio ? (
+            <p className="pf-bio">{data.bio}</p>
+          ) : (
+            <p className="pf-bio pf-bio--empty">Расскажите о себе — чего вы хотите достичь, какие у вас интересы</p>
+          )}
         </div>
 
+        {/* Stats */}
         <StatsGrid
           activeChallenges={data.activeChallenges}
           completedChallenges={data.completedChallenges}
@@ -153,20 +142,22 @@ export default function ProfilePage() {
           points={data.points}
         />
 
-        {/* Статистика избранного для организаторов */}
+        {/* Organizer favorites */}
         {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
-          <div className="org-fav-section">
-            <div className="org-fav-header">
-              <Heart size={20} color="#FF385C" />
-              <h3>Избранное в ваших челленджах</h3>
-              <span className="org-fav-total">{favStats.totalFavorites} добавлений</span>
+          <div className="pf-card">
+            <div className="pf-card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Heart size={16} style={{ color: 'var(--primary)' }} />
+                <h3 className="pf-card-title" style={{ margin: 0 }}>Избранное в ваших челленджах</h3>
+              </div>
+              <span className="pf-badge">{favStats.totalFavorites} добавлений</span>
             </div>
-            <div className="org-fav-list">
+            <div className="pf-fav-list">
               {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
-                <div key={c.id} className="org-fav-item">
-                  <span className="org-fav-title">{c.title}</span>
-                  <span className="org-fav-count">
-                    <Heart size={13} fill="#FF385C" color="#FF385C" />
+                <div key={c.id} className="pf-fav-item">
+                  <span className="pf-fav-title">{c.title}</span>
+                  <span className="pf-fav-count">
+                    <Heart size={12} fill="var(--primary)" color="var(--primary)" />
                     {c.favoritesCount}
                   </span>
                 </div>
@@ -175,19 +166,24 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="tabs-bar">
-          <button className={`tab-btn ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>Обзор</button>
-          <button className={`tab-btn ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>Настройки</button>
+        {/* Tabs */}
+        <div className="pf-tabs">
+          <button className={`pf-tab ${tab === 'overview' ? 'pf-tab--active' : ''}`} onClick={() => setTab('overview')}>
+            <Target size={14} /> Обзор
+          </button>
+          <button className={`pf-tab ${tab === 'settings' ? 'pf-tab--active' : ''}`} onClick={() => setTab('settings')}>
+            <Settings size={14} /> Настройки
+          </button>
         </div>
 
         {tab === 'overview' && (
-          <div className="tab-content fade-in">
-            <div className="content-grid">
-              <div className="content-left">
+          <div className="pf-tab-content">
+            <div className="pf-grid">
+              <div className="pf-grid-col">
                 <ActivityCalendar days={data.calendar} />
                 <AchievementShowcase count={data.achievements} />
               </div>
-              <div className="content-right">
+              <div className="pf-grid-col">
                 <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
               </div>
             </div>
@@ -195,32 +191,32 @@ export default function ProfilePage() {
         )}
 
         {tab === 'settings' && (
-          <div className="tab-content fade-in">
-            <div className="settings-grid">
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#FF385C18', color: '#FF385C' }}><Bell size={20} /></div>
-                <div className="sc-body"><h4>Уведомления</h4><p>Управление уведомлениями</p></div>
+          <div className="pf-tab-content">
+            <div className="pf-settings-list">
+              <div className="pf-setting">
+                <div className="pf-setting-icon" style={{ background: 'oklch(0.897 0.196 126.665 / 0.15)', color: 'oklch(0.453 0.124 130.933)' }}><Bell size={18} /></div>
+                <div className="pf-setting-body"><h4>Уведомления</h4><p>Управление уведомлениями</p></div>
               </div>
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#3b82f618', color: '#3b82f6' }}><Shield size={20} /></div>
-                <div className="sc-body"><h4>Безопасность</h4><p>Пароль, двухфакторная аутентификация</p></div>
+              <div className="pf-setting">
+                <div className="pf-setting-icon" style={{ background: 'oklch(0.525 0.223 3.958 / 0.1)', color: 'var(--primary)' }}><Shield size={18} /></div>
+                <div className="pf-setting-body"><h4>Безопасность</h4><p>Пароль, двухфакторная аутентификация</p></div>
               </div>
-              <Link href="/dashboard/subscription" className="settings-card">
-                <div className="sc-icon" style={{ background: '#8b5cf618', color: '#8b5cf6' }}><CreditCard size={20} /></div>
-                <div className="sc-body"><h4>Подписка</h4><p>Управление тарифом и оплатой</p></div>
+              <Link href="/dashboard/subscription" className="pf-setting">
+                <div className="pf-setting-icon" style={{ background: 'oklch(0.648 0.2 131.684 / 0.1)', color: 'oklch(0.648 0.2 131.684)' }}><CreditCard size={18} /></div>
+                <div className="pf-setting-body"><h4>Подписка</h4><p>Управление тарифом и оплатой</p></div>
               </Link>
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#f59e0b18', color: '#f59e0b' }}><Eye size={20} /></div>
-                <div className="sc-body"><h4>Приватность</h4><p>Видимость профиля</p></div>
+              <div className="pf-setting">
+                <div className="pf-setting-icon" style={{ background: 'oklch(0.768 0.233 130.85 / 0.1)', color: 'oklch(0.768 0.233 130.85)' }}><Eye size={18} /></div>
+                <div className="pf-setting-body"><h4>Приватность</h4><p>Видимость профиля</p></div>
               </div>
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#22c55e18', color: '#22c55e' }}><Heart size={20} /></div>
-                <div className="sc-body"><h4>Избранное</h4><p>Сохранённые челенджи</p></div>
+              <div className="pf-setting">
+                <div className="pf-setting-icon" style={{ background: 'oklch(0.525 0.223 3.958 / 0.08)', color: 'var(--primary)' }}><Heart size={18} /></div>
+                <div className="pf-setting-body"><h4>Избранное</h4><p>Сохранённые челенджи</p></div>
               </div>
             </div>
-            <div className="settings-danger">
+            <div className="pf-danger">
               <form action={logoutAction}>
-                <button type="submit" className="danger-btn"><LogOut size={16} /> Выйти из аккаунта</button>
+                <button type="submit" className="pf-btn pf-btn--danger"><LogOut size={16} /> Выйти из аккаунта</button>
               </form>
             </div>
           </div>
@@ -238,65 +234,116 @@ export default function ProfilePage() {
           gender: data.gender || '',
           birthDate: data.birthDate || '',
         }}
-        onSave={handleProfileSave}
+        onSave={refetchProfile}
       />
 
-      <style>{`
-        .profile-page { max-width: 1100px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 24px) 80px; display: flex; flex-direction: column; gap: 20px; }
-        .bio-section { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 16px; padding: 16px 20px; border: 1px solid #f0f0f0; gap: 16px; }
-        .bio-content { flex: 1; min-width: 0; }
-        .bio-text { font-size: 14px; color: #333; line-height: 1.6; margin: 0; }
-        .bio-empty { font-size: 13px; color: #aaa; font-style: italic; margin: 0; }
-        .bio-edit-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
-        .bio-edit-btn:hover { border-color: #FF385C; color: #FF385C; background: #fff5f7; }
-        .profile-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
-        .profile-loading p { font-size: 14px; color: #888; margin: 0; }
-        .tabs-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 0; }
-        .tab-btn { display: flex; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .tab-btn.active { background: #111; border-color: #111; color: white; }
-        .tab-btn:not(.active):hover { border-color: #FF385C; color: #FF385C; }
-        .tab-content { animation: fadeSlideUp 0.35s ease both; }
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .content-left, .content-right { display: flex; flex-direction: column; gap: 20px; }
-        .settings-grid { display: flex; flex-direction: column; gap: 10px; }
-        .settings-card { display: flex; align-items: center; gap: 14px; background: white; border-radius: 16px; padding: 18px 20px; border: 1.5px solid #f0f0f0; cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit; }
-        .settings-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateX(4px); }
-        .sc-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
-        .sc-body h4 { font-size: 14px; font-weight: 700; color: #111; margin: 0; }
-        .sc-body p { font-size: 12px; color: #888; margin: 2px 0 0; }
-        .settings-danger { margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0; }
-        .danger-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-        .danger-btn:hover { background: #fee2e2; border-color: #f87171; }
-
-        /* Organizer favorites stats */
-        .org-fav-section {
-          background: white; border-radius: 16px; padding: 20px;
-          border: 1px solid #f0f0f0;
-        }
-        .org-fav-header {
-          display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-        }
-        .org-fav-header h3 { font-size: 15px; font-weight: 800; margin: 0; color: #111; }
-        .org-fav-total {
-          margin-left: auto; padding: 3px 10px; border-radius: 99px;
-          background: #fff5f7; color: #FF385C; font-size: 12px; font-weight: 700;
-        }
-        .org-fav-list { display: flex; flex-direction: column; gap: 8px; }
-        .org-fav-item {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 8px 12px; border-radius: 10px; background: #fafafa;
-          transition: background 0.15s;
-        }
-        .org-fav-item:hover { background: #f5f5f5; }
-        .org-fav-title { font-size: 13px; font-weight: 600; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .org-fav-count {
-          display: flex; align-items: center; gap: 4px;
-          font-size: 13px; font-weight: 800; color: #FF385C; flex-shrink: 0;
-        }
-
-        @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
-      `}</style>
+      <style>{css}</style>
     </PageShell>
   );
 }
+
+const css = `
+  .pf-page {
+    max-width: 900px; margin: 0 auto;
+    padding: 20px clamp(12px, 3vw, 24px) 60px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* Card */
+  .pf-card {
+    background: var(--card, #fff); border: 1px solid var(--border, #e5e5e5);
+    border-radius: var(--radius, 0); padding: 20px 24px;
+  }
+  .pf-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .pf-card-title {
+    font-size: 15px; font-weight: 700; margin: 0;
+    color: var(--foreground, #1c1917);
+  }
+  .pf-bio { font-size: 14px; color: var(--muted-foreground, #78716c); line-height: 1.6; margin: 0; }
+  .pf-bio--empty { font-style: italic; color: var(--muted-foreground, #78716c); opacity: 0.6; }
+
+  /* Badge */
+  .pf-badge {
+    padding: 3px 10px; border-radius: 99px;
+    background: var(--primary, #e76f51); color: var(--primary-foreground, #fff);
+    font-size: 11px; font-weight: 700;
+  }
+
+  /* Tabs */
+  .pf-tabs { display: flex; gap: 6px; }
+  .pf-tab {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border-radius: var(--radius, 0);
+    border: 1px solid var(--border, #e5e5e5);
+    background: var(--card, #fff); color: var(--muted-foreground, #78716c);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pf-tab:hover { border-color: var(--primary, #e76f51); color: var(--primary, #e76f51); }
+  .pf-tab--active {
+    background: var(--primary, #e76f51); border-color: var(--primary, #e76f51);
+    color: var(--primary-foreground, #fff);
+  }
+
+  .pf-tab-content { animation: pfFade 0.3s ease; }
+  @keyframes pfFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pf-grid-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Settings */
+  .pf-settings-list { display: flex; flex-direction: column; gap: 8px; }
+  .pf-setting {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; border-radius: var(--radius, 0);
+    background: var(--card, #fff); border: 1px solid var(--border, #e5e5e5);
+    cursor: pointer; transition: all 0.15s;
+    text-decoration: none; color: inherit;
+  }
+  .pf-setting:hover { box-shadow: 0 2px 8px oklch(0 0 0 / 0.05); transform: translateX(4px); }
+  .pf-setting-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .pf-setting-body h4 { font-size: 14px; font-weight: 700; color: var(--foreground, #1c1917); margin: 0; }
+  .pf-setting-body p { font-size: 12px; color: var(--muted-foreground, #78716c); margin: 2px 0 0; }
+
+  .pf-danger { margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--border, #e5e5e5); }
+
+  /* Buttons */
+  .pf-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius, 0);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; border: none;
+  }
+  .pf-btn--ghost {
+    background: transparent; border: 1px solid var(--border, #e5e5e5);
+    color: var(--muted-foreground, #78716c);
+  }
+  .pf-btn--ghost:hover { border-color: var(--primary, #e76f51); color: var(--primary, #e76f51); }
+  .pf-btn--danger {
+    background: oklch(0.577 0.245 27.325 / 0.08); border: 1px solid oklch(0.577 0.245 27.325 / 0.2);
+    color: oklch(0.577 0.245 27.325);
+  }
+  .pf-btn--danger:hover { background: oklch(0.577 0.245 27.325 / 0.15); }
+
+  /* Favorites */
+  .pf-fav-list { display: flex; flex-direction: column; gap: 6px; }
+  .pf-fav-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-radius: var(--radius, 0);
+    background: var(--muted, #f5f5f4); transition: background 0.15s;
+  }
+  .pf-fav-item:hover { background: var(--accent, #f5f5f4); }
+  .pf-fav-title { font-size: 13px; font-weight: 600; color: var(--foreground, #1c1917); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pf-fav-count {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 800; color: var(--primary, #e76f51); flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) { .pf-grid { grid-template-columns: 1fr; } }
+`;
