@@ -198,7 +198,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         ))}
       </div>
 
-      <form ref={formRef} action={formAction} style={{ ...s.form, height: formHeight }} onSubmit={(e) => {
+      <form ref={formRef} id="register-form" action={formAction} style={{ ...s.form, height: formHeight }} onSubmit={(e) => {
         if (step < maxStep) { e.preventDefault(); goNext(); }
       }}>
         <input type="hidden" name="accountType" value={accountType} />
@@ -207,6 +207,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         {/* ─── STEP 0: Role Selection ─── */}
         <div ref={step0Ref} style={{
           ...s.stepPane,
+          ...(step === 0 ? s.stepPaneActive : {}),
           opacity: step === 0 ? 1 : 0,
           transform: step === 0 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? -30 : 30}px) scale(0.97)`,
           pointerEvents: step === 0 ? 'auto' : 'none',
@@ -229,6 +230,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         {isOrganizer && (
           <div ref={step1Ref} style={{
             ...s.stepPane,
+            ...(step === 1 ? s.stepPaneActive : {}),
             opacity: step === 1 ? 1 : 0,
             transform: step === 1 ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
             pointerEvents: step === 1 ? 'auto' : 'none',
@@ -251,6 +253,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         {/* ─── STEP 1 (participant) / STEP 2 (organizer): Personal Info ─── */}
         <div ref={step1Ref} style={{
           ...s.stepPane,
+          ...(step === (isOrganizer ? 2 : 1) ? s.stepPaneActive : {}),
           opacity: step === (isOrganizer ? 2 : 1) ? 1 : 0,
           transform: step === (isOrganizer ? 2 : 1) ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
           pointerEvents: step === (isOrganizer ? 2 : 1) ? 'auto' : 'none',
@@ -279,6 +282,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         {isBusiness && (
           <div ref={step2Ref} style={{
             ...s.stepPane,
+            ...(step === (isOrganizer ? 3 : 2) ? s.stepPaneActive : {}),
             opacity: step === (isOrganizer ? 3 : 2) ? 1 : 0,
             transform: step === (isOrganizer ? 3 : 2) ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
             pointerEvents: step === (isOrganizer ? 3 : 2) ? 'auto' : 'none',
@@ -311,6 +315,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         {/* ─── Final Step: Password ─── */}
         <div ref={stepFinalRef} style={{
           ...s.stepPane,
+          ...(step === maxStep ? s.stepPaneActive : {}),
           opacity: step === maxStep ? 1 : 0,
           transform: step === maxStep ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
           pointerEvents: step === maxStep ? 'auto' : 'none',
@@ -333,10 +338,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
             Далее <ArrowRight size={18} />
           </button>
         ) : (
-          <button type="submit" form="" disabled={isPending} style={s.submitBtn} onClick={() => {
-            const form = document.querySelector('form');
-            form?.requestSubmit();
-          }}>
+          <button type="submit" form="register-form" disabled={isPending} style={s.submitBtn}>
             {isPending ? 'Создаём...' : 'Зарегистрироваться'} <ArrowRight size={18} />
           </button>
         )}
@@ -497,6 +499,10 @@ const s: Record<string, React.CSSProperties> = {
     position: 'absolute', left: 0, right: 0, top: 0,
     display: 'flex', flexDirection: 'column', gap: 14,
     transition: 'opacity 0.35s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+    visibility: 'hidden',
+  },
+  stepPaneActive: {
+    visibility: 'visible' as const,
   },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: { fontSize: 12, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.04em' },
