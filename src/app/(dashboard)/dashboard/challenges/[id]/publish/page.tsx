@@ -4,15 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ChevronLeft, Check, Zap, Crown, Star } from 'lucide-react';
-import { PageShell } from '@/shared/components/page-shell';
 import { Spinner } from '@/shared/components/spinner';
 import { PUBLISH_TARIFFS } from '@/modules/payments/tariffs';
 import { useToast } from '@/shared/components/toast';
 
 const TARIFF_ICONS: Record<string, React.ReactNode> = {
-  basic: <Zap size={24} />,
-  pro: <Star size={24} />,
-  premium: <Crown size={24} />,
+  basic: <Zap size={28} />,
+  pro: <Star size={28} />,
+  premium: <Crown size={28} />,
 };
 
 const TARIFF_COLORS: Record<string, string> = {
@@ -73,8 +72,10 @@ export default function PublishPage() {
   };
 
   return (
-    <PageShell>
-      <div className="publish-page">
+    <div className="pub-root">
+      <div className="pub-bg" />
+
+      <div className="pub-content">
         {submitted ? (
           <div className="submitted-card">
             <div className="submitted-icon">
@@ -89,7 +90,7 @@ export default function PublishPage() {
         ) : (
           <>
             <header className="pub-header">
-              <Link href="/dashboard" className="pub-back">
+              <Link href={`/dashboard/challenges/${params.id}`} className="pub-back">
                 <ChevronLeft size={18} /> Назад
               </Link>
               <h1>Публикация челленджа</h1>
@@ -97,23 +98,27 @@ export default function PublishPage() {
             </header>
 
             <div className="tariffs-grid">
-              {PUBLISH_TARIFFS.map(tariff => (
+              {PUBLISH_TARIFFS.map((tariff, i) => (
                 <button
                   key={tariff.id}
                   className={`tariff-card ${selected === tariff.id ? 'selected' : ''} ${tariff.recommended ? 'recommended' : ''}`}
                   onClick={() => setSelected(tariff.id)}
+                  style={{ animationDelay: `${i * 0.1}s` }}
                 >
+                  {/* Shine overlay */}
+                  <div className="tariff-shine" />
+
                   {tariff.recommended && <span className="tariff-badge">Популярный</span>}
-                  <div className="tariff-icon" style={{ background: `${TARIFF_COLORS[tariff.id]}15`, color: TARIFF_COLORS[tariff.id] }}>
+                  <div className="tariff-icon" style={{ background: `${TARIFF_COLORS[tariff.id]}20`, color: TARIFF_COLORS[tariff.id] }}>
                     {TARIFF_ICONS[tariff.id]}
                   </div>
                   <h3>{tariff.name}</h3>
                   <div className="tariff-price">
-                    {tariff.price === 0 ? 'Бесплатно' : `${tariff.price.toLocaleString('ru-RU')} ₽`}
+                    {tariff.price === 0 ? 'Бесплатно' : <>{tariff.price.toLocaleString('ru-RU')} <span className="tariff-currency">₽</span></>}
                   </div>
                   <ul className="tariff-features">
-                    {tariff.features.map((f, i) => (
-                      <li key={i}><Check size={14} /> {f}</li>
+                    {tariff.features.map((f, j) => (
+                      <li key={j}><Check size={14} /> {f}</li>
                     ))}
                   </ul>
                   {selected === tariff.id && <div className="tariff-check"><Check size={16} /></div>}
@@ -130,74 +135,206 @@ export default function PublishPage() {
             </div>
           </>
         )}
-
-        <style jsx>{`
-          .publish-page { max-width: 800px; margin: 0 auto; padding: 32px 20px 80px; }
-          .submitted-card { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 32px; background: white; border-radius: 20px; text-align: center; border: 1px solid #f0f0f0; }
-          .submitted-icon { width: 80px; height: 80px; border-radius: 50%; background: #f0fdf4; display: grid; place-items: center; }
-          .submitted-card h2 { font-size: 22px; font-weight: 900; margin: 0; color: #111; }
-          .submitted-card p { font-size: 14px; color: #71717a; margin: 0; max-width: 400px; line-height: 1.6; }
-          .pub-header { text-align: center; margin-bottom: 40px; }
-          .pub-back {
-            display: inline-flex; align-items: center; gap: 4px;
-            font-size: 13px; font-weight: 700; color: #71717a;
-            text-decoration: none; margin-bottom: 16px;
-          }
-          .pub-back:hover { color: #18181b; }
-          .pub-header h1 { font-size: 28px; font-weight: 900; margin: 0 0 8px; color: #111; }
-          .pub-header p { font-size: 14px; color: #71717a; margin: 0; }
-
-          .tariffs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-
-          .tariff-card {
-            position: relative; display: flex; flex-direction: column; align-items: center;
-            gap: 16px; padding: 24px 16px; border-radius: 16px;
-            border: 2px solid #e4e4e7; background: white; cursor: pointer;
-            transition: all 0.2s; text-align: center;
-          }
-          .tariff-card:hover { border-color: #a1a1aa; transform: translateY(-2px); }
-          .tariff-card.selected { border-color: #FF385C; box-shadow: 0 0 0 3px rgba(255,56,92,0.1); }
-          .tariff-card.recommended { border-color: #FF385C30; }
-
-          .tariff-badge {
-            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-            background: #FF385C; color: white; padding: 3px 12px; border-radius: 99px;
-            font-size: 10px; font-weight: 800; text-transform: uppercase;
-          }
-
-          .tariff-icon { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; }
-          .tariff-card h3 { font-size: 18px; font-weight: 800; margin: 0; color: #111; }
-          .tariff-price { font-size: 24px; font-weight: 900; color: #111; }
-
-          .tariff-features { list-style: none; padding: 0; margin: 0; width: 100%; text-align: left; }
-          .tariff-features li {
-            display: flex; align-items: center; gap: 8px;
-            padding: 6px 0; font-size: 13px; color: #3f3f46; font-weight: 600;
-          }
-          .tariff-features li :global(svg) { color: #16a34a; flex-shrink: 0; }
-
-          .tariff-check {
-            position: absolute; top: 12px; right: 12px;
-            width: 24px; height: 24px; border-radius: 50%;
-            background: #FF385C; color: white;
-            display: grid; place-items: center;
-          }
-
-          .pub-error { background: #fef2f2; color: #dc2626; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; margin-bottom: 20px; text-align: center; }
-
-          .pub-actions { text-align: center; }
-          .pub-btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 14px 40px; border-radius: 12px; border: none;
-            background: #FF385C; color: white; font-size: 16px; font-weight: 800;
-            cursor: pointer; transition: all 0.2s;
-          }
-          .pub-btn:hover:not(:disabled) { background: #E31C5F; transform: translateY(-1px); }
-          .pub-btn:disabled { opacity: 0.5; cursor: default; }
-
-          @media (max-width: 700px) { .tariffs-grid { grid-template-columns: 1fr; } }
-        `}</style>
       </div>
-    </PageShell>
+
+      <style>{css}</style>
+    </div>
   );
 }
+
+const css = `
+  .pub-root {
+    min-height: 100vh; display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  }
+
+  /* Blurred background */
+  .pub-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: url('/auth-bg.jpg') center / cover no-repeat;
+    filter: blur(20px) brightness(0.55) saturate(1.2);
+    transform: scale(1.05);
+  }
+  .pub-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(10,10,18,0.4);
+  }
+
+  .pub-content {
+    position: relative; z-index: 1;
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 40px clamp(16px, 3vw, 40px);
+  }
+
+  /* Header */
+  .pub-header { text-align: center; margin-bottom: 40px; }
+  .pub-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.5);
+    text-decoration: none; margin-bottom: 16px; padding: 8px 16px;
+    border-radius: 10px; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.2s;
+  }
+  .pub-back:hover { background: rgba(255,255,255,0.12); color: white; }
+  .pub-header h1 { font-size: clamp(24px, 4vw, 32px); font-weight: 900; margin: 0 0 8px; color: white; letter-spacing: -0.02em; }
+  .pub-header p { font-size: 15px; color: rgba(255,255,255,0.45); margin: 0; }
+
+  /* Tariffs grid */
+  .tariffs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; max-width: 900px; width: 100%; }
+
+  /* Tariff card — glassmorphism */
+  .tariff-card {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    gap: 16px; padding: 32px 24px; border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    cursor: pointer; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center; overflow: hidden;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardFloat 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes cardFloat {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: none; }
+  }
+  .tariff-card:hover {
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.3),
+      0 0 40px rgba(255,255,255,0.05),
+      inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .tariff-card.selected {
+    border-color: rgba(255,56,92,0.5);
+    background: rgba(255,56,92,0.08);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.3),
+      0 0 40px rgba(255,56,92,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .tariff-card.selected:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow:
+      0 24px 70px rgba(0,0,0,0.35),
+      0 0 50px rgba(255,56,92,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+
+  /* Shine effect on hover */
+  .tariff-shine {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255,255,255,0.06) 45%,
+      rgba(255,255,255,0.12) 50%,
+      rgba(255,255,255,0.06) 55%,
+      transparent 60%
+    );
+    background-size: 250% 100%;
+    background-position: 200% 0;
+    transition: background-position 0.8s ease;
+    opacity: 0;
+  }
+  .tariff-card:hover .tariff-shine {
+    opacity: 1;
+    background-position: -200% 0;
+  }
+
+  .tariff-badge {
+    position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #FF385C, #E31C5F);
+    color: white; padding: 5px 16px; border-radius: 0 0 12px 12px;
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 16px rgba(255,56,92,0.3);
+  }
+
+  .tariff-icon {
+    width: 60px; height: 60px; border-radius: 16px;
+    display: grid; place-items: center;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .tariff-card:hover .tariff-icon { transform: scale(1.1) rotate(-5deg); }
+  .tariff-card h3 { font-size: 18px; font-weight: 800; margin: 0; color: white; }
+  .tariff-price { font-size: 28px; font-weight: 900; color: white; letter-spacing: -0.02em; }
+  .tariff-currency { font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.5); }
+
+  .tariff-features { list-style: none; padding: 0; margin: 0; width: 100%; text-align: left; }
+  .tariff-features li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 0; font-size: 13px; color: rgba(255,255,255,0.65); font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .tariff-features li:last-child { border-bottom: none; }
+  .tariff-features li :global(svg) { color: #4ade80; flex-shrink: 0; }
+
+  .tariff-check {
+    position: absolute; top: 14px; right: 14px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #FF385C, #E31C5F);
+    color: white; display: grid; place-items: center;
+    box-shadow: 0 4px 12px rgba(255,56,92,0.4);
+    animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+  /* Submitted card */
+  .submitted-card {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    padding: 60px 40px; max-width: 480px; width: 100%;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: cardFloat 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .submitted-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2);
+    display: grid; place-items: center;
+  }
+  .submitted-card h2 { font-size: 22px; font-weight: 900; margin: 0; color: white; }
+  .submitted-card p { font-size: 14px; color: rgba(255,255,255,0.5); margin: 0; max-width: 360px; line-height: 1.6; }
+
+  /* Error */
+  .pub-error {
+    background: rgba(255,56,92,0.1); border: 1px solid rgba(255,56,92,0.2);
+    color: #ff6b8a; padding: 12px 20px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; margin-bottom: 20px; text-align: center;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Button */
+  .pub-actions { text-align: center; }
+  .pub-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 44px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #FF385C, #E31C5F);
+    color: white; font-size: 16px; font-weight: 800;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgba(255,56,92,0.3);
+  }
+  .pub-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(255,56,92,0.4);
+  }
+  .pub-btn:active:not(:disabled) { transform: translateY(0); }
+  .pub-btn:disabled { opacity: 0.5; cursor: default; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .tariffs-grid { grid-template-columns: 1fr; max-width: 400px; }
+    .pub-content { padding: 24px 16px; }
+  }
+`;
