@@ -1,20 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, lazy, Suspense, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ChevronLeft, ChevronRight, Plus, Trash2, GripVertical,
   Camera, MapPin, Type, Zap, Users, Calendar, DollarSign,
   Target, X, Eye, Check, ArrowRight, Award, Settings2, Monitor,
-  Globe, Clock, AlertTriangle, Star, FileUp, ListChecks, Lock
+  Globe, Clock, AlertTriangle, FileUp, ListChecks, Lock, Trophy, Gift
 } from 'lucide-react';
 import { Spinner } from '@/shared/components/spinner';
 import { useToast } from '@/shared/components/toast';
 import { createChallengeAction } from '@/modules/challenges/actions/create';
 import { FileUpload } from '@/shared/components/file-upload';
-import { type ModalChallenge } from '@/shared/components/challenge-modal';
-
-const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
 
 type StepType = 'action' | 'upload' | 'survey';
 
@@ -115,20 +112,20 @@ export default function NewChallengePage() {
   const catObj = CATEGORIES.find(c => c.key === data.category);
   const canNext = step === 0 ? !!data.title && !!data.category : step === 2 ? data.steps.length > 0 : true;
 
-  // Progress based on field completion
+  // Progress based on field completion (only user-acted fields)
   const progressPct = useMemo(() => {
     let filled = 0, total = 0;
-    total++; if (data.title) filled++;
-    total++; if (data.description) filled++;
+    total++; if (data.title.trim()) filled++;
+    total++; if (data.description.trim()) filled++;
     total++; if (data.category) filled++;
     total++; if (data.coverImage) filled++;
-    total++; if (data.format) filled++;
+    total++; if (data.format !== 'ONLINE') filled++;  // only if changed from default
     total++; if (data.startDate) filled++;
     total++; if (data.endDate) filled++;
-    total++; if (data.maxParticipants > 0) filled++;
+    total++; if (data.maxParticipants !== 100) filled++;  // only if changed from default
     total++; if (data.steps.length > 0) filled++;
-    total++; if (data.rewardTitle) filled++;
-    return Math.round((filled / total) * 100);
+    total++; if (data.rewardTitle.trim()) filled++;
+    return total === 0 ? 0 : Math.round((filled / total) * 100);
   }, [data]);
 
   const handlePublish = async () => {
@@ -157,22 +154,6 @@ export default function NewChallengePage() {
     } catch { setError('Ошибка сети'); } finally { setPublishing(false); }
   };
 
-  const getPreviewChallenge = (): ModalChallenge => ({
-    id: 'preview', title: data.title || 'Название челенджа',
-    organizer: 'Ваша организация', category: catObj?.label || 'Категория',
-    imageUrl: data.coverImage || PLACEHOLDER, participantsCount: 0,
-    maxParticipants: data.maxParticipants || 100,
-    endDate: data.endDate || 'Не указано', location: data.city || data.address || 'Онлайн',
-    achievement: data.selectedAchievements.length > 0 ? `${data.selectedAchievements.length} достижений` : 'Участие',
-    reward: data.rewardTitle || 'Награда', description: data.description || 'Описание челленжа...',
-    requirements: data.requirements || '', refundPolicy: '', isJoined: false,
-    stages: data.steps.map((s, i) => ({
-      id: s.id, title: s.title || `Этап ${i + 1}`,
-      description: s.description || '', type: s.type === 'action' ? 'ДЕЙСТВИЕ' : s.type === 'upload' ? 'ЗАГРУЗКА' : 'ОПРОС',
-      status: 'pending' as const,
-    })),
-  });
-
   return (
     <div className="cc-root">
       {/* Blurred background */}
@@ -180,7 +161,7 @@ export default function NewChallengePage() {
 
       {/* Top bar */}
       <header className="cc-topbar">
-        <Link href="/dashboard" className="cc-topbtn">
+        <Link href="/explore" className="cc-topbtn">
           <ChevronLeft size={16} /> Назад
         </Link>
         <button className={`cc-topbtn ${showPreview ? 'cc-topbtn--active' : ''}`} onClick={() => setShowPreview(v => !v)}>
@@ -427,9 +408,74 @@ export default function NewChallengePage() {
         {/* Preview panel */}
         {showPreview && (
           <div className="cc-preview-panel">
-            <Suspense fallback={<div className="cc-preview-loading"><Spinner size={24} /></div>}>
-              <ChallengeModal challenge={getPreviewChallenge()} onClose={() => setShowPreview(false)} />
-            </Suspense>
+            <div className="cc-preview-card">
+              {/* Image */}
+              <div className="cc-pv-img">
+                <img src={data.coverImage || PLACEHOLDER} alt={data.title} />
+                {catObj && <span className="cc-pv-badge" style={{ background: catObj.gradient }}>{catObj.label}</span>}
+              </div>
+
+              {/* Info */}
+              <div className="cc-pv-body">
+                <h3 className="cc-pv-title">{data.title || 'Название челленжа'}</h3>
+                <p className="cc-pv-org">Организатор: Ваша организация</p>
+
+                {/* Tabs */}
+                <div className="cc-pv-tabs">
+                  <span className="cc-pv-tab active">Этапы</span>
+                  <span className="cc-pv-tab">Общий чат</span>
+                  <span className="cc-pv-tab">Галерея</span>
+                </div>
+
+                {/* Stages */}
+                <div className="cc-pv-stages">
+                  {data.steps.length === 0 ? (
+                    <div className="cc-pv-empty">Добавьте этапы в конструкторе</div>
+                  ) : data.steps.map((s, i) => {
+                    const st = STEP_TYPES.find(t => t.key === s.type)!;
+                    return (
+                      <div key={s.id} className="cc-pv-stage">
+                        <div className="cc-pv-stage-num" style={{ background: st.gradient }}>{i + 1}</div>
+                        <div className="cc-pv-stage-info">
+                          <span className="cc-pv-stage-type">{st.label}</span>
+                          <span className="cc-pv-stage-title">{s.title || `Этап ${i + 1}`}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Meta */}
+                <div className="cc-pv-meta">
+                  <span>📍 {data.city || data.address || 'Онлайн'}</span>
+                  <span>📅 {data.endDate || 'Не указано'}</span>
+                  <span>👥 {data.maxParticipants} мест</span>
+                </div>
+
+                {/* Badges */}
+                <div className="cc-pv-badges">
+                  <div className="cc-pv-badge-item">
+                    <Trophy size={14} />
+                    <span>Достижение: {data.selectedAchievements.length > 0 ? `${data.selectedAchievements.length} шт.` : 'Участие'}</span>
+                  </div>
+                  <div className="cc-pv-badge-item">
+                    <Gift size={14} />
+                    <span>Награда: {data.rewardTitle || 'Не указана'}</span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {data.description && (
+                  <div className="cc-pv-desc">
+                    <h4>Описание</h4>
+                    <p>{data.description}</p>
+                  </div>
+                )}
+
+                {/* CTA */}
+                <button className="cc-pv-cta">Участвовать</button>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -669,16 +715,61 @@ const css = `
 
   /* ── Preview panel ── */
   .cc-preview-panel {
-    flex: 0 0 480px; max-height: calc(100vh - 140px);
+    flex: 0 0 420px; max-height: calc(100vh - 140px);
     overflow-y: auto; border-radius: 24px;
     animation: previewIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-    filter: blur(0);
   }
+  .cc-preview-panel::-webkit-scrollbar { width: 4px; }
+  .cc-preview-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
   @keyframes previewIn {
     from { opacity: 0; filter: blur(12px); transform: translateX(20px) scale(0.95); }
     to { opacity: 1; filter: blur(0); transform: none; }
   }
-  .cc-preview-loading { display: flex; align-items: center; justify-content: center; padding: 60px; }
+
+  /* Preview card */
+  .cc-preview-card {
+    background: white; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .cc-pv-img { position: relative; height: 200px; overflow: hidden; }
+  .cc-pv-img img { width: 100%; height: 100%; object-fit: cover; }
+  .cc-pv-badge {
+    position: absolute; bottom: 12px; left: 12px;
+    padding: 6px 14px; border-radius: 99px;
+    font-size: 12px; font-weight: 700; color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .cc-pv-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .cc-pv-title { font-size: 18px; font-weight: 900; margin: 0; color: #111; line-height: 1.3; }
+  .cc-pv-org { font-size: 13px; color: #9ca3af; margin: 0; }
+
+  .cc-pv-tabs { display: flex; gap: 4px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+  .cc-pv-tab { font-size: 13px; font-weight: 700; color: #9ca3af; padding: 6px 12px; border-radius: 8px; cursor: default; }
+  .cc-pv-tab.active { background: #FF385C; color: white; }
+
+  .cc-pv-stages { display: flex; flex-direction: column; gap: 8px; }
+  .cc-pv-empty { text-align: center; padding: 20px; font-size: 13px; color: #ccc; }
+  .cc-pv-stage { display: flex; align-items: center; gap: 10px; padding: 10px; background: #f9fafb; border-radius: 12px; border: 1px solid #f0f0f0; }
+  .cc-pv-stage-num { width: 28px; height: 28px; border-radius: 50%; color: white; display: grid; place-items: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+  .cc-pv-stage-info { display: flex; flex-direction: column; gap: 2px; }
+  .cc-pv-stage-type { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
+  .cc-pv-stage-title { font-size: 13px; font-weight: 700; color: #111; }
+
+  .cc-pv-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #6b7280; }
+
+  .cc-pv-badges { display: flex; flex-direction: column; gap: 6px; }
+  .cc-pv-badge-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; font-size: 13px; font-weight: 600; color: #166534; }
+
+  .cc-pv-desc h4 { font-size: 13px; font-weight: 800; margin: 0 0 4px; color: #111; }
+  .cc-pv-desc p { font-size: 13px; color: #6b7280; margin: 0; line-height: 1.5; }
+
+  .cc-pv-cta {
+    width: 100%; padding: 14px; border-radius: 14px; border: none;
+    background: #FF385C; color: white; font-size: 15px; font-weight: 800;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(255,56,92,0.3);
+  }
+  .cc-pv-cta:hover { background: #E31C5F; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,56,92,0.35); }
 
   /* ── Bottom bar ── */
   .cc-bottombar {
