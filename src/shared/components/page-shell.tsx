@@ -12,13 +12,10 @@ type PageShellProps = {
 export function PageShell({ children, variant = 'compact' }: PageShellProps) {
   return (
     <div className="page-shell-root" style={styles.root}>
-      <div
-        className={variant === 'public' ? 'page-shell public-shell' : 'page-shell'}
-        style={variant === 'public' ? styles.publicShell : styles.shell}
-      >
-        <SiteNav variant={variant} />
-        <div style={variant === 'public' ? styles.publicContent : styles.content}>{children}</div>
-      </div>
+      <SiteNav variant={variant} />
+      <main style={variant === 'public' ? styles.publicMain : styles.main}>
+        {children}
+      </main>
       <SiteFooter />
     </div>
   );
@@ -30,22 +27,12 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     minHeight: '100vh',
   },
-  shell: {
-    width: '100%',
-    margin: '0 auto',
-    padding: '0',
-    flex: '1 0 auto',
-  },
-  publicShell: {
-    width: '100%',
-    margin: '0',
-    padding: '0',
-    flex: '1 0 auto',
-  },
-  publicContent: {
+  main: {
+    flex: '1 1 auto',
     width: '100%',
   },
-  content: {
+  publicMain: {
+    flex: '1 1 auto',
     width: '100%',
   },
 };

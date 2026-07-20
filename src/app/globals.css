@@ -56,10 +56,6 @@ img, video {
   display: block;
 }
 
-.page-shell {
-  padding-bottom: 24px;
-}
-
 /* Utility: hide on mobile */
 .hide-mobile { display: block; }
 .hide-tablet { display: block; }
