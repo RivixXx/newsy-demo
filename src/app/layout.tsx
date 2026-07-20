@@ -5,6 +5,10 @@ import { SessionProvider } from '@/shared/components/session-provider';
 import { RegionProvider } from '@/shared/components/region-provider';
 import { ToastProvider } from '@/shared/components/toast';
 import './globals.css';
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const viewport: Viewport = {
   themeColor: '#ff385c',
@@ -46,7 +50,7 @@ export default async function RootLayout({
   const session = await getCurrentAuthSession();
 
   return (
-    <html lang="ru">
+    <html lang="ru" className={cn("font-sans", geist.variable)}>
       <body>
         <a href="#main-content" className="skip-link">Перейти к основному содержимому</a>
         <SessionProvider session={session}>
