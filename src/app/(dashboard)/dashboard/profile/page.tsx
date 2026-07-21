@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
-import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Crown, Flame, Trophy, Target } from 'lucide-react';
+import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Crown, Trophy, Target } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -112,59 +112,65 @@ export default function ProfilePage() {
         <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
       )}
 
-      <div className="mx-auto max-w-6xl px-4 py-5 space-y-4">
-        {/* Profile Header Card */}
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4">
+
+        {/* ═══════ PROFILE HEADER ═══════ */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-20 w-20 border-2 border-primary/20">
+          <CardContent className="p-4 sm:p-6">
+            {/* Mobile: stacked layout */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-primary/20 mx-auto sm:mx-0">
                 <AvatarImage src={data.avatarUrl} alt={data.name} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight">{data.name}</h1>
+              <div className="flex-1 min-w-0 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{data.name}</h1>
                   <Badge variant="secondary" className="gap-1">
                     <Crown className="h-3 w-3" />
                     Ур. {data.level.level}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">{data.email}</p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                   {data.gender && <span>{data.gender === 'male' ? 'Мужчина' : 'Женщина'}</span>}
                   {isOrganizer && <Badge variant="outline" className="text-xs">Организатор</Badge>}
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="self-start hidden sm:flex">
+                <Edit3 className="h-4 w-4" />
+                Редактировать
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="sm:hidden w-full">
                 <Edit3 className="h-4 w-4" />
                 Редактировать
               </Button>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-4 gap-4 mt-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{data.points}</div>
-                <div className="text-xs text-muted-foreground">Очков</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-5 sm:mt-6">
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.points}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Очков</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{data.streak}</div>
-                <div className="text-xs text-muted-foreground">Серия дней</div>
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.streak}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Серия дней</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{data.completedChallenges}</div>
-                <div className="text-xs text-muted-foreground">Завершено</div>
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.completedChallenges}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Завершено</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{data.achievements}</div>
-                <div className="text-xs text-muted-foreground">Достижений</div>
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.achievements}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Достижений</div>
               </div>
             </div>
 
             {/* XP Progress */}
-            <div className="mt-6 space-y-2">
+            <div className="mt-4 sm:mt-6 space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{data.level.name}</span>
                 <span className="font-medium">{data.level.xp}/{data.level.xpNeeded} XP</span>
@@ -174,9 +180,9 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Bio Card */}
+        {/* ═══════ BIO ═══════ */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-4 sm:p-6">
             <h3 className="text-sm font-semibold mb-2">О себе</h3>
             {data.bio ? (
               <p className="text-sm text-muted-foreground">{data.bio}</p>
@@ -186,10 +192,10 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Organizer Favorites */}
+        {/* ═══════ ORGANIZER FAVORITES ═══════ */}
         {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <Heart className="h-4 w-4 text-primary" />
@@ -201,7 +207,7 @@ export default function ProfilePage() {
                 {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
                   <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                     <span className="text-sm font-medium truncate">{c.title}</span>
-                    <span className="text-sm font-bold text-primary flex items-center gap-1">
+                    <span className="text-sm font-bold text-primary flex items-center gap-1 flex-shrink-0">
                       <Heart className="h-3 w-3 fill-primary" />
                       {c.favoritesCount}
                     </span>
@@ -212,38 +218,39 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Tabs */}
+        {/* ═══════ TABS ═══════ */}
         <Tabs defaultValue="overview">
           <TabsList className="w-full">
-            <TabsTrigger value="overview" className="flex-1 gap-2">
-              <Target className="h-4 w-4" />
+            <TabsTrigger value="overview" className="flex-1 gap-1.5 text-xs sm:text-sm">
+              <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Обзор
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1 gap-2">
-              <Settings className="h-4 w-4" />
+            <TabsTrigger value="settings" className="flex-1 gap-1.5 text-xs sm:text-sm">
+              <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Настройки
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2 space-y-4">
+          {/* ═══════ OVERVIEW TAB ═══════ */}
+          <TabsContent value="overview" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent className="p-4 sm:p-6">
                     <h3 className="text-sm font-semibold mb-4">Активность</h3>
                     <ActivityCalendar days={data.calendar} />
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent className="p-4 sm:p-6">
                     <h3 className="text-sm font-semibold mb-4">Последняя активность</h3>
                     <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
                   </CardContent>
                 </Card>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent className="p-4 sm:p-6">
                     <h3 className="text-sm font-semibold mb-4">Достижения</h3>
                     <AchievementShowcase count={data.achievements} />
                   </CardContent>
@@ -252,72 +259,35 @@ export default function ProfilePage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* ═══════ SETTINGS TAB ═══════ */}
+          <TabsContent value="settings" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               <Card>
-                <CardContent className="pt-6 space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Bell className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">Уведомления</h4>
-                    <p className="text-xs text-muted-foreground">Управление уведомлениями</p>
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">Безопасность</h4>
-                    <p className="text-xs text-muted-foreground">Пароль, двухфакторная аутентификация</p>
-                  </div>
-                </div>
-                <Separator />
-                <Link href="/dashboard/subscription" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">Подписка</h4>
-                    <p className="text-xs text-muted-foreground">Управление тарифом и оплатой</p>
-                  </div>
-                </Link>
-                <Separator />
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Eye className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">Приватность</h4>
-                    <p className="text-xs text-muted-foreground">Видимость профиля</p>
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Heart className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">Избранное</h4>
-                    <p className="text-xs text-muted-foreground">Сохранённые челенджи</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <CardContent className="p-4 sm:p-6 space-y-2">
+                  <SettingRow icon={<Bell className="h-5 w-5 text-primary" />} title="Уведомления" desc="Управление уведомлениями" />
+                  <Separator />
+                  <SettingRow icon={<Shield className="h-5 w-5 text-primary" />} title="Безопасность" desc="Пароль, двухфакторная аутентификация" />
+                  <Separator />
+                  <Link href="/dashboard/subscription" className="block">
+                    <SettingRow icon={<CreditCard className="h-5 w-5 text-primary" />} title="Подписка" desc="Управление тарифом и оплатой" />
+                  </Link>
+                  <Separator />
+                  <SettingRow icon={<Eye className="h-5 w-5 text-primary" />} title="Приватность" desc="Видимость профиля" />
+                  <Separator />
+                  <SettingRow icon={<Heart className="h-5 w-5 text-primary" />} title="Избранное" desc="Сохранённые челенджи" />
+                </CardContent>
+              </Card>
 
-            <Card className="border-destructive/20">
-              <CardContent className="pt-6">
-                <form action={logoutAction}>
-                  <Button type="submit" variant="destructive" className="w-full gap-2">
-                    <LogOut className="h-4 w-4" />
-                    Выйти из аккаунта
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+              <Card className="border-destructive/20">
+                <CardContent className="p-4 sm:p-6">
+                  <form action={logoutAction}>
+                    <Button type="submit" variant="destructive" className="w-full gap-2">
+                      <LogOut className="h-4 w-4" />
+                      Выйти из аккаунта
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
@@ -337,5 +307,19 @@ export default function ProfilePage() {
         onSave={refetchProfile}
       />
     </PageShell>
+  );
+}
+
+function SettingRow({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <h4 className="text-sm font-semibold">{title}</h4>
+        <p className="text-xs text-muted-foreground truncate">{desc}</p>
+      </div>
+    </div>
   );
 }
