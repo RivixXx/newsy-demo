@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @theme inline {
   --color-background: oklch(1 0 0);
@@ -37,7 +38,6 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Legacy variables */
 :root {
   color-scheme: light;
   --bg: #f6f1ea;
@@ -91,7 +91,6 @@ img, video {
   display: block;
 }
 
-/* Utility: hide on mobile */
 .hide-mobile { display: block; }
 .hide-tablet { display: block; }
 
@@ -103,7 +102,6 @@ img, video {
   .hide-tablet { display: none !important; }
 }
 
-/* React Datepicker styles */
 .react-datepicker {
   font-family: inherit !important;
   border: 1px solid var(--color-border) !important;
@@ -194,11 +192,9 @@ img, video {
   color: var(--color-muted-foreground) !important;
 }
 
-/* ── Spinner keyframes (global) ── */
 @keyframes spinner-spin { to { transform: rotate(360deg); } }
 @keyframes spinner-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-/* ── Skip link (a11y) ── */
 .skip-link {
   position: absolute;
   top: -40px;
