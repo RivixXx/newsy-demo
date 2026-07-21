@@ -112,7 +112,7 @@ export default function ProfilePage() {
         <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
       )}
 
-      <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+      <div className="mx-auto max-w-6xl px-4 py-5 space-y-4">
         {/* Profile Header Card */}
         <Card>
           <CardContent className="pt-6">
@@ -226,31 +226,36 @@ export default function ProfilePage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-sm font-semibold mb-4">Активность</h3>
-                  <ActivityCalendar days={data.calendar} />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-sm font-semibold mb-4">Достижения</h3>
-                  <AchievementShowcase count={data.achievements} />
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="text-sm font-semibold mb-4">Активность</h3>
+                    <ActivityCalendar days={data.calendar} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="text-sm font-semibold mb-4">Последняя активность</h3>
+                    <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="text-sm font-semibold mb-4">Достижения</h3>
+                    <AchievementShowcase count={data.achievements} />
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-sm font-semibold mb-4">Последняя активность</h3>
-                <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4 mt-4">
-            <Card>
-              <CardContent className="pt-6 space-y-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="pt-6 space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Bell className="h-5 w-5 text-primary" />
@@ -313,6 +318,7 @@ export default function ProfilePage() {
                 </form>
               </CardContent>
             </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
