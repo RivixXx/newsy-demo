@@ -1,41 +1,62 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.147 0.004 49.25);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.147 0.004 49.25);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.147 0.004 49.25);
-  --color-primary: oklch(0.525 0.223 3.958);
-  --color-primary-foreground: oklch(0.971 0.014 343.198);
-  --color-secondary: oklch(0.967 0.001 286.375);
-  --color-secondary-foreground: oklch(0.21 0.006 285.885);
-  --color-muted: oklch(0.97 0.001 106.424);
-  --color-muted-foreground: oklch(0.553 0.013 58.071);
-  --color-accent: oklch(0.97 0.001 106.424);
-  --color-accent-foreground: oklch(0.216 0.006 56.043);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  --color-border: oklch(0.923 0.003 48.717);
-  --color-input: oklch(0.923 0.003 48.717);
-  --color-ring: oklch(0.709 0.01 56.259);
-  --color-chart-1: oklch(0.897 0.196 126.665);
-  --color-chart-2: oklch(0.768 0.233 130.85);
-  --color-chart-3: oklch(0.648 0.2 131.684);
-  --color-chart-4: oklch(0.532 0.157 131.589);
-  --color-chart-5: oklch(0.453 0.124 130.933);
-  --radius: 0;
-  --color-sidebar: oklch(0.985 0.001 106.423);
-  --color-sidebar-foreground: oklch(0.147 0.004 49.25);
-  --color-sidebar-primary: oklch(0.592 0.249 0.584);
-  --color-sidebar-primary-foreground: oklch(0.971 0.014 343.198);
-  --color-sidebar-accent: oklch(0.97 0.001 106.424);
-  --color-sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --color-sidebar-border: oklch(0.923 0.003 48.717);
-  --color-sidebar-ring: oklch(0.709 0.01 56.259);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 4 76% 61%;
+    --primary-foreground: 340 85% 97%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 24.3 75% 59.6%;
+    --radius: 0;
+  }
+
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 4 72% 51%;
+    --primary-foreground: 340 85% 97%;
+    --secondary: 12 6.7% 15.1%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 12 6.7% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 12 6.7% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 12 6.7% 15.1%;
+    --input: 12 6.7% 15.1%;
+    --ring: 24.3 75% 59.6%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+  }
 }
 
 :root {
@@ -68,12 +89,12 @@ html {
 }
 
 body {
-  min-height: 100vh;
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background-color: #f7f7f7;
+  background-image: linear-gradient(rgba(247, 247, 247, 0.85), rgba(247, 247, 247, 0.85)), url('/background.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 a {
@@ -104,30 +125,30 @@ img, video {
 
 .react-datepicker {
   font-family: inherit !important;
-  border: 1px solid var(--color-border) !important;
+  border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
   overflow: hidden;
 }
 .react-datepicker__header {
-  background: var(--color-muted) !important;
-  border-bottom: 1px solid var(--color-border) !important;
+  background: var(--muted) !important;
+  border-bottom: 1px solid var(--border) !important;
   padding: 12px 0 !important;
 }
 .react-datepicker__current-month {
   font-weight: 800 !important;
   font-size: 14px !important;
-  color: var(--color-foreground) !important;
+  color: var(--foreground) !important;
 }
 .react-datepicker__day-name {
   font-size: 11px !important;
   font-weight: 700 !important;
-  color: var(--color-muted-foreground) !important;
+  color: var(--muted-foreground) !important;
 }
 .react-datepicker__day {
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: var(--color-foreground) !important;
+  color: var(--foreground) !important;
   border-radius: 50% !important;
   width: 36px !important;
   height: 36px !important;
@@ -136,38 +157,38 @@ img, video {
   transition: background 0.1s !important;
 }
 .react-datepicker__day:hover {
-  background: var(--color-muted) !important;
+  background: var(--muted) !important;
   border-radius: 50% !important;
 }
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
-  background: var(--color-primary) !important;
-  color: var(--color-primary-foreground) !important;
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
   border-radius: 50% !important;
 }
 .react-datepicker__day--in-range {
-  background: var(--color-muted) !important;
+  background: var(--muted) !important;
   border-radius: 0 !important;
 }
 .react-datepicker__day--range-start,
 .react-datepicker__day--range-end {
-  background: var(--color-primary) !important;
-  color: var(--color-primary-foreground) !important;
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
   border-radius: 50% !important;
 }
 .react-datepicker__day--today {
   font-weight: 800 !important;
-  border: 1.5px solid var(--color-foreground) !important;
+  border: 1.5px solid var(--foreground) !important;
 }
 .react-datepicker__day--disabled {
-  color: var(--color-muted-foreground) !important;
+  color: var(--muted-foreground) !important;
   opacity: 0.4;
 }
 .react-datepicker__navigation {
   top: 12px !important;
 }
 .react-datepicker__navigation-icon::before {
-  border-color: var(--color-foreground) !important;
+  border-color: var(--foreground) !important;
 }
 .react-datepicker-wrapper {
   display: block !important;
@@ -175,21 +196,21 @@ img, video {
 .react-datepicker__input-container input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-foreground);
-  background: var(--color-background);
+  color: var(--foreground);
+  background: var(--background);
   outline: none;
   transition: border-color 0.15s;
 }
 .react-datepicker__input-container input:focus {
-  border-color: var(--color-ring);
+  border-color: var(--ring);
 }
 .react-datepicker__close-icon::before {
   font-size: 16px !important;
-  color: var(--color-muted-foreground) !important;
+  color: var(--muted-foreground) !important;
 }
 
 @keyframes spinner-spin { to { transform: rotate(360deg); } }
@@ -199,8 +220,8 @@ img, video {
   position: absolute;
   top: -40px;
   left: 0;
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
+  background: var(--primary);
+  color: var(--primary-foreground);
   padding: 8px 16px;
   z-index: 10000;
   font-weight: 700;
