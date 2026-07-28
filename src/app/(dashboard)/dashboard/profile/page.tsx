@@ -18,6 +18,7 @@ import { ProfileEditModal } from './components/profile-edit-modal';
 import { ActivityCalendar } from './components/activity-calendar';
 import { AchievementShowcase } from './components/achievement-showcase';
 import { ActivityFeed } from './components/activity-feed';
+import { TwoFactorSetup } from '@/modules/identity/components/two-factor-setup';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
 
 interface ProfileData {
@@ -266,7 +267,7 @@ export default function ProfilePage() {
                 <CardContent className="p-4 sm:p-6 space-y-2">
                   <SettingRow icon={<Bell className="h-5 w-5 text-primary" />} title="Уведомления" desc="Управление уведомлениями" />
                   <Separator />
-                  <SettingRow icon={<Shield className="h-5 w-5 text-primary" />} title="Безопасность" desc="Пароль, двухфакторная аутентификация" />
+                  <SecuritySection />
                   <Separator />
                   <Link href="/dashboard/subscription" className="block">
                     <SettingRow icon={<CreditCard className="h-5 w-5 text-primary" />} title="Подписка" desc="Управление тарифом и оплатой" />
@@ -320,6 +321,27 @@ function SettingRow({ icon, title, desc }: { icon: React.ReactNode; title: strin
         <h4 className="text-sm font-semibold">{title}</h4>
         <p className="text-xs text-muted-foreground truncate">{desc}</p>
       </div>
+    </div>
+  );
+}
+
+function SecuritySection() {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <div onClick={() => setExpanded(v => !v)}>
+        <SettingRow icon={<Shield className="h-5 w-5 text-primary" />} title="Безопасность" desc="Пароль, двухфакторная аутентификация" />
+      </div>
+      {expanded && (
+        <div className="px-2 sm:px-3 pb-3 pt-1">
+          <div className="rounded-lg bg-muted/30 p-3 sm:p-4 space-y-3">
+            <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Двухфакторная аутентификация
+            </h5>
+            <TwoFactorSetup />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

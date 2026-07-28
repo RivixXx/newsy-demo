@@ -39,8 +39,16 @@ export interface CreateChallengeInput {
     title: string;
     description: string;
     points: number;
+    questionType?: string;
     options?: string[];
     correctIndex?: number;
+    correctIndices?: number[];
+    minLength?: number;
+    maxLength?: number;
+    ratingMin?: number;
+    ratingMax?: number;
+    ratingMinLabel?: string;
+    ratingMaxLabel?: string;
     location?: string;
     criteria?: string;
     verification?: Record<string, unknown>;
@@ -106,7 +114,29 @@ export async function createChallengeAction(input: CreateChallengeInput) {
         steps: {
           create: input.steps.map((s, i) => {
             const config: Record<string, unknown> = {};
-            if (s.options) { config.options = s.options; config.correctIndex = s.correctIndex; }
+            if (s.questionType) { config.questionType = s.questionType; }
+            if (s.options) {
+              config.options = s.options;
+              // Backward compat: без questionType сохраняем как было (single)
+              if (!s.questionType || s.questionType === 'single') {
+                if (s.correctIndex != null) config.correctIndex = s.correctIndex;
+              }
+            }
+            if (s.questionType === 'multiple' && s.correctIndices) { config.correctIndices = s.correctIndices; }
+            if (s.questionType === 'text') {
+              if (s.minLength != null) config.minLength = s.minLength;
+              if (s.maxLength != null) config.maxLength = s.maxLength;
+            }
+            if (s.questionType === 'rating') {
+              if (s.ratingMin != null) config.ratingMin = s.ratingMin;
+              if (s.ratingMax != null) config.ratingMax = s.ratingMax;
+              if (s.ratingMinLabel) config.ratingMinLabel = s.ratingMinLabel;
+              if (s.ratingMaxLabel) config.ratingMaxLabel = s.ratingMaxLabel;
+            }
+            if (s.questionType === 'yesno' && s.correctIndex != null) {
+              config.correctIndex = s.correctIndex;
+              config.options = ['Да', 'Нет'];
+            }
             if (s.location) { config.location = s.location; }
             if (s.verification) Object.assign(config, s.verification);
             return {

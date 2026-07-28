@@ -452,3 +452,34 @@
   border-color: #FFD700;
   background: #FFFBEB;
 }
+
+.locationBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #ebebeb;
+}
+
+.locationIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #FF385C;
+}
+
+.locationInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.locationLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

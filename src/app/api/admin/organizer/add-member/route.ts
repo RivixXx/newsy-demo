@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 });
     }
 
-    const organizer = await prisma.organizer.findFirst({ where: { name: 'NEWSY' } });
+    const organizer = await prisma.organizer.findFirst({ where: { name: 'ЧИ' } });
     if (!organizer) {
-      return NextResponse.json({ error: 'Организатор NEWSY не найден' }, { status: 404 });
+      return NextResponse.json({ error: 'Организатор ЧИ не найден' }, { status: 404 });
     }
 
     const existing = await prisma.organizerMember.findUnique({
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `${user.firstName} ${user.lastName} добавлен в организацию NEWSY`,
+      message: `${user.firstName} ${user.lastName} добавлен в организацию ЧИ`,
     });
   } catch (error: unknown) {
     console.error('[admin/add-member] Error:', error);

@@ -43,8 +43,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${userName}'s NEWSY Profile`,
-        text: `I'm level ${level} on NEWSY! Check out my achievements.`,
+        title: `${userName}'s ЧИ Profile`,
+        text: `I'm level ${level} on ЧИ! Check out my achievements.`,
         url: window.location.href,
       }).catch(console.error);
     } else {

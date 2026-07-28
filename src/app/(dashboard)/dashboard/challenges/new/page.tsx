@@ -17,7 +17,10 @@ type StepType = 'action' | 'upload' | 'survey';
 
 interface Step {
   id: string; type: StepType; title: string; description: string; points: number;
-  options?: string[]; correctIndex?: number; location?: string; criteria?: string;
+  questionType?: string; options?: string[]; correctIndex?: number;
+  correctIndices?: number[]; minLength?: number; maxLength?: number;
+  ratingMin?: number; ratingMax?: number; ratingMinLabel?: string; ratingMaxLabel?: string;
+  location?: string; criteria?: string;
 }
 interface FormData {
   title: string; description: string; category: string; coverImage: string;
@@ -104,7 +107,11 @@ export default function NewChallengePage() {
     setAnimDir(to > step ? 'forward' : 'back');
     setStep(to);
   };
-  const addStep = (type: StepType) => update({ steps: [...data.steps, { id: uid(), type, title: '', description: '', points: 50, options: type === 'survey' ? ['', ''] : undefined }] });
+  const addStep = (type: StepType) => update({ steps: [...data.steps, {
+    id: uid(), type, title: '', description: '', points: 50,
+    questionType: type === 'survey' ? 'single' : undefined,
+    options: type === 'survey' ? ['', ''] : undefined,
+  }] });
   const updateStep = (id: string, p: Partial<Step>) => update({ steps: data.steps.map(s => s.id === id ? { ...s, ...p } : s) });
   const removeStep = (id: string) => update({ steps: data.steps.filter(s => s.id !== id) });
   const moveStep = (f: number, t: number) => { const a = [...data.steps]; const [item] = a.splice(f, 1); a.splice(t, 0, item); update({ steps: a }); };
@@ -146,7 +153,7 @@ export default function NewChallengePage() {
         gender: data.gender || null,
         selectedAchievements: data.selectedAchievements,
         customAchievement: data.customAchievement,
-        steps: data.steps.map(s => ({ type: s.type, title: s.title, description: s.description, points: s.points, options: s.options, correctIndex: s.correctIndex, location: s.location, criteria: s.criteria })),
+        steps: data.steps.map(s => ({ type: s.type, title: s.title, description: s.description, points: s.points, questionType: s.questionType, options: s.options, correctIndex: s.correctIndex, correctIndices: s.correctIndices, minLength: s.minLength, maxLength: s.maxLength, ratingMin: s.ratingMin, ratingMax: s.ratingMax, ratingMinLabel: s.ratingMinLabel, ratingMaxLabel: s.ratingMaxLabel, location: s.location, criteria: s.criteria })),
       });
       if (r?.error) { setError(r.error); return; }
       if (!r?.success || !r?.challengeId) { setError('Ошибка создания челенджа'); return; }
@@ -297,16 +304,141 @@ export default function NewChallengePage() {
                           <textarea className="cc-step-desc" rows={2} placeholder="Инструкция для участника..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
                           <input className="cc-step-criteria" placeholder="Критерии приёма при проверке..." value={s.criteria || ''} onChange={e => updateStep(s.id, { criteria: e.target.value })} />
                           {s.type === 'survey' && (
-                            <div className="cc-opts">
-                              {(s.options || []).map((o, oi) => (
-                                <div key={oi} className="cc-opt">
-                                  <button className={`cc-opt-dot ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={8} /></button>
-                                  <input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />
-                                  {(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}
+                            <>
+                              {/* Question sub-type selector */}
+                              <div className="cc-question-types">
+                                {[
+                                  { type: 'single', icon: '○', label: 'Один из списка' },
+                                  { type: 'multiple', icon: '☑', label: 'Несколько из списка' },
+                                  { type: 'text', icon: 'Aa', label: 'Текстовый ответ' },
+                                  { type: 'rating', icon: '★', label: 'Оценка' },
+                                  { type: 'yesno', icon: '👍', label: 'Да / Нет' },
+                                ].map(qt => (
+                                  <button
+                                    key={qt.type}
+                                    className={`cc-qt-btn ${(s.questionType || 'single') === qt.type ? 'on' : ''}`}
+                                    onClick={() => updateStep(s.id, {
+                                      questionType: qt.type,
+                                      options: qt.type === 'yesno' ? ['Да', 'Нет'] : (qt.type === 'single' || qt.type === 'multiple') && !s.options ? ['', ''] : s.questionType === 'yesno' && qt.type !== 'yesno' ? undefined : s.options,
+                                      correctIndex: qt.type === 'yesno' ? 0 : (qt.type === 'single' && s.questionType !== 'single' ? undefined : s.correctIndex),
+                                      correctIndices: qt.type === 'multiple' ? [] : undefined,
+                                      ratingMin: qt.type === 'rating' ? 1 : undefined,
+                                      ratingMax: qt.type === 'rating' ? 5 : undefined,
+                                    })}
+                                  >
+                                    <span className="cc-qt-icon">{qt.icon}</span>
+                                    <span>{qt.label}</span>
+                                  </button>
+                                ))}
+                              </div>
+
+                              {/* Single choice */}
+                              {(s.questionType || 'single') === 'single' && (
+                                <div className="cc-opts">
+                                  {(s.options || []).map((o, oi) => (
+                                    <div key={oi} className="cc-opt">
+                                      <button className={`cc-opt-dot ${s.correctIndex === oi ? 'on' : ''}`} onClick={() => updateStep(s.id, { correctIndex: oi })}><Check size={8} /></button>
+                                      <input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />
+                                      {(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}
+                                    </div>
+                                  ))}
+                                  <button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button>
                                 </div>
-                              ))}
-                              <button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button>
-                            </div>
+                              )}
+
+                              {/* Multiple choice */}
+                              {s.questionType === 'multiple' && (
+                                <div className="cc-opts">
+                                  {(s.options || []).map((o, oi) => (
+                                    <div key={oi} className="cc-opt">
+                                      <button
+                                        className={`cc-opt-dot ${(s.correctIndices || []).includes(oi) ? 'on' : ''}`}
+                                        onClick={() => {
+                                          const cur = s.correctIndices || [];
+                                          const idx = cur.indexOf(oi);
+                                          const next = idx >= 0 ? cur.filter(i => i !== oi) : [...cur, oi];
+                                          updateStep(s.id, { correctIndices: next });
+                                        }}
+                                        style={{ borderRadius: 4 }}
+                                      ><Check size={8} /></button>
+                                      <input placeholder={`Вариант ${oi + 1}`} value={o} onChange={e => { const opts = [...(s.options || [])]; opts[oi] = e.target.value; updateStep(s.id, { options: opts }); }} />
+                                      {(s.options || []).length > 2 && <button className="cc-opt-x" onClick={() => updateStep(s.id, { options: (s.options || []).filter((_, j) => j !== oi) })}><X size={10} /></button>}
+                                    </div>
+                                  ))}
+                                  <button className="cc-opt-add" onClick={() => updateStep(s.id, { options: [...(s.options || []), ''] })}><Plus size={10} /> Вариант</button>
+                                  {(s.correctIndices || []).length > 0 && (
+                                    <span style={{ fontSize: 11, color: '#9ca3af' }}>✓ {(s.correctIndices || []).length} правильных</span>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Text answer */}
+                              {s.questionType === 'text' && (
+                                <div className="cc-text-config">
+                                  <div className="cc-grid-2">
+                                    <div className="cc-field">
+                                      <label>Мин. длина</label>
+                                      <input className="cc-input" type="number" min={0} value={s.minLength ?? ''} onChange={e => updateStep(s.id, { minLength: e.target.value ? Number(e.target.value) : undefined })} placeholder="0" />
+                                    </div>
+                                    <div className="cc-field">
+                                      <label>Макс. длина</label>
+                                      <input className="cc-input" type="number" min={1} value={s.maxLength ?? ''} onChange={e => updateStep(s.id, { maxLength: e.target.value ? Number(e.target.value) : undefined })} placeholder="500" />
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: '#9ca3af' }}>Участник введёт текстовый ответ</span>
+                                </div>
+                              )}
+
+                              {/* Rating */}
+                              {s.questionType === 'rating' && (
+                                <div className="cc-text-config">
+                                  <div className="cc-grid-2">
+                                    <div className="cc-field">
+                                      <label>От</label>
+                                      <input className="cc-input" type="number" min={0} value={s.ratingMin ?? 1} onChange={e => updateStep(s.id, { ratingMin: Number(e.target.value) })} />
+                                    </div>
+                                    <div className="cc-field">
+                                      <label>До</label>
+                                      <input className="cc-input" type="number" min={2} max={100} value={s.ratingMax ?? 5} onChange={e => updateStep(s.id, { ratingMax: Number(e.target.value) })} />
+                                    </div>
+                                  </div>
+                                  <div className="cc-grid-2" style={{ marginTop: 8 }}>
+                                    <div className="cc-field">
+                                      <label>Подпись минимума</label>
+                                      <input className="cc-input" placeholder="Плохо" value={s.ratingMinLabel ?? ''} onChange={e => updateStep(s.id, { ratingMinLabel: e.target.value || undefined })} />
+                                    </div>
+                                    <div className="cc-field">
+                                      <label>Подпись максимума</label>
+                                      <input className="cc-input" placeholder="Отлично" value={s.ratingMaxLabel ?? ''} onChange={e => updateStep(s.id, { ratingMaxLabel: e.target.value || undefined })} />
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: '#9ca3af' }}>Участник поставит оценку от {s.ratingMin ?? 1} до {s.ratingMax ?? 5}</span>
+                                </div>
+                              )}
+
+                              {/* Yes/No */}
+                              {s.questionType === 'yesno' && (
+                                <div className="cc-text-config">
+                                  <div className="cc-question-types" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                                    <button
+                                      className={`cc-qt-btn ${s.correctIndex === 0 ? 'on' : ''}`}
+                                      onClick={() => updateStep(s.id, { correctIndex: 0, options: ['Да', 'Нет'] })}
+                                    >
+                                      <span className="cc-qt-icon">👍</span>
+                                      <span>Да</span>
+                                    </button>
+                                    <button
+                                      className={`cc-qt-btn ${s.correctIndex === 1 ? 'on' : ''}`}
+                                      onClick={() => updateStep(s.id, { correctIndex: 1, options: ['Да', 'Нет'] })}
+                                    >
+                                      <span className="cc-qt-icon">👎</span>
+                                      <span>Нет</span>
+                                    </button>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: '#9ca3af' }}>Участник выберет Да или Нет. Отметьте правильный ответ.</span>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -662,6 +794,19 @@ const css = `
   .cc-opt-x:hover { color: #ef4444; }
   .cc-opt-add { align-self: flex-start; background: none; border: 1px dashed #FF385C; color: #FF385C; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px; }
 
+  /* ── Question types ── */
+  .cc-question-types { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+  .cc-qt-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 8px 4px; border-radius: 10px; border: 1.5px solid #e5e7eb;
+    background: white; cursor: pointer; transition: all 0.2s; font-size: 10px;
+    font-weight: 700; color: #6b7280; line-height: 1.2;
+  }
+  .cc-qt-btn:hover { border-color: #2563eb; color: #2563eb; transform: translateY(-1px); }
+  .cc-qt-btn.on { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+  .cc-qt-icon { font-size: 16px; }
+  .cc-text-config { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+
   /* ── Achievements ── */
   .cc-ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
   .cc-ach { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border-radius: 14px; border: 1.5px solid #e5e7eb; background: white; cursor: pointer; transition: all 0.25s; position: relative; }
@@ -808,7 +953,11 @@ const css = `
     .cc-card-body { padding: 20px; }
     .cc-rv-stats { grid-template-columns: repeat(2, 1fr); }
     .cc-ach-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+    .cc-question-types { grid-template-columns: repeat(3, 1fr); }
     .cc-preview-panel { display: none; }
     .cc-form-card--narrow { max-width: 100%; min-width: unset; }
+  }
+  @media (max-width: 480px) {
+    .cc-question-types { grid-template-columns: repeat(2, 1fr); }
   }
 `;

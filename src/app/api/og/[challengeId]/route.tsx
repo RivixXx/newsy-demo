@@ -31,7 +31,7 @@ export async function GET(
             background: '#f3f4f6',
             fontFamily: 'system-ui, sans-serif',
           }}>
-            <h1 style={{ fontSize: 48, color: '#666' }}>NEWSY</h1>
+            <h1 style={{ fontSize: 48, color: '#666' }}>ЧИ</h1>
           </div>
         ),
         { width: 1200, height: 630 }
@@ -67,9 +67,9 @@ export async function GET(
                 fontSize: 28,
                 fontWeight: 900,
               }}>
-                N
+                ЧИ
               </div>
-              <span style={{ fontSize: 24, fontWeight: 800, opacity: 0.9 }}>NEWSY</span>
+              <span style={{ fontSize: 24, fontWeight: 800, opacity: 0.9 }}>ЧИ</span>
             </div>
           </div>
 

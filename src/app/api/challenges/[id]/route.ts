@@ -7,6 +7,7 @@ const STEP_TYPES: Record<string, string> = {
   photo: 'ФОТО',
   geo: 'ГЕО',
   question: 'ВОПРОС',
+  survey: 'ОПРОС',
 };
 
 export async function GET(

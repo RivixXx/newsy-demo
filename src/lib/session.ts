@@ -2,10 +2,11 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { cookies } from 'next/headers';
 
-import type { AuthSession } from './auth';
+import type { AuthSession, TwoFactorTempSession } from './auth';
 
 const SESSION_COOKIE_NAME = '__Host-newsy_session';
 const SESSION_LIFETIME_MS = 1000 * 60 * 60 * 24 * 7;
+const TEMP_TOKEN_LIFETIME_MS = 1000 * 60 * 5; // 5 minutes
 
 function getSecret(): string {
   const secret = process.env.NEXTAUTH_SECRET?.trim();
@@ -100,6 +101,86 @@ export async function setAuthSession(session: AuthSession): Promise<void> {
 export async function clearAuthSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, '', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: true,
+    path: '/',
+    expires: new Date(0)
+  });
+}
+
+const TEMP_COOKIE_NAME = '__Host-newsy_2fa_temp';
+
+export function createTemp2faToken(userId: string): string {
+  const payload = encode(
+    JSON.stringify({
+      userId,
+      expiresAt: new Date(Date.now() + TEMP_TOKEN_LIFETIME_MS).toISOString(),
+      issuedAt: new Date().toISOString()
+    })
+  );
+  const signature = sign(payload);
+  return `${payload}.${signature}`;
+}
+
+export function parseTemp2faToken(value: string): TwoFactorTempSession | null {
+  const [payload, signature] = value.split('.');
+
+  if (!payload || !signature) {
+    return null;
+  }
+
+  const expectedSignature = sign(payload);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  const actualBuffer = Buffer.from(signature);
+
+  if (expectedBuffer.length !== actualBuffer.length) {
+    return null;
+  }
+
+  if (!timingSafeEqual(expectedBuffer, actualBuffer)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(decode(payload)) as TwoFactorTempSession & { issuedAt?: string };
+    if (!parsed.userId || !parsed.expiresAt) {
+      return null;
+    }
+
+    const expiresAt = new Date(parsed.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      return null;
+    }
+
+    return {
+      userId: parsed.userId,
+      expiresAt: parsed.expiresAt
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function setTemp2faCookie(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(TEMP_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: true,
+    path: '/',
+    expires: new Date(Date.now() + TEMP_TOKEN_LIFETIME_MS)
+  });
+}
+
+export async function getTemp2faCookie(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get(TEMP_COOKIE_NAME)?.value ?? null;
+}
+
+export async function clearTemp2faCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(TEMP_COOKIE_NAME, '', {
     httpOnly: true,
     sameSite: 'strict',
     secure: true,

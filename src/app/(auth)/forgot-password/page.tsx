@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
         <div style={s.brandBlock}>
           <Link href="/welcome" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', marginBottom: 8 }}>
             <img src="/icon.png" alt="" style={{ width: 48, height: 48 }} className="brand-logo" />
-            <h1 className="brand-title" style={s.brandTitle}>NEWSY</h1>
+            <h1 className="brand-title" style={s.brandTitle}>ЧИ</h1>
           </Link>
           <p className="brand-subtitle" style={s.brandSubtitle}>
             Платформа интерактивных челленджей.

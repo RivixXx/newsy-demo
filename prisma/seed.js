@@ -59,8 +59,8 @@ async function main() {
     await prisma.organizer.create({
       data: {
         type: 'BRAND',
-        name: 'NEWSY',
-        legalName: 'ООО "Ньюси"',
+        name: 'ЧИ',
+        legalName: 'ООО "ЧИ"',
         description: 'Официальный организатор платформы',
         status: 'ACTIVE'
       }
@@ -75,7 +75,7 @@ async function main() {
         email: 'admin@newsy.ru',
         passwordHash: hashPassword('Newsy123!'),
         firstName: 'Админ',
-        lastName: 'NEWSY',
+        lastName: 'ЧИ',
         status: 'ACTIVE',
         roles: { create: { role: { connect: { key: 'admin' } } } }
       }
@@ -91,7 +91,7 @@ async function main() {
         email: 'user@newsy.ru',
         passwordHash: hashPassword('Newsy123!'),
         firstName: 'Пользователь',
-        lastName: 'NEWSY',
+        lastName: 'ЧИ',
         status: 'ACTIVE',
         roles: { create: { role: { connect: { key: 'user' } } } }
       }

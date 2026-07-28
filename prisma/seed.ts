@@ -68,8 +68,8 @@ async function main() {
     await prisma.organizer.create({
       data: {
         type: 'BRAND',
-        name: 'NEWSY',
-        legalName: 'ООО "Ньюси"',
+        name: 'ЧИ',
+        legalName: 'ООО "ЧИ"',
         description: 'Официальный организатор платформы',
         status: 'ACTIVE',
       },
@@ -83,7 +83,7 @@ async function main() {
         email: 'admin@newsy.ru',
         passwordHash: hashPassword('Newsy123!'),
         firstName: 'Админ',
-        lastName: 'NEWSY',
+        lastName: 'ЧИ',
         status: 'ACTIVE',
         roles: {
           create: {
@@ -95,7 +95,7 @@ async function main() {
     console.log('Admin created: admin@newsy.ru / Newsy123!');
   }
 
-  const existingOrganizer = await prisma.organizer.findFirst({ where: { name: 'NEWSY' } });
+  const existingOrganizer = await prisma.organizer.findFirst({ where: { name: 'ЧИ' } });
   if (existingOrganizer && admin) {
     await prisma.organizerMember.upsert({
       where: { organizerId_userId: { organizerId: existingOrganizer.id, userId: admin.id } },
@@ -130,7 +130,7 @@ async function main() {
         email: 'user@newsy.ru',
         passwordHash: hashPassword('Newsy123!'),
         firstName: 'Пользователь',
-        lastName: 'NEWSY',
+        lastName: 'ЧИ',
         status: 'ACTIVE',
         roles: {
           create: {
@@ -208,9 +208,9 @@ async function main() {
   console.log('Subscription plans seeded');
 
   // =============================================
-  // STARTER CHALLENGE: "Гайд по платформе NEWSY"
+  // STARTER CHALLENGE: "Гайд по платформе ЧИ"
   // =============================================
-  const organizer = await prisma.organizer.findFirst({ where: { name: 'NEWSY' } });
+  const organizer = await prisma.organizer.findFirst({ where: { name: 'ЧИ' } });
   if (organizer) {
     const existingChallenge = await prisma.challenge.findUnique({ where: { id: 'ch-guide-001' } });
     if (!existingChallenge) {
@@ -219,8 +219,8 @@ async function main() {
           id: 'ch-guide-001',
           organizerId: organizer.id,
           status: 'DRAFT',
-          title: 'Гайд по платформе NEWSY: Первые шаги',
-          description: 'Познакомься с платформой NEWSY! Пройди 5 простых этапов, чтобы узнать все функции: загрузка файлов, профиль, навигация, поиск и достижения. Идеально для первого знакомства.',
+          title: 'Гайд по платформе ЧИ: Первые шаги',
+          description: 'Познакомься с платформой ЧИ! Пройди 5 простых этапов, чтобы узнать все функции: загрузка файлов, профиль, навигация, поиск и достижения. Идеально для первого знакомства.',
           category: 'education',
           isCooperative: false,
           startDate: new Date(),
@@ -249,7 +249,7 @@ async function main() {
                 order: 2,
                 type: 'question',
                 config: {
-                  options: ['Гайд по платформе NEWSY', 'Забег на 5 км', 'Что-то другое'],
+                  options: ['Гайд по платформе ЧИ', 'Забег на 5 км', 'Что-то другое'],
                   correctIndex: 0,
                 },
                 rewardPoints: 15,

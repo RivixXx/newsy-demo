@@ -90,7 +90,7 @@ export default async function FeedPage() {
 
         <header style={s.header}>
           <h1 style={s.h1}>Лента активности</h1>
-          <p style={s.sub}>Последние выполненные этапы от участников NEWSY</p>
+          <p style={s.sub}>Последние выполненные этапы от участников ЧИ</p>
         </header>
 
         {items.length === 0 ? (

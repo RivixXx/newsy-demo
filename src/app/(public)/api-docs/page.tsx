@@ -15,7 +15,7 @@ export default function ApiDocsPage() {
         <Code size={32} color="#FF385C" />
         <div>
           <h1>API Documentation</h1>
-          <p>Публичное API NEWSY для интеграций</p>
+          <p>Публичное API ЧИ для интеграций</p>
         </div>
       </header>
 

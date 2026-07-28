@@ -4,7 +4,7 @@ import { PageShell } from '@/shared/components/page-shell';
 
 export const metadata: Metadata = {
   title: 'Поиск челленджей',
-  description: 'Найди интересный челлендж по названию, бренду или теме на платформе NEWSY.',
+  description: 'Найди интересный челлендж по названию, бренду или теме на платформе ЧИ.',
   robots: { index: false },
 };
 

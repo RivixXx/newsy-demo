@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, MapPin } from 'lucide-react';
 import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
@@ -12,6 +12,7 @@ import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
 import { useFavorites } from '@/shared/hooks/use-favorites';
+import { MapTooltip } from '@/shared/components/map-tooltip';
 
 const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
 
@@ -44,6 +45,8 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
     maxParticipants: c.maxParticipants,
     endDate: c.endDate,
     location: c.location,
+    latitude: c.latitude,
+    longitude: c.longitude,
     achievement: c.achievement,
     reward: c.reward,
     description: c.description,
@@ -113,6 +116,13 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
           <div className="card-tags">
             <span className="card-tag achievement" title="Достижение за выполнение">🏆 {challenge.achievement}</span>
             <span className="card-tag reward" title="Награда за выполнение">🎁 {challenge.reward}</span>
+          </div>
+          <div className="card-location">
+            <MapTooltip
+              address={challenge.location}
+              latitude={challenge.latitude}
+              longitude={challenge.longitude}
+            />
           </div>
           <div className="card-footer">
             <span className="card-slots">
@@ -233,6 +243,11 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
         }
         .card-tag.achievement { background: #fef3c7; color: #92400e; }
         .card-tag.reward { background: #dcfce7; color: #166534; }
+        .card-location {
+          display: flex; align-items: center;
+          min-height: 20px;
+          margin: 0;
+        }
         .card-footer {
           display: flex; justify-content: space-between;
           align-items: center; padding-top: 10px;

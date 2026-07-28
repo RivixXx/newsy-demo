@@ -17,7 +17,7 @@ export function LoginForm({ action }: LoginFormProps) {
       <div style={styles.card}>
         <div style={styles.header}>
           <h1 style={styles.title}>С возвращением!</h1>
-          <p style={styles.subtitle}>Войдите в NEWSY, чтобы продолжить свои челенджи</p>
+          <p style={styles.subtitle}>Войдите в ЧИ, чтобы продолжить свои челенджи</p>
         </div>
 
         <form action={formAction} style={styles.form}>
@@ -26,7 +26,7 @@ export function LoginForm({ action }: LoginFormProps) {
             <input 
               name="identifier" 
               type="text" 
-              placeholder="demo@newsy.ru" 
+              placeholder="demo@chi.ru"
               style={styles.input} 
               required 
             />

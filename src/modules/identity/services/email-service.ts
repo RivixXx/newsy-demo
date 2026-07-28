@@ -42,18 +42,18 @@ export function createEmailService(): EmailService {
   return {
     async sendVerificationEmail(to, token, baseUrl) {
       const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
-      await send(to, 'Подтвердите email — NEWSY', `
-        <h2>Добро пожаловать в NEWSY!</h2>
+      await send(to, 'Подтвердите email — ЧИ', `
+        <h2>Добро пожаловать в ЧИ!</h2>
         <p>Для завершения регистрации подтвердите ваш email:</p>
         <a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#FF385C;color:white;text-decoration:none;border-radius:8px;font-weight:700;">Подтвердить email</a>
-        <p style="margin-top:16px;color:#666;">Если вы не регистрировались на NEWSY, просто проигнорируйте это письмо.</p>
+        <p style="margin-top:16px;color:#666;">Если вы не регистрировались на ЧИ, просто проигнорируйте это письмо.</p>
         <p style="color:#999;font-size:12px;">Ссылка действительна 24 часа.</p>
       `);
     },
 
     async sendPasswordResetEmail(to, token, baseUrl) {
       const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-      await send(to, 'Сброс пароля — NEWSY', `
+      await send(to, 'Сброс пароля — ЧИ', `
         <h2>Сброс пароля</h2>
         <p>Вы запросили сброс пароля. Перейдите по ссылке:</p>
         <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#FF385C;color:white;text-decoration:none;border-radius:8px;font-weight:700;">Сбросить пароль</a>

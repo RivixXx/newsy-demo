@@ -9,6 +9,7 @@ import {
   ChevronLeft, Check, UserCircle, Trophy, Zap,
 } from 'lucide-react';
 import { loginAction, registerAction, type AuthActionState } from '@/modules/identity/actions';
+import { TwoFactorVerify } from './two-factor-verify';
 
 /* ─────────────────────────── types ─────────────────────────────── */
 
@@ -55,7 +56,7 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
         <div className="auth-brand">
           <Link href="/welcome" className="brand-link">
             <img src="/icon.png" alt="" className="brand-logo" />
-            <span className="brand-name">NEWSY</span>
+            <span className="brand-name">ЧИ</span>
           </Link>
           <h2 className="brand-headline">Соревнуйся.<br/>Побеждай.<br/>Получай награды.</h2>
           <p className="brand-desc">
@@ -107,6 +108,20 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
 function LoginForm({ action }: { action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState> }) {
   const [state, formAction, isPending] = useActionState(action, {});
   const [showPass, setShowPass] = useState(false);
+  const [show2fa, setShow2fa] = useState(false);
+
+  // When loginAction returns twoFactorToken, show 2FA verification
+  if (state.twoFactorToken === 'required' || show2fa) {
+    return (
+      <TwoFactorVerify
+        onBack={() => {
+          setShow2fa(false);
+          // Clear the 2FA flag by resetting state — a full page navigation would also work
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="form-wrap">
@@ -116,7 +131,7 @@ function LoginForm({ action }: { action: (state: AuthActionState, formData: Form
       </div>
 
       <form action={formAction} className="auth-form">
-        <Field icon={<Mail size={18} />} name="identifier" placeholder="demo@newsy.ru" label="Email или Телефон" />
+        <Field icon={<Mail size={18} />} name="identifier" placeholder="demo@chi.ru" label="Email или Телефон" />
         <Field
           icon={<Lock size={18} />} name="password" placeholder="••••••••" label="Пароль"
           type={showPass ? 'text' : 'password'}
@@ -239,7 +254,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
               <Field icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
               <Field icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
             </div>
-            <Field icon={<Mail size={18} />} name="email" placeholder="demo@newsy.ru" label="Email" type="email" />
+            <Field icon={<Mail size={18} />} name="email" placeholder="demo@chi.ru" label="Email" type="email" />
             <div className="field-row">
               <div className="field-group">
                 <label className="field-label">Пол</label>

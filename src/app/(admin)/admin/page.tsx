@@ -136,7 +136,7 @@ export default function AdminPage() {
           <header className="admin-header">
             <div>
               <h1><Shield size={24} /> Админ-панель</h1>
-              <p>Управление платформой NEWSY</p>
+              <p>Управление платформой ЧИ</p>
             </div>
           </header>
           <PageSpinner text="Загружаем данные..." />
@@ -152,7 +152,7 @@ export default function AdminPage() {
           <header className="admin-header">
             <div>
               <h1><Shield size={24} /> Админ-панель</h1>
-              <p>Управление платформой NEWSY</p>
+              <p>Управление платформой ЧИ</p>
             </div>
           </header>
           <div className="admin-denied">
@@ -172,7 +172,7 @@ export default function AdminPage() {
         <header className="admin-header">
           <div>
             <h1><Shield size={24} /> Админ-панель</h1>
-            <p>Управление платформой NEWSY</p>
+            <p>Управление платформой ЧИ</p>
           </div>
         </header>
 

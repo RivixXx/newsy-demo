@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, ArrowLeft, Trophy, Clock, Gift, Flag } from 'lucide-react';
+import { Users, ArrowLeft, Trophy, Clock, Gift, Flag, MapPin } from 'lucide-react';
 import { ShareButtons } from '@/shared/components/share-buttons';
+import { MapTooltip } from '@/shared/components/map-tooltip';
 import styles from './challenge-detail.module.css';
 
 
@@ -123,6 +124,18 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
               темпе, подходящем для всех уровней подготовки.
             </p>
 
+            <div className={styles.locationBlock}>
+              <MapPin size={18} className={styles.locationIcon} />
+              <div className={styles.locationInfo}>
+                <span className={styles.locationLabel}>Место проведения</span>
+                <MapTooltip
+                  address="Парк Горького, Москва"
+                  latitude={55.7255}
+                  longitude={37.5882}
+                />
+              </div>
+            </div>
+
             <div className={styles.rulesBlock}>
               <h3>
                 <Trophy size={18} /> Что вы получите
@@ -135,7 +148,7 @@ export default function ChallengeDetailContent({ challengeId }: { challengeId: s
               </p>
             </div>
 
-            <ShareButtons challengeId={challengeId} title="Утренний забег на 5км — NEWSY" compact />
+            <ShareButtons challengeId={challengeId} title="Утренний забег на 5км — ЧИ" compact />
 
             <div className={styles.actionLinks}>
               <a

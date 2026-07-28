@@ -41,7 +41,7 @@ export function AnnouncementPopup() {
       .then(r => r.json())
       .then(d => setConfig(d))
       .catch(() => setConfig({
-        enabled: true, badge: 'НОВИНКА', title: 'NEWSY', titleAccent: 'Челленджи',
+        enabled: true, badge: 'НОВИНКА', title: 'ЧИ', titleAccent: '',
         subtitle: 'Интерактивные челленджи для бизнеса и блогеров.',
         discount: '', discountLabel: '', promoCode: '', description: '',
         ctaText: 'Смотреть', ctaUrl: '/', address: '', phone: '', workHours: '',

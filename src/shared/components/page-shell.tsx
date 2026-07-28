@@ -6,7 +6,7 @@ import { SiteFooter } from './site-footer';
 
 type PageShellProps = {
   children: ReactNode;
-  variant?: 'compact' | 'public';
+  variant?: 'compact' | 'public' | 'landing';
 };
 
 export function PageShell({ children, variant = 'compact' }: PageShellProps) {

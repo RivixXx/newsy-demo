@@ -36,8 +36,8 @@ export function SiteFooter() {
         <div className="footer-top">
           <div className="footer-brand">
             <Link href="/" className="footer-logo">
-              <img src="/icon.png" alt="NEWSY" className="footer-logo-img" />
-              <span className="footer-logo-text">NEWSY</span>
+              <img src="/icon.svg" alt="ЧИ" className="footer-logo-img" />
+              <span className="footer-logo-text">ЧИ</span>
             </Link>
             <p className="footer-tagline">
               Платформа интерактивных челенджей.
@@ -108,7 +108,7 @@ export function SiteFooter() {
 
         {/* Bottom */}
         <div className="footer-bottom">
-          <span className="footer-copy">&copy; 2026 NEWSY. Все права защищены.</span>
+          <span className="footer-copy">&copy; 2026 ЧИ. Все права защищены.</span>
           <span className="footer-made">Сделано с <Heart size={12} fill="#FF385C" color="#FF385C" /> в России</span>
         </div>
       </div>
