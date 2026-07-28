@@ -23,6 +23,20 @@ export async function POST(
       return NextResponse.json({ error: 'Челлендж недоступен для участия' }, { status: 400 });
     }
 
+    // Проверка срока регистрации
+    if (challenge.startDate) {
+      const now = new Date();
+      const deadline = new Date(challenge.startDate);
+      // Если есть startTime — комбинируем
+      if (challenge.startTime) {
+        const [h, m] = challenge.startTime.split(':').map(Number);
+        if (!isNaN(h)) deadline.setHours(h, m || 0, 0, 0);
+      }
+      if (now >= deadline) {
+        return NextResponse.json({ error: 'Регистрация на этот челлендж закрыта' }, { status: 400 });
+      }
+    }
+
     const existing = await prisma.userProgress.findUnique({
       where: { userId_challengeId: { userId: session.user.id, challengeId: id } },
     });

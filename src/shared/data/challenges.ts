@@ -16,6 +16,8 @@ export interface CatalogChallenge {
   latitude?: number;
   longitude?: number;
   endDate: string;
+  startDate?: string | null;
+  startTime?: string | null;
   description: string;
   requirements: string;
   refundPolicy: string;
@@ -236,6 +238,15 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
   },
 ];
 
+function combineDateAndTime(date: Date, time?: string | null): Date {
+  const d = new Date(date);
+  if (time) {
+    const [h, m] = time.split(':').map(Number);
+    if (!isNaN(h)) d.setHours(h, m || 0, 0, 0);
+  }
+  return d;
+}
+
 export function getChallengeById(id: string): CatalogChallenge | undefined {
   return MOCK_CHALLENGES.find(c => c.id === id);
 }
@@ -289,6 +300,8 @@ export async function getChallengeFromDb(id: string): Promise<CatalogChallenge |
       latitude: challenge.latitude ?? undefined,
       longitude: challenge.longitude ?? undefined,
       endDate: challenge.endDate ? new Date(challenge.endDate).toLocaleDateString('ru-RU') : 'Бессрочно',
+      startDate: challenge.startDate ? combineDateAndTime(challenge.startDate, challenge.startTime).toISOString() : null,
+      startTime: challenge.startTime ?? null,
       description: challenge.description || '',
       requirements: '',
       refundPolicy: '',

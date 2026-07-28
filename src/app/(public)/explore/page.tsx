@@ -7,6 +7,7 @@ import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
+import { CountdownTimer } from '@/shared/components/countdown-timer';
 import { useRegion } from '@/shared/components/region-provider';
 import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { type CatalogChallenge } from '@/shared/data/challenges';
@@ -44,6 +45,7 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
     participantsCount: c.participantsCount,
     maxParticipants: c.maxParticipants,
     endDate: c.endDate,
+    startDate: c.startDate,
     location: c.location,
     latitude: c.latitude,
     longitude: c.longitude,
@@ -125,6 +127,12 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
             />
           </div>
           <div className="card-footer">
+            {/* Compact countdown before start */}
+            {challenge.startDate && new Date(challenge.startDate) > new Date() && (
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <CountdownTimer targetDate={challenge.startDate} compact />
+              </div>
+            )}
             <span className="card-slots">
               <span className={availableSlots <= 5 ? 'few' : ''}>{availableSlots}</span> мест из {challenge.maxParticipants}
             </span>
@@ -249,10 +257,11 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
           margin: 0;
         }
         .card-footer {
-          display: flex; justify-content: space-between;
+          display: flex; flex-wrap: wrap; justify-content: space-between;
           align-items: center; padding-top: 10px;
           border-top: 1px solid rgba(0,0,0,0.06);
           font-size: 12px; color: #888;
+          gap: 6px;
         }
         .card-slots { font-weight: 700; }
         .card-slots .few { color: #ef4444; }

@@ -9,6 +9,7 @@ import {
 import { Spinner } from '@/shared/components/spinner';
 import { ShareButtons } from '@/shared/components/share-buttons';
 import { MapTooltip } from '@/shared/components/map-tooltip';
+import { CountdownTimer } from '@/shared/components/countdown-timer';
 import { useSession } from '@/shared/components/session-provider';
 import { useToast } from '@/shared/components/toast';
 
@@ -33,6 +34,8 @@ export interface ModalChallenge {
   participantsCount: number;
   maxParticipants: number | null;
   endDate: string;
+  startDate?: string | null;
+  overallStatus?: 'registration' | 'active' | 'completed';
   location: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -64,6 +67,8 @@ export interface ChatMessage {
 export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [status, setStatus] = useState<ParticipationStatus>(challenge.isJoined ? 'active' : 'none');
   const [stages, setStages] = useState<ChallengeStage[]>(challenge.stages);
+  const [startDate, setStartDate] = useState<string | null>(challenge.startDate || null);
+  const [overallStatus, setOverallStatus] = useState<'registration' | 'active' | 'completed'>(challenge.overallStatus || 'active');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'chat' | 'gallery'>('info');
@@ -121,6 +126,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           setStages(d.stages);
           if (d.isJoined) setStatus('active');
         }
+        if (d.startDate) setStartDate(d.startDate);
+        if (d.overallStatus) setOverallStatus(d.overallStatus);
         setLoadingDetail(false);
       })
       .catch(() => setLoadingDetail(false));
@@ -156,6 +163,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
       .then(r => r.json())
       .then(d => {
         if (d.stages) setStages(d.stages);
+        if (d.startDate) setStartDate(d.startDate);
+        if (d.overallStatus) setOverallStatus(d.overallStatus);
       })
       .catch(() => {});
   };
@@ -284,7 +293,11 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const maxSlots = challenge.maxParticipants ?? Infinity;
   const availableSlots = maxSlots === Infinity ? null : Math.max(0, maxSlots - challenge.participantsCount);
 
+  const canJoin = status === 'none' && overallStatus === 'registration';
+  const registrationClosed = status === 'none' && overallStatus !== 'registration';
+
   const getButtonLabel = () => {
+    if (status === 'none' && registrationClosed) return 'Регистрация закрыта';
     if (status === 'none') return 'Участвовать';
     if (status === 'active') return 'В процессе';
     if (status === 'completed') return 'Завершён ✓';
@@ -295,6 +308,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
     if (status === 'active') return 'join-btn active';
     if (status === 'completed') return 'join-btn completed';
     if (status === 'failed') return 'join-btn failed';
+    if (registrationClosed) return 'join-btn closed';
     return 'join-btn';
   };
 
@@ -654,8 +668,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               </div>
               <button
                 className={getButtonClass()}
-                onClick={status === 'none' ? handleJoin : undefined}
-                disabled={status !== 'none'}
+                onClick={canJoin ? handleJoin : undefined}
+                disabled={!canJoin}
               >
                 {getButtonLabel()}
               </button>
@@ -689,6 +703,13 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                 </span>
               </div>
             </div>
+
+            {/* Countdown before start */}
+            {startDate && overallStatus === 'registration' && (
+              <div style={{ padding: '0 20px 12px' }}>
+                <CountdownTimer targetDate={startDate} />
+              </div>
+            )}
 
             <div className="modal-rewards-block">
               <div className="reward-card achievement">
@@ -1437,6 +1458,11 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
 
         .join-btn.active {
           background: linear-gradient(135deg, #f59e0b, #ef4444);
+          cursor: default;
+        }
+
+        .join-btn.closed {
+          background: #6b7280;
           cursor: default;
         }
 

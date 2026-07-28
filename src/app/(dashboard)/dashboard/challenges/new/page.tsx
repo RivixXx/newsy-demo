@@ -249,13 +249,14 @@ export default function NewChallengePage() {
                     </div>
                   </div>
                 )}
-                <div className="cc-field"><label>Дата и время</label>
+                <div className="cc-field"><label>Дата старта и регистрации</label>
                   <div className="cc-grid-2">
                     <div className="cc-ig"><span className="cc-ig-icon"><Calendar size={14} /></span><input type="date" value={data.startDate} onChange={e => update({ startDate: e.target.value })} /></div>
-                    <div className="cc-ig"><span className="cc-ig-icon"><Calendar size={14} /></span><input type="date" value={data.endDate} onChange={e => update({ endDate: e.target.value })} /></div>
                     <div className="cc-ig"><span className="cc-ig-icon"><Clock size={14} /></span><input type="time" value={data.startTime} onChange={e => update({ startTime: e.target.value })} /></div>
+                    <div className="cc-ig"><span className="cc-ig-icon"><Calendar size={14} /></span><input type="date" value={data.endDate} onChange={e => update({ endDate: e.target.value })} /></div>
                     <div className="cc-ig"><span className="cc-ig-icon"><Clock size={14} /></span><input type="time" value={data.endTime} onChange={e => update({ endTime: e.target.value })} /></div>
                   </div>
+                  <span className="cc-field-hint">В эту дату регистрация и оплата закрываются, этапы открываются</span>
                 </div>
                 <div className="cc-grid-2">
                   <div className="cc-field"><label>Макс. участников</label><div className="cc-ig"><span className="cc-ig-icon"><Users size={14} /></span><input type="number" value={data.maxParticipants} onChange={e => update({ maxParticipants: parseInt(e.target.value) || 0 })} /></div></div>
@@ -723,6 +724,7 @@ const css = `
   .cc-input--lg { font-size: 18px; font-weight: 700; padding: 14px 18px; background: white; }
   .cc-textarea { resize: vertical; font-family: inherit; min-height: 60px; }
   .cc-counter { font-size: 11px; color: #aaa; text-align: right; }
+  .cc-field-hint { font-size: 11px; color: #9ca3af; font-style: italic; margin-top: 2px; }
   .cc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .cc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .cc-ig { display: flex; align-items: center; gap: 0; border: 1.5px solid #e5e7eb; border-radius: 12px; background: #f9fafb; overflow: hidden; transition: all 0.2s; }
