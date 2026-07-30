@@ -3,6 +3,15 @@ import { prisma } from '@/lib/db';
 
 export const revalidate = 60;
 
+function combineDateAndTime(date: Date, time?: string | null): Date {
+  const d = new Date(date);
+  if (time) {
+    const [h, m] = time.split(':').map(Number);
+    if (!isNaN(h)) d.setHours(h, m || 0, 0, 0);
+  }
+  return d;
+}
+
 export async function GET() {
   try {
     const challenges = await prisma.challenge.findMany({
@@ -58,8 +67,9 @@ export async function GET() {
           ? new Date(c.endDate).toLocaleDateString('ru-RU')
           : 'Бессрочно',
         startDate: c.startDate
-          ? new Date(c.startDate).toLocaleDateString('ru-RU')
+          ? combineDateAndTime(c.startDate, c.startTime).toISOString()
           : null,
+        startTime: c.startTime ?? null,
         description: c.description ?? '',
         entryFee: c.entryFee,
         isDemo: false,

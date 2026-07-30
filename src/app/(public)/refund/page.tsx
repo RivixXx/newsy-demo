@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Политика возврата — NEWSY',
-  description: 'Условия возврата платежей и оплаты на платформе NEWSY.',
+  title: 'Политика возврата — ЧИ',
+  description: 'Условия возврата платежей и оплаты на платформе ЧИ.',
 };
 
 export default function RefundPage() {

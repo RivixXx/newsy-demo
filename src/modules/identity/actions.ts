@@ -3,10 +3,10 @@
 import { redirect } from 'next/navigation';
 
 import { prisma } from '@/lib/db';
-import { clearAuthSession, setAuthSession } from '@/lib/session';
+import { clearAuthSession, createTemp2faToken, setAuthSession, setTemp2faCookie } from '@/lib/session';
 import { rateLimit } from '@/lib/rate-limit';
 
-import { createAuthService } from './services';
+import { createAuthService, TwoFactorRequiredError } from './services';
 import { hashPassword } from './services/password-hash';
 import { loginCredentialsSchema } from './validators';
 import { createEmailService, generateVerificationToken, TOKEN_EXPIRY_MS } from './services/email-service';
@@ -20,6 +20,7 @@ function isRedirect(err: unknown): boolean {
 export interface AuthActionState {
   error?: string | null;
   success?: string | null;
+  twoFactorToken?: string;
 }
 
 function readFormValue(formData: FormData, key: string): string {
@@ -53,6 +54,14 @@ export async function loginAction(
     redirect('/explore');
   } catch (error) {
     if (isRedirect(error)) throw error;
+
+    // Handle 2FA requirement
+    if (error instanceof TwoFactorRequiredError) {
+      const token = createTemp2faToken(error.userId);
+      await setTemp2faCookie(token);
+      return { twoFactorToken: 'required' };
+    }
+
     return { error: error instanceof Error ? error.message : 'Не удалось выполнить вход.' };
   }
 }

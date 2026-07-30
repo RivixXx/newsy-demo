@@ -17,7 +17,7 @@ export function RegisterForm({ action }: RegisterFormProps) {
       <div style={styles.card}>
         <div style={styles.header}>
           <h1 style={styles.title}>Создать аккаунт</h1>
-          <p style={styles.subtitle}>Зарегистрируйтесь в NEWSY, чтобы участвовать в челленджах</p>
+          <p style={styles.subtitle}>Зарегистрируйтесь в ЧИ, чтобы участвовать в челленджах</p>
         </div>
 
         <form action={formAction} style={styles.form}>
@@ -49,7 +49,7 @@ export function RegisterForm({ action }: RegisterFormProps) {
             <input
               name="email"
               type="email"
-              placeholder="demo@newsy.ru"
+              placeholder="demo@chi.ru"
               style={styles.input}
               required
             />

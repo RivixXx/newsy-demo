@@ -55,11 +55,67 @@ export async function POST(
 
     // Validate submission against step config
     const config = (step.config as Record<string, unknown>) || {};
-    if (config.minTextLength && typeof submission === 'string') {
-      if (submission.trim().length < (config.minTextLength as number)) {
-        return NextResponse.json({ error: `Минимальная длина текста — ${config.minTextLength} символов` }, { status: 400 });
+    const questionType = config.questionType as string | undefined;
+
+    // Validation by question sub-type
+    if (questionType === 'text' || (!questionType && config.minTextLength)) {
+      if (typeof submission !== 'string') {
+        return NextResponse.json({ error: 'Текстовый ответ обязателен' }, { status: 400 });
+      }
+      if (config.minLength != null && submission.trim().length < (config.minLength as number)) {
+        return NextResponse.json({ error: `Минимальная длина текста — ${config.minLength} символов` }, { status: 400 });
+      }
+      if (config.maxLength != null && submission.trim().length > (config.maxLength as number)) {
+        return NextResponse.json({ error: `Максимальная длина текста — ${config.maxLength} символов` }, { status: 400 });
+      }
+    } else if (questionType === 'rating') {
+      const val = typeof submission === 'number' ? submission : Number(submission);
+      if (isNaN(val)) {
+        return NextResponse.json({ error: 'Оценка должна быть числом' }, { status: 400 });
+      }
+      const min = (config.ratingMin as number) ?? 1;
+      const max = (config.ratingMax as number) ?? 5;
+      if (val < min || val > max) {
+        return NextResponse.json({ error: `Оценка должна быть от ${min} до ${max}` }, { status: 400 });
+      }
+    } else if (questionType === 'yesno') {
+      const validAnswers = ['0', '1', 0, 1, 'yes', 'no', 'Да', 'Нет'];
+      if (!validAnswers.includes(submission)) {
+        return NextResponse.json({ error: 'Ответ должен быть Да или Нет' }, { status: 400 });
+      }
+      if (config.correctIndex != null) {
+        const expected = config.correctIndex === 0 ? '0' : '1';
+        const submitted = ['0', 0, 'yes', 'Да'].includes(submission) ? '0' : '1';
+        if (submitted !== expected) {
+          return NextResponse.json({ error: 'Неверный ответ' }, { status: 400 });
+        }
+      }
+    } else if (questionType === 'multiple') {
+      if (!Array.isArray(submission)) {
+        return NextResponse.json({ error: 'Необходимо выбрать варианты ответа' }, { status: 400 });
+      }
+      const correctIndices = config.correctIndices as number[] | undefined;
+      if (correctIndices && correctIndices.length > 0) {
+        const submitted = (submission as number[]).sort();
+        const expected = [...correctIndices].sort();
+        if (JSON.stringify(submitted) !== JSON.stringify(expected)) {
+          return NextResponse.json({ error: 'Выбраны не все правильные варианты' }, { status: 400 });
+        }
+      }
+    } else if (questionType === 'single' || !questionType) {
+      // single choice (default) — validate option was selected
+      if (submission == null || submission === '') {
+        return NextResponse.json({ error: 'Выберите один из вариантов ответа' }, { status: 400 });
+      }
+      if (config.correctIndex != null) {
+        const submitted = typeof submission === 'string' ? parseInt(submission) : submission;
+        if (submitted !== config.correctIndex) {
+          return NextResponse.json({ error: 'Неверный ответ' }, { status: 400 });
+        }
       }
     }
+
+    // Keep legacy validation for non-question types
     if (config.requirePhoto && (!submission || (typeof submission === 'string' && !submission.trim()))) {
       return NextResponse.json({ error: 'Фото обязательно для этого этапа' }, { status: 400 });
     }
@@ -70,9 +126,6 @@ export async function POST(
       if ((submission as any).accuracy > (config.maxGeoAccuracy as number)) {
         return NextResponse.json({ error: `Точность геолокации должна быть не хуже ${config.maxGeoAccuracy} м` }, { status: 400 });
       }
-    }
-    if (config.requireOption && (!submission || (typeof submission === 'string' && !submission.trim()))) {
-      return NextResponse.json({ error: 'Выберите один из вариантов ответа' }, { status: 400 });
     }
 
     await prisma.stepProgress.upsert({

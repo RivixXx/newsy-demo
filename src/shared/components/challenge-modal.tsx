@@ -2,12 +2,14 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  X, MapPin, Users, Calendar, Clock, Upload, Camera,
+  X, Users, Calendar, Clock, Upload, Camera,
   Navigation, MessageSquare, Send, Trophy, Gift, ChevronDown,
   AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import { Spinner } from '@/shared/components/spinner';
 import { ShareButtons } from '@/shared/components/share-buttons';
+import { MapTooltip } from '@/shared/components/map-tooltip';
+import { CountdownTimer } from '@/shared/components/countdown-timer';
 import { useSession } from '@/shared/components/session-provider';
 import { useToast } from '@/shared/components/toast';
 
@@ -32,6 +34,8 @@ export interface ModalChallenge {
   participantsCount: number;
   maxParticipants: number | null;
   endDate: string;
+  startDate?: string | null;
+  overallStatus?: 'registration' | 'active' | 'completed';
   location: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -63,15 +67,17 @@ export interface ChatMessage {
 export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const [status, setStatus] = useState<ParticipationStatus>(challenge.isJoined ? 'active' : 'none');
   const [stages, setStages] = useState<ChallengeStage[]>(challenge.stages);
+  const [startDate, setStartDate] = useState<string | null>(challenge.startDate || null);
+  const [overallStatus, setOverallStatus] = useState<'registration' | 'active' | 'completed'>(challenge.overallStatus || 'active');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'chat' | 'gallery'>('info');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [stageInputs, setStageInputs] = useState<Record<string, string>>({});
+  const [questionInputs, setQuestionInputs] = useState<Record<string, any>>({});
   const [loadingChat, setLoadingChat] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(true);
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>(challenge.galleryPhotos || []);
-  const [showMap, setShowMap] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const { toast } = useToast();
@@ -120,6 +126,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           setStages(d.stages);
           if (d.isJoined) setStatus('active');
         }
+        if (d.startDate) setStartDate(d.startDate);
+        if (d.overallStatus) setOverallStatus(d.overallStatus);
         setLoadingDetail(false);
       })
       .catch(() => setLoadingDetail(false));
@@ -155,6 +163,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
       .then(r => r.json())
       .then(d => {
         if (d.stages) setStages(d.stages);
+        if (d.startDate) setStartDate(d.startDate);
+        if (d.overallStatus) setOverallStatus(d.overallStatus);
       })
       .catch(() => {});
   };
@@ -174,34 +184,74 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const handleCompleteStage = async (stageId: string) => {
     const stage = stages.find(s => s.id === stageId);
     const cfg = stage?.config as Record<string, unknown> || {};
+    const qt = cfg.questionType as string | undefined;
 
-    // Client-side validation
-    if (cfg.minTextLength && (!stageInputs[stageId] || stageInputs[stageId].trim().length < (cfg.minTextLength as number))) {
-      toast('warning', `Минимальная длина текста — ${cfg.minTextLength} символов`);
-      return;
-    }
-    if (cfg.requirePhoto && stage?.type === 'ФОТО' && !stageInputs[stageId]) {
-      toast('warning', 'Загрузите фото для этого этапа');
-      return;
-    }
-    if (cfg.requireGeo && stage?.type === 'ГЕО' && !stageInputs[stageId]) {
-      toast('warning', 'Подтвердите геолокацию для этого этапа');
-      return;
-    }
-    if (cfg.requireOption && stage?.type === 'ВОПРОС' && !stageInputs[stageId]) {
-      toast('warning', 'Выберите один из вариантов ответа');
-      return;
-    }
-    if (stage?.type === 'ДЕЙСТВИЕ' && !stageInputs[stageId]?.trim()) {
-      toast('warning', 'Заполните поле перед подтверждением');
-      return;
+    // Determine submission based on stage type
+    let submission: any = stageInputs[stageId] || null;
+
+    // Build question submission
+    if (stage?.type === 'ВОПРОС' || stage?.type === 'ОПРОС') {
+      if (qt === 'text') {
+        submission = stageInputs[stageId] || '';
+        if (cfg.maxLength && submission.length > (cfg.maxLength as number)) {
+          toast('warning', `Максимальная длина текста — ${cfg.maxLength} символов`);
+          return;
+        }
+        if (cfg.minLength && submission.trim().length < (cfg.minLength as number)) {
+          toast('warning', `Минимальная длина текста — ${cfg.minLength} символов`);
+          return;
+        }
+      } else if (qt === 'multiple') {
+        submission = questionInputs[stageId] || [];
+        if (!Array.isArray(submission) || submission.length === 0) {
+          toast('warning', 'Выберите хотя бы один вариант');
+          return;
+        }
+      } else if (qt === 'rating') {
+        submission = questionInputs[stageId];
+        if (submission == null) {
+          toast('warning', 'Поставьте оценку');
+          return;
+        }
+      } else if (qt === 'yesno') {
+        submission = questionInputs[stageId];
+        if (submission == null) {
+          toast('warning', 'Выберите Да или Нет');
+          return;
+        }
+      } else {
+        // single or default
+        submission = questionInputs[stageId];
+        if (submission == null) {
+          toast('warning', 'Выберите один из вариантов ответа');
+          return;
+        }
+      }
+    } else {
+      // Non-question types
+      if (cfg.requirePhoto && stage?.type === 'ФОТО' && !stageInputs[stageId]) {
+        toast('warning', 'Загрузите фото для этого этапа');
+        return;
+      }
+      if (cfg.requireGeo && stage?.type === 'ГЕО' && !stageInputs[stageId]) {
+        toast('warning', 'Подтвердите геолокацию для этого этапа');
+        return;
+      }
+      if (cfg.requireOption && !stageInputs[stageId]) {
+        toast('warning', 'Выберите один из вариантов ответа');
+        return;
+      }
+      if (stage?.type === 'ДЕЙСТВИЕ' && !stageInputs[stageId]?.trim()) {
+        toast('warning', 'Заполните поле перед подтверждением');
+        return;
+      }
     }
 
     try {
       const res = await fetch(`/api/challenges/${challenge.id}/complete-step`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stepId: stageId, submission: stageInputs[stageId] || null }),
+        body: JSON.stringify({ stepId: stageId, submission }),
       });
       const data = await res.json();
       if (!res.ok) { toast('error', data.error || 'Ошибка'); return; }
@@ -243,7 +293,11 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   const maxSlots = challenge.maxParticipants ?? Infinity;
   const availableSlots = maxSlots === Infinity ? null : Math.max(0, maxSlots - challenge.participantsCount);
 
+  const canJoin = status === 'none' && overallStatus === 'registration';
+  const registrationClosed = status === 'none' && overallStatus !== 'registration';
+
   const getButtonLabel = () => {
+    if (status === 'none' && registrationClosed) return 'Регистрация закрыта';
     if (status === 'none') return 'Участвовать';
     if (status === 'active') return 'В процессе';
     if (status === 'completed') return 'Завершён ✓';
@@ -254,6 +308,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
     if (status === 'active') return 'join-btn active';
     if (status === 'completed') return 'join-btn completed';
     if (status === 'failed') return 'join-btn failed';
+    if (registrationClosed) return 'join-btn closed';
     return 'join-btn';
   };
 
@@ -373,7 +428,14 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                         <p>{stage.description}</p>
                         {stage.config && (
                           <div className="stage-verify-hints">
-                            {'minTextLength' in stage.config && stage.config.minTextLength ? <span className="verify-hint">Минимум {String(stage.config.minTextLength)} символов</span> : null}
+                            {/* Question type hints */}
+                            {stage.config.questionType === 'text' && <span className="verify-hint">✏️ Текстовый ответ{stage.config.maxLength ? ` (до ${String(stage.config.maxLength)} симв.)` : ''}{stage.config.minLength ? ` (мин. ${String(stage.config.minLength)} симв.)` : ''}</span>}
+                            {stage.config.questionType === 'single' && <span className="verify-hint">○ Один вариант из списка</span>}
+                            {stage.config.questionType === 'multiple' && <span className="verify-hint">☑ Можно выбрать несколько</span>}
+                            {stage.config.questionType === 'rating' && <span className="verify-hint">★ Оценка от {String(stage.config.ratingMin ?? 1)} до {String(stage.config.ratingMax ?? 5)}</span>}
+                            {stage.config.questionType === 'yesno' && <span className="verify-hint">👍 Да / Нет</span>}
+                            {/* Legacy hints */}
+                            {!stage.config.questionType && 'minTextLength' in stage.config && stage.config.minTextLength ? <span className="verify-hint">Минимум {String(stage.config.minTextLength)} символов</span> : null}
                             {'minPhotoWidth' in stage.config && stage.config.minPhotoWidth ? <span className="verify-hint">Фото: минимум {String(stage.config.minPhotoWidth)}×{String(stage.config.minPhotoHeight || 0)} px</span> : null}
                             {'requirePhoto' in stage.config && stage.config.requirePhoto && !('minPhotoWidth' in stage.config) ? <span className="verify-hint">Фото обязательно</span> : null}
                             {'maxGeoAccuracy' in stage.config && stage.config.maxGeoAccuracy ? <span className="verify-hint">Точность: не хуже {String(stage.config.maxGeoAccuracy)} м</span> : null}
@@ -410,6 +472,111 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                                   <CheckCircle2 size={15} /> Подтвердить выполнение
                                 </button>
                               </>
+                            )}
+                            {/* ВОПРОС / ОПРОС — UI вопроса */}
+                            {(stage.type === 'ВОПРОС' || stage.type === 'ОПРОС') && stage.config && (
+                              <div className="stage-question-wrap">
+                                {/* Single choice */}
+                                {(stage.config.questionType === 'single' || !stage.config.questionType) && Array.isArray(stage.config.options) && (
+                                  <div className="sq-options">
+                                    {(stage.config.options as string[]).map((opt, oi) => (
+                                      <button
+                                        key={oi}
+                                        className={`sq-option ${questionInputs[stage.id] === oi ? 'selected' : ''}`}
+                                        onClick={() => setQuestionInputs(prev => ({ ...prev, [stage.id]: oi }))}
+                                      >
+                                        <span className="sq-radio">{questionInputs[stage.id] === oi ? '●' : '○'}</span>
+                                        <span>{opt}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Multiple choice */}
+                                {stage.config.questionType === 'multiple' && Array.isArray(stage.config.options) && (
+                                  <div className="sq-options">
+                                    {(stage.config.options as string[]).map((opt, oi) => {
+                                      const selected = Array.isArray(questionInputs[stage.id]) && (questionInputs[stage.id] as number[]).includes(oi);
+                                      return (
+                                        <button
+                                          key={oi}
+                                          className={`sq-option ${selected ? 'selected' : ''}`}
+                                          onClick={() => {
+                                            const current: number[] = Array.isArray(questionInputs[stage.id]) ? [...questionInputs[stage.id]] : [];
+                                            const idx = current.indexOf(oi);
+                                            const next = idx >= 0 ? current.filter(i => i !== oi) : [...current, oi];
+                                            setQuestionInputs(prev => ({ ...prev, [stage.id]: next }));
+                                          }}
+                                        >
+                                          <span className="sq-radio">{selected ? '☑' : '☐'}</span>
+                                          <span>{opt}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {/* Text answer */}
+                                {stage.config.questionType === 'text' && (
+                                  < div className="sq-text">
+                                    <textarea
+                                      className="stage-text-input"
+                                      placeholder="Введите ваш ответ..."
+                                      rows={3}
+                                      value={stageInputs[stage.id] || ''}
+                                      onChange={e => setStageInputs(prev => ({ ...prev, [stage.id]: e.target.value }))}
+                                    />
+                                    <div className="sq-char-counter">
+                                      {stageInputs[stage.id]?.length || 0}{stage.config.maxLength ? ` / ${stage.config.maxLength}` : ''} символов
+                                    </div>
+                                  </div>
+                                )}
+                                {/* Rating */}
+                                {stage.config.questionType === 'rating' && (() => {
+                                  const rMin = (stage.config!.ratingMin as number) ?? 1;
+                                  const rMax = (stage.config!.ratingMax as number) ?? 5;
+                                  const rMinLbl = stage.config!.ratingMinLabel as string | undefined;
+                                  const rMaxLbl = stage.config!.ratingMaxLabel as string | undefined;
+                                  return (
+                                    <div className="sq-rating">
+                                      {(rMinLbl || rMaxLbl) && (
+                                        <div className="sq-rating-labels">
+                                          <span>{rMinLbl || ''}</span>
+                                          <span>{rMaxLbl || ''}</span>
+                                        </div>
+                                      )}
+                                      <div className="sq-rating-btns">
+                                        {Array.from({ length: rMax - rMin + 1 }, (_, i) => rMin + i).map(val => (
+                                          <button
+                                            key={val}
+                                            className={`sq-rating-btn ${questionInputs[stage.id] === val ? 'selected' : ''}`}
+                                            onClick={() => setQuestionInputs(prev => ({ ...prev, [stage.id]: val }))}
+                                          >
+                                            {val}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                {/* Yes/No */}
+                                {stage.config.questionType === 'yesno' && (
+                                  <div className="sq-yesno">
+                                    <button
+                                      className={`sq-yesno-btn yes ${questionInputs[stage.id] === 0 || questionInputs[stage.id] === '0' || questionInputs[stage.id] === 'Да' ? 'selected' : ''}`}
+                                      onClick={() => setQuestionInputs(prev => ({ ...prev, [stage.id]: 0 }))}
+                                    >
+                                      <span className="sq-yesno-icon">👍</span>
+                                      <span>Да</span>
+                                    </button>
+                                    <button
+                                      className={`sq-yesno-btn no ${questionInputs[stage.id] === 1 || questionInputs[stage.id] === '1' || questionInputs[stage.id] === 'Нет' ? 'selected' : ''}`}
+                                      onClick={() => setQuestionInputs(prev => ({ ...prev, [stage.id]: 1 }))}
+                                    >
+                                      <span className="sq-yesno-icon">👎</span>
+                                      <span>Нет</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             )}
                             <button
                               className="stage-btn complete"
@@ -501,8 +668,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
               </div>
               <button
                 className={getButtonClass()}
-                onClick={status === 'none' ? handleJoin : undefined}
-                disabled={status !== 'none'}
+                onClick={canJoin ? handleJoin : undefined}
+                disabled={!canJoin}
               >
                 {getButtonLabel()}
               </button>
@@ -517,27 +684,12 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
             </div>
 
             <div className="modal-meta">
-              <div
-                className="meta-row meta-location"
-                onMouseEnter={() => challenge.latitude && setShowMap(true)}
-                onMouseLeave={() => setShowMap(false)}
-              >
-                <MapPin size={15} />
-                <span>{challenge.location}</span>
-                {showMap && challenge.latitude && challenge.longitude && (
-                  <div className="map-tooltip">
-                    <iframe
-                      width="280" height="180"
-                      style={{ border: 0, borderRadius: 10 }}
-                      loading="lazy"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${challenge.longitude - 0.01}%2C${challenge.latitude - 0.01}%2C${challenge.longitude + 0.01}%2C${challenge.latitude + 0.01}&layer=mapnik&marker=${challenge.latitude}%2C${challenge.longitude}`}
-                    />
-                    <div className="map-tooltip-address">
-                      <MapPin size={12} />
-                      {challenge.location}
-                    </div>
-                  </div>
-                )}
+              <div className="meta-row meta-location">
+                <MapTooltip
+                  address={challenge.location}
+                  latitude={challenge.latitude}
+                  longitude={challenge.longitude}
+                />
               </div>
               <div className="meta-row">
                 <Calendar size={15} />
@@ -551,6 +703,13 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
                 </span>
               </div>
             </div>
+
+            {/* Countdown before start */}
+            {startDate && overallStatus === 'registration' && (
+              <div style={{ padding: '0 20px 12px' }}>
+                <CountdownTimer targetDate={startDate} />
+              </div>
+            )}
 
             <div className="modal-rewards-block">
               <div className="reward-card achievement">
@@ -1030,6 +1189,139 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           color: #22c55e;
         }
 
+        /* QUESTION UI */
+        .stage-question-wrap {
+          width: 100%;
+          margin: 8px 0;
+        }
+        .sq-options {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .sq-option {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 14px;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 12px;
+          background: white;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 13px;
+          font-weight: 600;
+          color: #374151;
+          text-align: left;
+        }
+        .sq-option:hover {
+          border-color: #FF385C;
+          background: #fff5f7;
+        }
+        .sq-option.selected {
+          border-color: #FF385C;
+          background: #fef2f4;
+          color: #FF385C;
+        }
+        .sq-radio {
+          font-size: 16px;
+          width: 20px;
+          text-align: center;
+          flex-shrink: 0;
+        }
+        .sq-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 100%;
+        }
+        .sq-char-counter {
+          font-size: 11px;
+          color: #9ca3af;
+          text-align: right;
+        }
+        .sq-rating {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          align-items: center;
+        }
+        .sq-rating-labels {
+          display: flex;
+          justify-content: space-between;
+          width: 100%;
+          font-size: 11px;
+          color: #9ca3af;
+          font-weight: 600;
+        }
+        .sq-rating-btns {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .sq-rating-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 1.5px solid #e5e7eb;
+          background: white;
+          font-size: 16px;
+          font-weight: 800;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .sq-rating-btn:hover {
+          border-color: #FF385C;
+          color: #FF385C;
+          transform: scale(1.1);
+        }
+        .sq-rating-btn.selected {
+          border-color: #FF385C;
+          background: #FF385C;
+          color: white;
+          box-shadow: 0 4px 12px rgba(255,56,92,0.3);
+        }
+        .sq-yesno {
+          display: flex;
+          gap: 12px;
+          width: 100%;
+        }
+        .sq-yesno-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 16px;
+          border-radius: 14px;
+          border: 1.5px solid #e5e7eb;
+          background: white;
+          font-size: 16px;
+          font-weight: 800;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .sq-yesno-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .sq-yesno-btn.yes.selected {
+          border-color: #22c55e;
+          background: #f0fdf4;
+          color: #16a34a;
+        }
+        .sq-yesno-btn.no.selected {
+          border-color: #ef4444;
+          background: #fef2f2;
+          color: #dc2626;
+        }
+        .sq-yesno-icon {
+          font-size: 22px;
+        }
+
         /* CHAT */
         .chat-wrap {
           flex: 1;
@@ -1169,6 +1461,11 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           cursor: default;
         }
 
+        .join-btn.closed {
+          background: #6b7280;
+          cursor: default;
+        }
+
         .join-btn.completed {
           background: linear-gradient(135deg, #22c55e, #16a34a);
           cursor: default;
@@ -1209,6 +1506,8 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           .chat-input-row { padding: 10px 16px; }
           .modal-action-bar { padding: 12px 16px; flex-direction: column; gap: 10px; }
           .join-btn { width: 100%; text-align: center; }
+          .sq-rating-btn { width: 40px; height: 40px; font-size: 14px; }
+          .sq-yesno-btn { padding: 14px; font-size: 14px; }
         }
 
         @media (max-width: 480px) {
@@ -1224,6 +1523,10 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           .stage-body { padding: 10px 12px 12px; }
           .stage-actions { flex-direction: column; }
           .stage-btn { width: 100%; justify-content: center; }
+          .sq-yesno { flex-direction: column; gap: 8px; }
+          .sq-yesno-btn { padding: 14px; font-size: 15px; justify-content: center; }
+          .sq-rating-btn { width: 38px; height: 38px; font-size: 13px; }
+          .sq-option { padding: 12px 14px; font-size: 14px; min-height: 44px; }
         }
       `}</style>
     </>

@@ -7,7 +7,17 @@ const STEP_TYPES: Record<string, string> = {
   photo: 'ФОТО',
   geo: 'ГЕО',
   question: 'ВОПРОС',
+  survey: 'ОПРОС',
 };
+
+function combineDateAndTime(date: Date, time?: string | null): Date {
+  const d = new Date(date);
+  if (time) {
+    const [h, m] = time.split(':').map(Number);
+    if (!isNaN(h)) d.setHours(h, m || 0, 0, 0);
+  }
+  return d;
+}
 
 export async function GET(
   _req: NextRequest,
@@ -56,9 +66,14 @@ export async function GET(
     const stages = challenge.steps.map((step, idx) => {
       const stepProg = userProgress?.stepProgress.find((sp: any) => sp.stepId === step.id);
       let status: 'pending' | 'active' | 'completed' = 'pending';
+
+      // Если ЧИ ещё не началось — все этапы заблокированы
+      const now = new Date();
+      const hasStarted = !challenge.startDate || now >= combineDateAndTime(challenge.startDate, challenge.startTime);
+
       if (stepProg?.status === 'COMPLETED') {
         status = 'completed';
-      } else if (isJoined) {
+      } else if (isJoined && hasStarted) {
         const prevDone = idx === 0 || userProgress?.stepProgress.some(
           (sp: any) => sp.stepId === challenge.steps[idx - 1]?.id && sp.status === 'COMPLETED'
         );
@@ -86,6 +101,17 @@ export async function GET(
       }
     }
 
+    // Compute overall status
+    const now = new Date();
+    const startMoment = challenge.startDate ? combineDateAndTime(challenge.startDate, challenge.startTime) : null;
+    const endMoment = challenge.endDate ? new Date(challenge.endDate) : null;
+    let overallStatus: 'registration' | 'active' | 'completed' = 'active';
+    if (startMoment && now < startMoment) {
+      overallStatus = 'registration';
+    } else if (endMoment && now > endMoment) {
+      overallStatus = 'completed';
+    }
+
     return NextResponse.json({
       id: challenge.id,
       title: challenge.title,
@@ -95,6 +121,8 @@ export async function GET(
       participantsCount: challenge._count.participations,
       maxParticipants: challenge.maxParticipants ?? null,
       endDate: challenge.endDate ? new Date(challenge.endDate).toLocaleDateString('ru-RU') : 'Бессрочно',
+      startDate: startMoment ? startMoment.toISOString() : null,
+      overallStatus,
       location: challenge.address || 'Онлайн',
       latitude: challenge.latitude,
       longitude: challenge.longitude,

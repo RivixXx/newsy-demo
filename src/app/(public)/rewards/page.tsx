@@ -31,12 +31,12 @@ const REWARD_COLORS: Record<string, string> = {
 };
 
 const MOCK_REWARDS: Reward[] = [
-  { id: '1', name: 'Футболка NEWSY', description: 'Официальная футболка платформы. Размеры S-XL.', pointsCost: 500, category: 'merchandise', imageUrl: '', available: true },
+  { id: '1', name: 'Футболка ЧИ', description: 'Официальная футболка платформы. Размеры S-XL.', pointsCost: 500, category: 'merchandise', imageUrl: '', available: true },
   { id: '2', name: 'Скидка 20% на партнёров', description: 'Скидочный код на товары партнёров платформы.', pointsCost: 300, category: 'discount', imageUrl: '', available: true },
   { id: '3', name: 'Премиум на 1 месяц', description: 'Бесплатный доступ к Профи-тарифу.', pointsCost: 800, category: 'digital', imageUrl: '', available: true },
   { id: '4', name: 'Мастер-класс от эксперта', description: 'Персональный мастер-класс по выбору.', pointsCost: 1200, category: 'experience', imageUrl: '', available: true },
-  { id: '5', name: 'Стикерпак NEWSY', description: 'Набор стикеров для мессенджеров.', pointsCost: 100, category: 'digital', imageUrl: '', available: true },
-  { id: '6', name: 'Брендированный кейс', description: 'Чехол для телефона с логотипом NEWSY.', pointsCost: 600, category: 'merchandise', imageUrl: '', available: false },
+  { id: '5', name: 'Стикерпак ЧИ', description: 'Набор стикеров для мессенджеров.', pointsCost: 100, category: 'digital', imageUrl: '', available: true },
+  { id: '6', name: 'Брендированный кейс', description: 'Чехол для телефона с логотипом ЧИ.', pointsCost: 600, category: 'merchandise', imageUrl: '', available: false },
 ];
 
 export default function RewardsPage() {

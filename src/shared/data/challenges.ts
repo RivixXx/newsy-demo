@@ -13,7 +13,11 @@ export interface CatalogChallenge {
   reward: string;
   location: string;
   region?: string | null;
+  latitude?: number;
+  longitude?: number;
   endDate: string;
+  startDate?: string | null;
+  startTime?: string | null;
   description: string;
   requirements: string;
   refundPolicy: string;
@@ -27,7 +31,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 45, maxParticipants: 60, isJoined: false, badges: ['hot'], isRecommended: true,
     achievement: 'Стартап-пионер', reward: 'Бесплатный офис в Сколково на 1 мес.',
-    location: 'Москва', region: 'Москва', endDate: '25 июля 2026',
+    location: 'Москва', region: 'Москва', latitude: 55.6982, longitude: 37.3570, endDate: '25 июля 2026',
     description: 'Создай рабочий прототип продукта за 48 часов в команде. Менторы Сколково помогут на всех этапах.',
     requirements: 'Участники от 18 лет. Команда 2-5 человек. Наличие ноутбука.',
     refundPolicy: 'Возврат взноса при отмене за 72 часа до старта. После — средства не возвращаются.',
@@ -51,7 +55,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 150, maxParticipants: 200, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Железный кандидат', reward: 'Сертификат HR Academy',
-    location: 'Москва / Онлайн', region: 'Москва', endDate: '5 августа 2026',
+    location: 'Москва / Онлайн', region: 'Москва', latitude: 55.7558, longitude: 37.6176, endDate: '5 августа 2026',
     description: 'Пройди минимум 5 реальных собеседований в IT-компании за 7 дней и получи экспертную обратную связь.',
     requirements: 'Резюме на hh.ru. Опыт в IT от 6 месяцев.',
     refundPolicy: 'Возврат взноса при отмене за 48 часов. Дисквалификация при нечестном прохождении.',
@@ -183,7 +187,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 120, maxParticipants: 200, isJoined: false, badges: [], isRecommended: true,
     achievement: 'Утренний бегун', reward: 'Кроссовки Nike Air Max (на выбор)',
-    location: 'Парк Горького, Москва', region: 'Москва', endDate: '27 июля 2026',
+    location: 'Парк Горького, Москва', region: 'Москва', latitude: 55.7255, longitude: 37.5882, endDate: '27 июля 2026',
     description: 'Пробеги 5 км вместе с Nike Run Club. Старт в 7:00. Темп свободный.',
     requirements: 'Любой уровень подготовки. Спортивная одежда. Приложение Nike Run.',
     refundPolicy: 'Возврат при отмене за 3 дня. После — средства не возвращаются.',
@@ -205,7 +209,7 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 15, maxParticipants: 50, isJoined: false, badges: ['cooperative'], isRecommended: true,
     achievement: 'Покоритель Волги', reward: 'Экипировка Arena на ₽25 000',
-    location: 'Волгоград', region: 'Волгоград', endDate: '3 августа 2026',
+    location: 'Волгоград', region: 'Волгоград', latitude: 48.7080, longitude: 44.5133, endDate: '3 августа 2026',
     description: 'Групповой заплыв через Волгу. Сопровождение катером. Медицинский контроль.',
     requirements: 'Подтверждённое умение плавать на 2 км+. Медсправка.',
     refundPolicy: 'Возврат при отмене за 7 дней. Медотвод — полный возврат.',
@@ -227,12 +231,21 @@ export const MOCK_CHALLENGES: CatalogChallenge[] = [
     imageUrl: '/images/challenge-placeholder.svg',
     participantsCount: 15, maxParticipants: 30, isJoined: false, badges: [], isRecommended: false,
     achievement: 'Охотник за стикерами', reward: 'Сертификат ТЦ Триумф на ₽5 000',
-    location: 'ТЦ Триумф, Москва', region: 'Москва', endDate: '28 июля 2026',
+    location: 'ТЦ Триумф, Москва', region: 'Москва', latitude: 55.7626, longitude: 37.5926, endDate: '28 июля 2026',
     description: 'Собери 10 скрытых стикеров, спрятанных на территории ТЦ Триумф. Квест для всей семьи.',
     requirements: 'Смартфон. Любой возраст.',
     refundPolicy: 'Бесплатное участие.',
   },
 ];
+
+function combineDateAndTime(date: Date, time?: string | null): Date {
+  const d = new Date(date);
+  if (time) {
+    const [h, m] = time.split(':').map(Number);
+    if (!isNaN(h)) d.setHours(h, m || 0, 0, 0);
+  }
+  return d;
+}
 
 export function getChallengeById(id: string): CatalogChallenge | undefined {
   return MOCK_CHALLENGES.find(c => c.id === id);
@@ -284,7 +297,11 @@ export async function getChallengeFromDb(id: string): Promise<CatalogChallenge |
       reward: 'Награда',
       location: challenge.address || 'Онлайн',
       region: challenge.region || null,
+      latitude: challenge.latitude ?? undefined,
+      longitude: challenge.longitude ?? undefined,
       endDate: challenge.endDate ? new Date(challenge.endDate).toLocaleDateString('ru-RU') : 'Бессрочно',
+      startDate: challenge.startDate ? combineDateAndTime(challenge.startDate, challenge.startTime).toISOString() : null,
+      startTime: challenge.startTime ?? null,
       description: challenge.description || '',
       requirements: '',
       refundPolicy: '',

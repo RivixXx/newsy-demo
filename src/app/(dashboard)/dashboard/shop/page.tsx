@@ -37,12 +37,12 @@ async function getUserPoints(userId?: string): Promise<number> {
 
 // Mock prizes для демонстрации
 const MOCK_PRIZES: ShopPrize[] = [
-  { id: '1', name: 'Мерч NEWSY — футболка', description: 'Чёрная футболка с логотипом NEWSY', imageUrl: null, cost: 500, stock: 50 },
+  { id: '1', name: 'Мерч ЧИ — футболка', description: 'Чёрная футболка с логотипом ЧИ', imageUrl: null, cost: 500, stock: 50 },
   { id: '2', name: 'Скидка 20% на партнёров', description: 'Промокод на скидку у магазинов-партнёров', imageUrl: null, cost: 200, stock: 100 },
-  { id: '3', name: 'Стикерпак NEWSY', description: 'Набор из 10 стикеров для мессенджеров', imageUrl: null, cost: 100, stock: 200 },
+  { id: '3', name: 'Стикерпак ЧИ', description: 'Набор из 10 стикеров для мессенджеров', imageUrl: null, cost: 100, stock: 200 },
   { id: '4', name: 'Бейдж «Эксклюзив»', description: 'Эксклюзивный бейдж в профиле', imageUrl: null, cost: 300, stock: 999 },
-  { id: '5', name: 'Кружка NEWSY', description: 'Керамическая кружка с логотипом', imageUrl: null, cost: 400, stock: 30 },
-  { id: '6', name: 'Пропуск на мероприятие', description: 'Билет на офлайн-мероприятие NEWSY', imageUrl: null, cost: 1000, stock: 10 },
+  { id: '5', name: 'Кружка ЧИ', description: 'Керамическая кружка с логотипом', imageUrl: null, cost: 400, stock: 30 },
+  { id: '6', name: 'Пропуск на мероприятие', description: 'Билет на офлайн-мероприятие ЧИ', imageUrl: null, cost: 1000, stock: 10 },
 ];
 
 export default async function ShopPage() {

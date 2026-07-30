@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Финансы — NEWSY',
+  title: 'Финансы — ЧИ',
   description: 'Управление финансами и история транзакций.',
 };
 

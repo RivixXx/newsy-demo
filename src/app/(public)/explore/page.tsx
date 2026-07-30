@@ -2,16 +2,18 @@
 
 import React, { useRef, useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, MapPin } from 'lucide-react';
 import { IconRun, IconSchool, IconRoute, IconPalette, IconCpu, IconBolt } from '@tabler/icons-react';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
+import { CountdownTimer } from '@/shared/components/countdown-timer';
 import { useRegion } from '@/shared/components/region-provider';
 import { type ModalChallenge } from '@/shared/components/challenge-modal';
 import { type CatalogChallenge } from '@/shared/data/challenges';
 import { useChallenges } from '@/shared/hooks/use-challenges';
 import { useFavorites } from '@/shared/hooks/use-favorites';
+import { MapTooltip } from '@/shared/components/map-tooltip';
 
 const ChallengeModal = lazy(() => import('@/shared/components/challenge-modal').then(m => ({ default: m.ChallengeModal })));
 
@@ -43,7 +45,10 @@ function toModalChallenge(c: CatalogChallenge): ModalChallenge {
     participantsCount: c.participantsCount,
     maxParticipants: c.maxParticipants,
     endDate: c.endDate,
+    startDate: c.startDate,
     location: c.location,
+    latitude: c.latitude,
+    longitude: c.longitude,
     achievement: c.achievement,
     reward: c.reward,
     description: c.description,
@@ -114,7 +119,20 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
             <span className="card-tag achievement" title="Достижение за выполнение">🏆 {challenge.achievement}</span>
             <span className="card-tag reward" title="Награда за выполнение">🎁 {challenge.reward}</span>
           </div>
+          <div className="card-location">
+            <MapTooltip
+              address={challenge.location}
+              latitude={challenge.latitude}
+              longitude={challenge.longitude}
+            />
+          </div>
           <div className="card-footer">
+            {/* Compact countdown before start */}
+            {challenge.startDate && new Date(challenge.startDate) > new Date() && (
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <CountdownTimer targetDate={challenge.startDate} compact />
+              </div>
+            )}
             <span className="card-slots">
               <span className={availableSlots <= 5 ? 'few' : ''}>{availableSlots}</span> мест из {challenge.maxParticipants}
             </span>
@@ -233,11 +251,17 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
         }
         .card-tag.achievement { background: #fef3c7; color: #92400e; }
         .card-tag.reward { background: #dcfce7; color: #166534; }
+        .card-location {
+          display: flex; align-items: center;
+          min-height: 20px;
+          margin: 0;
+        }
         .card-footer {
-          display: flex; justify-content: space-between;
+          display: flex; flex-wrap: wrap; justify-content: space-between;
           align-items: center; padding-top: 10px;
           border-top: 1px solid rgba(0,0,0,0.06);
           font-size: 12px; color: #888;
+          gap: 6px;
         }
         .card-slots { font-weight: 700; }
         .card-slots .few { color: #ef4444; }

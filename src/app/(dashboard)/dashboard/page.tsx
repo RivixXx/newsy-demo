@@ -4,27 +4,75 @@ import type { CSSProperties } from 'react';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 import { PageShell } from '@/shared/components/page-shell';
+import { DashboardCharts } from './charts';
 
 async function getStats(userId?: string) {
   try {
     const challengeCount = await prisma.challenge.count({ where: { deletedAt: null, status: 'PUBLISHED' } });
     const participationCount = userId ? await prisma.userProgress.count({ where: { userId } }) : 0;
-    const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    const user = userId ? await prisma.user.findUnique({ where: { id: userId }, select: { email: true, firstName: true, lastName: true, createdAt: true } }) : null;
     const achievementsCount = userId ? await prisma.userAchievement.count({ where: { userId } }) : 0;
+
+    // Recent participations for activity chart
+    const recentParticipations = userId ? await prisma.userProgress.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+      select: { updatedAt: true, status: true },
+    }) : [];
+
+    // Challenges by category
+    const categoryStats = await prisma.challenge.groupBy({
+      by: ['category'],
+      where: { deletedAt: null, status: 'PUBLISHED' },
+      _count: true,
+    });
+
+    // User's challenge creator stats
+    const createdChallenges = userId ? await prisma.challenge.count({
+      where: { organizer: { members: { some: { userId } } }, deletedAt: null },
+    }) : 0;
+
+    const pendingReview = userId ? await prisma.challenge.count({
+      where: { organizer: { members: { some: { userId } } }, status: 'PENDING_REVIEW' },
+    }) : 0;
 
     return {
       challengeCount,
       participationCount,
       achievementsCount,
-      email: user?.email ?? user?.id ?? 'Гость'
+      createdChallenges,
+      pendingReview,
+      email: user?.email ?? 'Гость',
+      name: user?.firstName || user?.email?.split('@')[0] || 'Гость',
+      memberSince: user?.createdAt?.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }) || '',
+      recentParticipations: recentParticipations.map(p => ({
+        date: p.updatedAt.toISOString(),
+        status: p.status,
+      })),
+      categoryStats: categoryStats.map(c => ({
+        name: c.category || 'Другое',
+        value: c._count,
+      })),
     };
   } catch (e) {
-    // Fallback if DB is not reachable
     return {
       challengeCount: 12,
       participationCount: 3,
       achievementsCount: 5,
-      email: 'demo@newsy.ru'
+      createdChallenges: 2,
+      pendingReview: 1,
+      email: 'demo@newsy.ru',
+      name: 'Демо',
+      memberSince: 'январь 2025',
+      recentParticipations: [],
+      categoryStats: [
+        { name: 'Спорт', value: 4 },
+        { name: 'Обучение', value: 3 },
+        { name: 'Квесты', value: 5 },
+        { name: 'Искусство', value: 2 },
+        { name: 'Технологии', value: 3 },
+      ],
     };
   }
 }
@@ -35,153 +83,242 @@ export default async function DashboardPage() {
 
   return (
     <PageShell>
-      <main style={styles.page}>
-        <section className="dash-card" style={styles.card}>
-          <p style={styles.kicker}>Личный кабинет</p>
-          <h1 style={styles.title}>Рабочее пространство NEWSY</h1>
-          <p style={styles.lead}>
-            Отслеживайте свой прогресс, управляйте челенджами и просматривайте достижения в реальном времени.
-          </p>
+      <main style={s.page}>
+        {/* Header */}
+        <div style={s.header}>
+          <div>
+            <p style={s.kicker}>Личный кабинет</p>
+            <h1 style={s.title}>Привет, {stats.name}</h1>
+            <p style={s.lead}>Управляйте челленджами и отслеживайте прогресс</p>
+          </div>
+          {stats.memberSince && (
+            <div style={s.sinceBadge}>Участник с {stats.memberSince}</div>
+          )}
+        </div>
 
-          <div className="dash-grid" style={styles.grid}>
-            <div style={styles.panel}>
-              <strong>Пользователь</strong>
-              <span>{stats.email}</span>
-            </div>
-            <div style={styles.panel}>
-              <strong>Челенджей доступно</strong>
-              <span>{stats.challengeCount}</span>
-            </div>
-            <div style={styles.panel}>
-              <strong>Мои участия</strong>
-              <span>{stats.participationCount}</span>
-            </div>
-            <div style={styles.panel}>
-              <strong>Мои достижения</strong>
-              <span>{stats.achievementsCount}</span>
+        {/* Stats row */}
+        <div style={s.statsRow}>
+          <div style={{ ...s.statCard, borderLeft: '4px solid #FF385C' }}>
+            <div style={s.statIcon}><span style={{ fontSize: 24 }}>🏆</span></div>
+            <div style={s.statInfo}>
+              <span style={s.statValue}>{stats.challengeCount}</span>
+              <span style={s.statLabel}>Челленджей доступно</span>
             </div>
           </div>
+          <div style={{ ...s.statCard, borderLeft: '4px solid #2563eb' }}>
+            <div style={s.statIcon}><span style={{ fontSize: 24 }}>🎯</span></div>
+            <div style={s.statInfo}>
+              <span style={s.statValue}>{stats.participationCount}</span>
+              <span style={s.statLabel}>Моих участий</span>
+            </div>
+          </div>
+          <div style={{ ...s.statCard, borderLeft: '4px solid #16a34a' }}>
+            <div style={s.statIcon}><span style={{ fontSize: 24 }}>⭐</span></div>
+            <div style={s.statInfo}>
+              <span style={s.statValue}>{stats.achievementsCount}</span>
+              <span style={s.statLabel}>Достижений</span>
+            </div>
+          </div>
+          <div style={{ ...s.statCard, borderLeft: '4px solid #d97706' }}>
+            <div style={s.statIcon}><span style={{ fontSize: 24 }}>📝</span></div>
+            <div style={s.statInfo}>
+              <span style={s.statValue}>{stats.createdChallenges}</span>
+              <span style={s.statLabel}>Создано челленджей</span>
+            </div>
+          </div>
+        </div>
 
-          <div className="dash-actions" style={styles.actions}>
-            <Link href="/explore" style={styles.primaryAction}>
-              Исследовать челенджи
+        {/* Charts */}
+        <DashboardCharts
+          categoryStats={stats.categoryStats}
+          recentParticipations={stats.recentParticipations}
+        />
+
+        {/* Quick actions */}
+        <div style={s.section}>
+          <h2 style={s.sectionTitle}>Быстрые действия</h2>
+          <div style={s.actions}>
+            <Link href="/explore" style={{ ...s.actionBtn, ...s.actionPrimary }}>
+              <span style={{ fontSize: 20 }}>🔍</span>
+              <span>Исследовать челенджи</span>
             </Link>
-            <Link href="/dashboard/profile" style={styles.secondaryAction}>
-              Мой профиль
+            <Link href="/dashboard/challenges/new" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>➕</span>
+              <span>Создать челлендж</span>
             </Link>
-            <Link href="/dashboard/daily" style={styles.secondaryAction}>
-              Сегодняшние задания
+            <Link href="/dashboard/profile" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>👤</span>
+              <span>Мой профиль</span>
             </Link>
-            <Link href="/dashboard/recommendations" style={styles.secondaryAction}>
-              Рекомендации
+            <Link href="/dashboard/daily" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>📅</span>
+              <span>Сегодняшние задания</span>
             </Link>
-            <Link href="/dashboard/achievements" style={styles.secondaryAction}>
-              Достижения
+            <Link href="/dashboard/achievements" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>🏅</span>
+              <span>Достижения</span>
             </Link>
-            <Link href="/dashboard/shop" style={styles.secondaryAction}>
-              Магазин призов
+            <Link href="/dashboard/recommendations" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>💡</span>
+              <span>Рекомендации</span>
             </Link>
-            <Link href="/dashboard/challenges/new" style={styles.secondaryAction}>
-              Создать челендж
+            <Link href="/dashboard/shop" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>🛒</span>
+              <span>Магазин призов</span>
             </Link>
-            <Link href="/dashboard/organizer" style={styles.secondaryAction}>
-              Дашборд организатора
+            <Link href="/dashboard/organizer" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>📊</span>
+              <span>Дашборд организатора</span>
             </Link>
-            <Link href="/dashboard/partner" style={styles.secondaryAction}>
-              Партнёрская программа
+            <Link href="/dashboard/analytics" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>📈</span>
+              <span>Аналитика</span>
             </Link>
-            <Link href="/dashboard/analytics" style={styles.secondaryAction}>
-              Аналитика
+            <Link href="/dashboard/partner" style={s.actionBtn}>
+              <span style={{ fontSize: 20 }}>🤝</span>
+              <span>Партнёрская программа</span>
             </Link>
           </div>
-        </section>
+        </div>
       </main>
 
       <style>{`
         @media (max-width: 768px) {
-          .dash-card { padding: 20px !important; border-radius: 20px !important; }
-          .dash-grid { grid-template-columns: 1fr 1fr !important; }
+          .dash-stats-row { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 480px) {
-          .dash-card { padding: 16px !important; border-radius: 16px !important; }
-          .dash-grid { grid-template-columns: 1fr !important; }
-          .dash-actions { flex-direction: column; }
-          .dash-actions a { width: 100%; text-align: center; }
+          .dash-stats-row { grid-template-columns: 1fr !important; }
+          .dash-actions-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </PageShell>
   );
 }
 
-const styles: Record<string, CSSProperties> = {
+const s: Record<string, CSSProperties> = {
   page: {
-    display: 'grid',
-    placeItems: 'center',
-    minHeight: '60vh',
-    padding: '20px clamp(12px, 3vw, 24px)',
+    maxWidth: 1100,
+    margin: '0 auto',
+    padding: '20px clamp(12px, 3vw, 24px) 60px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 28,
   },
-  card: {
-    width: 'min(920px, 100%)',
-    padding: '32px',
-    borderRadius: '28px',
-    background: 'rgba(255,255,255,0.85)',
-    border: '1px solid rgba(29,26,22,0.08)',
-    boxShadow: 'var(--shadow)',
-    display: 'grid',
-    gap: '18px'
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 16,
   },
   kicker: {
-    margin: 0,
-    color: 'var(--brand-strong)',
-    fontSize: '12px',
+    margin: '0 0 4px',
+    color: '#FF385C',
+    fontSize: 12,
     fontWeight: 800,
     letterSpacing: '0.12em',
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
   title: {
-    margin: 0,
-    fontSize: 'clamp(32px, 4vw, 56px)',
-    letterSpacing: '-0.05em'
+    margin: '0 0 6px',
+    fontSize: 'clamp(28px, 4vw, 42px)',
+    fontWeight: 900,
+    letterSpacing: '-0.03em',
+    color: '#111',
   },
   lead: {
     margin: 0,
-    color: 'var(--text-muted)',
-    fontSize: '18px',
-    lineHeight: 1.6,
-    maxWidth: '66ch'
+    color: '#888',
+    fontSize: 15,
+    lineHeight: 1.5,
   },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '14px'
+  sinceBadge: {
+    padding: '8px 16px',
+    borderRadius: 12,
+    background: '#f5f5f5',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#666',
+    border: '1px solid #e5e5e5',
   },
-  panel: {
-    padding: '18px',
-    borderRadius: '20px',
-    background: 'rgba(255,247,240,0.92)',
-    border: '1px solid rgba(180,95,52,0.14)',
+  statsRow: {
     display: 'grid',
-    gap: '6px'
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 14,
+  },
+  statCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    padding: '18px 16px',
+    borderRadius: 16,
+    background: 'white',
+    border: '1px solid #f0f0f0',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+    transition: 'all 0.2s',
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    background: '#fafafa',
+    display: 'grid',
+    placeItems: 'center',
+    flexShrink: 0,
+  },
+  statInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 900,
+    color: '#111',
+    letterSpacing: '-0.02em',
+    lineHeight: 1,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#999',
+  },
+  section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 800,
+    margin: 0,
+    color: '#111',
   },
   actions: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: 10,
+  },
+  actionBtn: {
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: '12px',
-    marginTop: '6px'
+    alignItems: 'center',
+    gap: 10,
+    padding: '14px 18px',
+    borderRadius: 14,
+    background: 'white',
+    border: '1px solid #f0f0f0',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+    color: '#333',
+    fontWeight: 700,
+    fontSize: 14,
+    textDecoration: 'none',
+    transition: 'all 0.2s',
   },
-  primaryAction: {
-    padding: '13px 18px',
-    borderRadius: '999px',
-    background: 'var(--brand)',
-    color: '#fff',
-    fontWeight: 800
+  actionPrimary: {
+    background: '#FF385C',
+    color: 'white',
+    border: '1px solid #FF385C',
+    boxShadow: '0 4px 16px rgba(255,56,92,0.2)',
   },
-  secondaryAction: {
-    padding: '13px 18px',
-    borderRadius: '999px',
-    background: 'rgba(255,255,255,0.8)',
-    border: '1px solid rgba(29,26,22,0.1)',
-    color: 'var(--text)',
-    fontWeight: 700
-  }
 };

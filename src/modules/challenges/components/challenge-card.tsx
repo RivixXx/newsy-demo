@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Users, Trophy, ChevronRight, Zap } from 'lucide-react';
+import { MapTooltip } from '@/shared/components/map-tooltip';
 import { Challenge } from '../types';
 
 interface ChallengeCardProps {
@@ -55,6 +56,15 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
           <div className="card-tags">
             {achievement && <span className="card-tag achievement" title="Достижение за выполнение">🏆 {achievement}</span>}
             {reward && <span className="card-tag reward" title="Награда за выполнение">🎁 {reward}</span>}
+          </div>
+
+          <div className="card-location-row">
+            <MapTooltip
+              address={challenge.address || ''}
+              latitude={challenge.latitude}
+              longitude={challenge.longitude}
+              format={challenge.format}
+            />
           </div>
 
           <div className="social-proof">
@@ -215,6 +225,13 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
         .card-tag.reward {
           background: #fff7ed;
           color: #d97706;
+        }
+
+        .card-location-row {
+          display: flex;
+          align-items: center;
+          min-height: 20px;
+          margin-bottom: 6px;
         }
 
         .card-footer-row {

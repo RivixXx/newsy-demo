@@ -17,7 +17,7 @@ export default function ReferralPage() {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState<ReferralStats>({ totalReferrals: 0, activeReferrals: 0, totalEarned: 0 });
 
-  const referralCode = session?.user?.id ? `NEWSY-${session.user.id.slice(0, 8).toUpperCase()}` : '';
+  const referralCode = session?.user?.id ? `ЧИ-${session.user.id.slice(0, 8).toUpperCase()}` : '';
   const referralLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://chillenge-russia.ru'}/register?ref=${referralCode}`;
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function ReferralPage() {
               {/* Шеринг */}
               <div className="ref-share-row">
                 <a
-                  href={`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к NEWSY! Челленджи, конкурсы, награды.')}`}
+                  href={`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к ЧИ! Челленджи, конкурсы, награды.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ref-share-btn telegram"
@@ -73,7 +73,7 @@ export default function ReferralPage() {
                   <Send size={16} /> Telegram
                 </a>
                 <a
-                  href={`https://vk.com/share.php?url=${encodeURIComponent(referralLink)}&title=${encodeURIComponent('Присоединяйся к NEWSY!')}`}
+                  href={`https://vk.com/share.php?url=${encodeURIComponent(referralLink)}&title=${encodeURIComponent('Присоединяйся к ЧИ!')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ref-share-btn vk"

@@ -4,15 +4,21 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
-import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3 } from 'lucide-react';
+import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Crown, Trophy, Target } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
-import { ProfileHero } from './components/profile-hero';
-import { StatsGrid } from './components/stats-grid';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { ProfileEditModal } from './components/profile-edit-modal';
 import { ActivityCalendar } from './components/activity-calendar';
 import { AchievementShowcase } from './components/achievement-showcase';
 import { ActivityFeed } from './components/activity-feed';
-import { ProfileEditModal } from './components/profile-edit-modal';
+import { TwoFactorSetup } from '@/modules/identity/components/two-factor-setup';
 import { ChallengeModal, ModalChallenge } from '@/shared/components/challenge-modal';
 
 interface ProfileData {
@@ -36,7 +42,6 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const session = useSession();
-  const [tab, setTab] = useState<'overview' | 'settings'>('overview');
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -47,10 +52,7 @@ export default function ProfilePage() {
     fetch('/api/user/profile-stats')
       .then(r => r.json())
       .then(d => {
-        if (d.error || !d.level) {
-          setLoading(false);
-          return;
-        }
+        if (d.error || !d.level) { setLoading(false); return; }
         setProfileData(d);
         setLoading(false);
       })
@@ -75,18 +77,11 @@ export default function ProfilePage() {
   };
 
   const refetchProfile = () => {
-    fetch('/api/user/profile-stats')
-      .then(r => r.json())
-      .then(d => setProfileData(d))
-      .catch(() => {});
+    fetch('/api/user/profile-stats').then(r => r.json()).then(d => setProfileData(d)).catch(() => {});
   };
 
-  // Загрузка статистики избранного для организаторов
   useEffect(() => {
-    fetch('/api/organizer/favorites-stats')
-      .then(r => r.json())
-      .then(d => setFavStats(d))
-      .catch(() => {});
+    fetch('/api/organizer/favorites-stats').then(r => r.json()).then(d => setFavStats(d)).catch(() => {});
   }, []);
 
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
@@ -95,7 +90,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <PageShell>
-        <div className="profile-page">
+        <div className="flex items-center justify-center min-h-[60vh]">
           <PageSpinner text="Загружаем профиль..." />
         </div>
       </PageShell>
@@ -110,121 +105,193 @@ export default function ProfilePage() {
     memberSince: '', activity: [], calendar: [],
   };
 
-  const handleProfileSave = () => {
-    refetchProfile();
-  };
+  const initials = data.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
 
   return (
     <PageShell>
       {selectedChallenge && (
         <ChallengeModal challenge={selectedChallenge} onClose={() => setSelectedChallenge(null)} />
       )}
-      <div className="profile-page">
-        <ProfileHero
-          name={data.name}
-          email={data.email}
-          level={data.level}
-          points={data.points}
-          streak={data.streak}
-          isOrganizer={isOrganizer}
-          gender={data.gender}
-          birthDate={data.birthDate}
-          avatarUrl={data.avatarUrl}
-        />
 
-        {/* Bio + Edit button */}
-        <div className="bio-section">
-          <div className="bio-content">
-            {data.bio ? (
-              <p className="bio-text">{data.bio}</p>
-            ) : (
-              <p className="bio-empty">Расскажите о себе — чего вы хотите достичь, какие у вас интересы</p>
-            )}
-          </div>
-          <button className="bio-edit-btn" onClick={() => setEditOpen(true)}>
-            <Edit3 size={14} /> Редактировать
-          </button>
-        </div>
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4">
 
-        <StatsGrid
-          activeChallenges={data.activeChallenges}
-          completedChallenges={data.completedChallenges}
-          achievements={data.achievements}
-          points={data.points}
-        />
-
-        {/* Статистика избранного для организаторов */}
-        {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
-          <div className="org-fav-section">
-            <div className="org-fav-header">
-              <Heart size={20} color="#FF385C" />
-              <h3>Избранное в ваших челленджах</h3>
-              <span className="org-fav-total">{favStats.totalFavorites} добавлений</span>
-            </div>
-            <div className="org-fav-list">
-              {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
-                <div key={c.id} className="org-fav-item">
-                  <span className="org-fav-title">{c.title}</span>
-                  <span className="org-fav-count">
-                    <Heart size={13} fill="#FF385C" color="#FF385C" />
-                    {c.favoritesCount}
-                  </span>
+        {/* ═══════ PROFILE HEADER ═══════ */}
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            {/* Mobile: stacked layout */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-primary/20 mx-auto sm:mx-0">
+                <AvatarImage src={data.avatarUrl} alt={data.name} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{data.name}</h1>
+                  <Badge variant="secondary" className="gap-1">
+                    <Crown className="h-3 w-3" />
+                    Ур. {data.level.level}
+                  </Badge>
                 </div>
-              ))}
+                <p className="text-muted-foreground text-sm mt-1">{data.email}</p>
+                <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                  {data.gender && <span>{data.gender === 'male' ? 'Мужчина' : 'Женщина'}</span>}
+                  {isOrganizer && <Badge variant="outline" className="text-xs">Организатор</Badge>}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="self-start hidden sm:flex">
+                <Edit3 className="h-4 w-4" />
+                Редактировать
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="sm:hidden w-full">
+                <Edit3 className="h-4 w-4" />
+                Редактировать
+              </Button>
             </div>
-          </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-5 sm:mt-6">
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.points}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Очков</div>
+              </div>
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.streak}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Серия дней</div>
+              </div>
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.completedChallenges}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Завершено</div>
+              </div>
+              <div className="text-center p-2 sm:p-3 rounded-lg bg-muted/30">
+                <div className="text-xl sm:text-2xl font-bold">{data.achievements}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Достижений</div>
+              </div>
+            </div>
+
+            {/* XP Progress */}
+            <div className="mt-4 sm:mt-6 space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">{data.level.name}</span>
+                <span className="font-medium">{data.level.xp}/{data.level.xpNeeded} XP</span>
+              </div>
+              <Progress value={data.level.progress} className="h-2" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ═══════ BIO ═══════ */}
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <h3 className="text-sm font-semibold mb-2">О себе</h3>
+            {data.bio ? (
+              <p className="text-sm text-muted-foreground">{data.bio}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Расскажите о себе — чего вы хотите достичь</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ═══════ ORGANIZER FAVORITES ═══════ */}
+        {favStats?.isOrganizer && favStats.totalFavorites > 0 && (
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-primary" />
+                  Избранное в ваших челленджах
+                </h3>
+                <Badge variant="secondary">{favStats.totalFavorites}</Badge>
+              </div>
+              <div className="space-y-2">
+                {favStats.challenges.filter(c => c.favoritesCount > 0).slice(0, 5).map(c => (
+                  <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <span className="text-sm font-medium truncate">{c.title}</span>
+                    <span className="text-sm font-bold text-primary flex items-center gap-1 flex-shrink-0">
+                      <Heart className="h-3 w-3 fill-primary" />
+                      {c.favoritesCount}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <div className="tabs-bar">
-          <button className={`tab-btn ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>Обзор</button>
-          <button className={`tab-btn ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>Настройки</button>
-        </div>
+        {/* ═══════ TABS ═══════ */}
+        <Tabs defaultValue="overview">
+          <TabsList className="w-full">
+            <TabsTrigger value="overview" className="flex-1 gap-1.5 text-xs sm:text-sm">
+              <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Обзор
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 gap-1.5 text-xs sm:text-sm">
+              <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Настройки
+            </TabsTrigger>
+          </TabsList>
 
-        {tab === 'overview' && (
-          <div className="tab-content fade-in">
-            <div className="content-grid">
-              <div className="content-left">
-                <ActivityCalendar days={data.calendar} />
-                <AchievementShowcase count={data.achievements} />
+          {/* ═══════ OVERVIEW TAB ═══════ */}
+          <TabsContent value="overview" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="lg:col-span-2 space-y-3 sm:space-y-4">
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    <h3 className="text-sm font-semibold mb-4">Активность</h3>
+                    <ActivityCalendar days={data.calendar} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    <h3 className="text-sm font-semibold mb-4">Последняя активность</h3>
+                    <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
+                  </CardContent>
+                </Card>
               </div>
-              <div className="content-right">
-                <ActivityFeed activities={data.activity} onChallengeClick={handleChallengeClick} />
+              <div className="space-y-3 sm:space-y-4">
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    <h3 className="text-sm font-semibold mb-4">Достижения</h3>
+                    <AchievementShowcase count={data.achievements} />
+                  </CardContent>
+                </Card>
               </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
 
-        {tab === 'settings' && (
-          <div className="tab-content fade-in">
-            <div className="settings-grid">
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#FF385C18', color: '#FF385C' }}><Bell size={20} /></div>
-                <div className="sc-body"><h4>Уведомления</h4><p>Управление уведомлениями</p></div>
-              </div>
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#3b82f618', color: '#3b82f6' }}><Shield size={20} /></div>
-                <div className="sc-body"><h4>Безопасность</h4><p>Пароль, двухфакторная аутентификация</p></div>
-              </div>
-              <Link href="/dashboard/subscription" className="settings-card">
-                <div className="sc-icon" style={{ background: '#8b5cf618', color: '#8b5cf6' }}><CreditCard size={20} /></div>
-                <div className="sc-body"><h4>Подписка</h4><p>Управление тарифом и оплатой</p></div>
-              </Link>
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#f59e0b18', color: '#f59e0b' }}><Eye size={20} /></div>
-                <div className="sc-body"><h4>Приватность</h4><p>Видимость профиля</p></div>
-              </div>
-              <div className="settings-card">
-                <div className="sc-icon" style={{ background: '#22c55e18', color: '#22c55e' }}><Heart size={20} /></div>
-                <div className="sc-body"><h4>Избранное</h4><p>Сохранённые челенджи</p></div>
-              </div>
+          {/* ═══════ SETTINGS TAB ═══════ */}
+          <TabsContent value="settings" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+              <Card>
+                <CardContent className="p-4 sm:p-6 space-y-2">
+                  <SettingRow icon={<Bell className="h-5 w-5 text-primary" />} title="Уведомления" desc="Управление уведомлениями" />
+                  <Separator />
+                  <SecuritySection />
+                  <Separator />
+                  <Link href="/dashboard/subscription" className="block">
+                    <SettingRow icon={<CreditCard className="h-5 w-5 text-primary" />} title="Подписка" desc="Управление тарифом и оплатой" />
+                  </Link>
+                  <Separator />
+                  <SettingRow icon={<Eye className="h-5 w-5 text-primary" />} title="Приватность" desc="Видимость профиля" />
+                  <Separator />
+                  <SettingRow icon={<Heart className="h-5 w-5 text-primary" />} title="Избранное" desc="Сохранённые челенджи" />
+                </CardContent>
+              </Card>
+
+              <Card className="border-destructive/20">
+                <CardContent className="p-4 sm:p-6">
+                  <form action={logoutAction}>
+                    <Button type="submit" variant="destructive" className="w-full gap-2">
+                      <LogOut className="h-4 w-4" />
+                      Выйти из аккаунта
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             </div>
-            <div className="settings-danger">
-              <form action={logoutAction}>
-                <button type="submit" className="danger-btn"><LogOut size={16} /> Выйти из аккаунта</button>
-              </form>
-            </div>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       <ProfileEditModal
@@ -238,65 +305,43 @@ export default function ProfilePage() {
           gender: data.gender || '',
           birthDate: data.birthDate || '',
         }}
-        onSave={handleProfileSave}
+        onSave={refetchProfile}
       />
-
-      <style>{`
-        .profile-page { max-width: 1100px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 24px) 80px; display: flex; flex-direction: column; gap: 20px; }
-        .bio-section { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 16px; padding: 16px 20px; border: 1px solid #f0f0f0; gap: 16px; }
-        .bio-content { flex: 1; min-width: 0; }
-        .bio-text { font-size: 14px; color: #333; line-height: 1.6; margin: 0; }
-        .bio-empty { font-size: 13px; color: #aaa; font-style: italic; margin: 0; }
-        .bio-edit-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
-        .bio-edit-btn:hover { border-color: #FF385C; color: #FF385C; background: #fff5f7; }
-        .profile-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
-        .profile-loading p { font-size: 14px; color: #888; margin: 0; }
-        .tabs-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 0; }
-        .tab-btn { display: flex; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #e5e7eb; background: white; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .tab-btn.active { background: #111; border-color: #111; color: white; }
-        .tab-btn:not(.active):hover { border-color: #FF385C; color: #FF385C; }
-        .tab-content { animation: fadeSlideUp 0.35s ease both; }
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .content-left, .content-right { display: flex; flex-direction: column; gap: 20px; }
-        .settings-grid { display: flex; flex-direction: column; gap: 10px; }
-        .settings-card { display: flex; align-items: center; gap: 14px; background: white; border-radius: 16px; padding: 18px 20px; border: 1.5px solid #f0f0f0; cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit; }
-        .settings-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateX(4px); }
-        .sc-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
-        .sc-body h4 { font-size: 14px; font-weight: 700; color: #111; margin: 0; }
-        .sc-body p { font-size: 12px; color: #888; margin: 2px 0 0; }
-        .settings-danger { margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0; }
-        .danger-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-        .danger-btn:hover { background: #fee2e2; border-color: #f87171; }
-
-        /* Organizer favorites stats */
-        .org-fav-section {
-          background: white; border-radius: 16px; padding: 20px;
-          border: 1px solid #f0f0f0;
-        }
-        .org-fav-header {
-          display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-        }
-        .org-fav-header h3 { font-size: 15px; font-weight: 800; margin: 0; color: #111; }
-        .org-fav-total {
-          margin-left: auto; padding: 3px 10px; border-radius: 99px;
-          background: #fff5f7; color: #FF385C; font-size: 12px; font-weight: 700;
-        }
-        .org-fav-list { display: flex; flex-direction: column; gap: 8px; }
-        .org-fav-item {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 8px 12px; border-radius: 10px; background: #fafafa;
-          transition: background 0.15s;
-        }
-        .org-fav-item:hover { background: #f5f5f5; }
-        .org-fav-title { font-size: 13px; font-weight: 600; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .org-fav-count {
-          display: flex; align-items: center; gap: 4px;
-          font-size: 13px; font-weight: 800; color: #FF385C; flex-shrink: 0;
-        }
-
-        @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
-      `}</style>
     </PageShell>
+  );
+}
+
+function SettingRow({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <h4 className="text-sm font-semibold">{title}</h4>
+        <p className="text-xs text-muted-foreground truncate">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function SecuritySection() {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <div onClick={() => setExpanded(v => !v)}>
+        <SettingRow icon={<Shield className="h-5 w-5 text-primary" />} title="Безопасность" desc="Пароль, двухфакторная аутентификация" />
+      </div>
+      {expanded && (
+        <div className="px-2 sm:px-3 pb-3 pt-1">
+          <div className="rounded-lg bg-muted/30 p-3 sm:p-4 space-y-3">
+            <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Двухфакторная аутентификация
+            </h5>
+            <TwoFactorSetup />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

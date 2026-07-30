@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Профиль бренда — NEWSY',
-  description: 'Управление профилем бренда на платформе NEWSY.',
+  title: 'Профиль бренда — ЧИ',
+  description: 'Управление профилем бренда на платформе ЧИ.',
 };
 
 export default function BrandProfilePage() {

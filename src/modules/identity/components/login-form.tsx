@@ -17,28 +17,28 @@ export function LoginForm({ action }: LoginFormProps) {
       <div style={styles.card}>
         <div style={styles.header}>
           <h1 style={styles.title}>С возвращением!</h1>
-          <p style={styles.subtitle}>Войдите в NEWSY, чтобы продолжить свои челленджи</p>
+          <p style={styles.subtitle}>Войдите в NEWSY, чтобы продолжить свои челенджи</p>
         </div>
 
         <form action={formAction} style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email или Телефон</label>
-            <input 
-              name="identifier" 
-              type="text" 
-              placeholder="demo@newsy.ru" 
-              style={styles.input} 
-              required 
+            <input
+              name="identifier"
+              type="text"
+              placeholder="demo@chi.ru"
+              style={styles.input}
+              required
             />
           </div>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Пароль</label>
-            <input 
-              name="password" 
-              type="password" 
-              placeholder="••••••••" 
-              style={styles.input} 
-              required 
+            <input
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              style={styles.input}
+              required
             />
           </div>
           <input type="hidden" name="provider" value="email" />

@@ -5,7 +5,14 @@ import { notifyAdminsNewChallenge } from '@/lib/notification-bus';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getCurrentAuthSession();
+    let session;
+    try {
+      session = await getCurrentAuthSession();
+    } catch (sessionErr) {
+      console.error('[confirm-mock] Session error:', sessionErr);
+      return NextResponse.json({ error: 'Ошибка авторизации' }, { status: 401 });
+    }
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
@@ -25,7 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Челлендж не найден' }, { status: 404 });
     }
 
-    const isMember = challenge.organizer.members.some(m => m.userId === session.user.id);
+    const isMember = challenge.organizer?.members?.some(m => m.userId === session.user.id);
     if (!isMember) {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
@@ -44,11 +51,16 @@ export async function POST(req: NextRequest) {
     });
 
     // Уведомить админов о новом ЧИ на модерации
-    const organizerName = challenge.organizer.members[0]?.userId
-      ? (await prisma.user.findUnique({ where: { id: challenge.organizer.members[0].userId }, select: { firstName: true, lastName: true } }))
-      : null;
-    const orgName = organizerName ? `${organizerName.firstName} ${organizerName.lastName}`.trim() : challenge.organizer.name;
-    notifyAdminsNewChallenge(challengeId, challenge.title, orgName);
+    try {
+      const firstMember = challenge.organizer?.members?.[0]?.userId;
+      const organizerName = firstMember
+        ? (await prisma.user.findUnique({ where: { id: firstMember }, select: { firstName: true, lastName: true } }))
+        : null;
+      const orgName = organizerName ? `${organizerName.firstName} ${organizerName.lastName}`.trim() : challenge.organizer?.name || 'Организатор';
+      notifyAdminsNewChallenge(challengeId, challenge.title, orgName);
+    } catch (notifErr) {
+      console.error('[confirm-mock] Notification error (non-fatal):', notifErr);
+    }
 
     return NextResponse.json({ success: true, status: 'PENDING_REVIEW' });
   } catch (error: any) {

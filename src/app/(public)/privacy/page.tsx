@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Политика конфиденциальности — NEWSY',
-  description: 'Политика конфиденциальности платформы NEWSY. Как мы собираем, используем и защищаем ваши персональные данные.',
+  title: 'Политика конфиденциальности — ЧИ',
+  description: 'Политика конфиденциальности платформы ЧИ. Как мы собираем, используем и защищаем ваши персональные данные.',
 };
 
 export default function PrivacyPage() {
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>1. Общие положения</h2>
         <p>
           Настоящая Политика конфиденциальности регулирует порядок обработки персональных данных
-          пользователей платформы NEWSY (далее — «Платформа»), доступной по адресу{' '}
+          пользователей платформы ЧИ (далее — «Платформа»), доступной по адресу{' '}
           <a href="https://chillenge-russia.ru" style={{ color: '#6366f1' }}>chillenge-russia.ru</a>.
         </p>
         <p style={{ marginTop: 12 }}>

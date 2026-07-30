@@ -5,6 +5,17 @@ export interface AuthService {
   logout(sessionId: string): Promise<void>;
   requestPasswordReset(payload: PasswordResetRequest): Promise<void>;
   confirmPasswordReset(payload: PasswordResetConfirmation): Promise<void>;
+  verify2fa(userId: string, token: string): Promise<AuthSession>;
+}
+
+export class TwoFactorRequiredError extends Error {
+  public readonly userId: string;
+
+  constructor(userId: string) {
+    super('Two-factor authentication is required');
+    this.name = 'TwoFactorRequiredError';
+    this.userId = userId;
+  }
 }
 
 export function normalizeIdentifier(identifier: string): string {

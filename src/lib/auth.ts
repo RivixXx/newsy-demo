@@ -15,6 +15,11 @@ export interface AuthSession {
   expiresAt: string;
 }
 
+export interface TwoFactorTempSession {
+  userId: string;
+  expiresAt: string;
+}
+
 export interface LoginCredentials {
   identifier: string;
   password: string;

@@ -143,6 +143,10 @@ model User {
   points         Int             @default(0)
   rating         Float           @default(0)
   lastLoginAt    DateTime?
+  totpSecret     String?
+  totpEnabled    Boolean     @default(false)
+  totpBackupCodes String?
+  totpVerifiedAt DateTime?
   referredBy     String?
   referralCode   String?         @unique
   gender         String?

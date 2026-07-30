@@ -39,9 +39,9 @@ async function sendMessage(chatId: number, text: string, options?: Record<string
 
 async function handleStart(chatId: number, userId: number, firstName: string, username?: string) {
   const text = `
-<b>Добро пожаловать в NEWSY! 🎯</b>
+<b>Добро пожаловать в ЧИ! 🎯</b>
 
-Привет, ${firstName}! Я бот NEWSY — платформы интерактивных челленджей.
+Привет, ${firstName}! Я бот ЧИ — платформы интерактивных челленджей.
 
 <b>Доступные команды:</b>
 /start — Приветствие
@@ -137,7 +137,7 @@ async function handleHelp(chatId: number) {
 /help — Эта справка
 
 <b>О платформе:</b>
-NEWSY — это место, где бренды и организации создают интерактивные челленджи для своих аудиторий.
+ЧИ — это место, где бренды и организации создают интерактивные челленджи для своих аудиторий.
 
 <a href="https://chillenge-russia.ru">Открыть веб-версию →</a>
   `.trim();
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    bot: 'NEWSY Telegram Bot',
+    bot: 'ЧИ Telegram Bot',
     version: '1.0.0',
   });
 }

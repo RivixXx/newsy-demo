@@ -21,7 +21,7 @@ export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps)
 
   const share = (platform: string) => {
     const url = getShareUrl(challengeId);
-    const text = `${title} — участвуй на NEWSY!`;
+    const text = `${title} — участвуй на ЧИ!`;
     switch (platform) {
       case 'telegram':
         window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');

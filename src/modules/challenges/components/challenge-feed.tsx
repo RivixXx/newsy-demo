@@ -5,6 +5,7 @@ import { Search, Filter, Sparkles } from 'lucide-react';
 import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
 import Link from 'next/link';
 import { Users, Trophy, ChevronRight, Gift } from 'lucide-react';
+import { MapTooltip } from '@/shared/components/map-tooltip';
 
 const CATEGORY_LABELS: Record<string, string> = {
   sport: 'Спорт',
@@ -44,6 +45,13 @@ function SearchCard({ challenge }: { challenge: CatalogChallenge }) {
             <div className="sc-tags">
               <span className="sc-tag achievement">🏆 {challenge.achievement}</span>
               <span className="sc-tag reward">🎁 {challenge.reward}</span>
+            </div>
+            <div className="sc-location">
+              <MapTooltip
+                address={challenge.location}
+                latitude={challenge.latitude}
+                longitude={challenge.longitude}
+              />
             </div>
             <div className="sc-footer">
               <span className="sc-slots">
@@ -103,6 +111,10 @@ function SearchCard({ challenge }: { challenge: CatalogChallenge }) {
         }
         .sc-tag.achievement { background: #fef3c7; color: #92400e; }
         .sc-tag.reward { background: #dcfce7; color: #166534; }
+        .sc-location {
+          display: flex; align-items: center;
+          min-height: 20px;
+        }
         .sc-footer {
           display: flex; justify-content: space-between; align-items: center;
           font-size: 11px; color: #888; font-weight: 600;

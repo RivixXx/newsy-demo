@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X, MapPin, Heart } from 'lucide-react';
+import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X, MapPin, Heart, LayoutDashboard } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { useRegion } from '@/shared/components/region-provider';
@@ -13,7 +13,7 @@ import { useSSE } from '@/shared/hooks/use-sse';
 const SearchPanel = lazy(() => import('@/shared/components/search-panel').then(m => ({ default: m.SearchPanel })));
 
 type SiteNavProps = {
-  variant?: 'compact' | 'public';
+  variant?: 'compact' | 'public' | 'landing';
 };
 
 interface NavNotification {
@@ -92,12 +92,12 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
   return (
     <>
-      <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
+      <header className={`site-header ${isScrolled ? 'scrolled' : ''} ${variant === 'landing' ? 'site-header--landing' : ''}`}>
         <nav className="nav-wrapper" aria-label="Основная навигация">
           <div className="nav-left">
             <Link href="/" className="brand">
-              <img src="/icon.png" alt="NEWSY Logo" className="brand-logo" />
-              <span className="brand-name">NEWSY</span>
+              <img src="/icon.svg" alt="ЧИ" className="brand-logo" />
+              <span className="brand-name">ЧИ</span>
             </Link>
           </div>
 
@@ -190,6 +190,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                     <>
                       <DDItem href="/dashboard/profile" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
                       <DDItem href="/favorites" icon={<Heart size={18} />} label="Избранное" onClick={close} />
+                      <DDItem href="/dashboard" icon={<LayoutDashboard size={18} />} label="Дашбоард" onClick={close} />
                       <div className="dd-divider" />
                       <DDItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челлендж" onClick={close} />
                       {session.user?.roles?.includes('admin') && (
@@ -235,13 +236,13 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
         .nav-wrapper {
           width: 100%; margin: 0 auto;
           padding: 0 clamp(16px, 3vw, 40px);
-          display: grid; grid-template-columns: auto 1fr auto;
+          display: grid; grid-template-columns: 1fr auto 1fr;
           align-items: center; height: 72px;
           gap: 16px;
         }
 
         /* Brand */
-        .nav-left { display: flex; align-items: center; }
+        .nav-left { display: flex; align-items: center; justify-content: start; }
         .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
         .brand-logo { width: 36px; height: 36px; object-fit: contain; }
         .brand-name { color: #FF385C; font-size: 26px; font-weight: 900; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
@@ -431,6 +432,49 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
           .brand-logo { width: 24px; height: 24px; }
           .capsule-wrap { margin-left: 4px; }
         }
+
+        /* ===== LANDING VARIANT (dark transparent nav) ===== */
+        .site-header--landing {
+          position: fixed;
+          background: transparent;
+          border-bottom-color: transparent;
+        }
+        .site-header--landing.scrolled {
+          background: rgba(7, 7, 8, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom-color: rgba(255,255,255,0.06);
+        }
+        .site-header--landing .brand-name { color: #FF385C; }
+        .site-header--landing .region-btn {
+          background: rgba(255,255,255,0.06);
+          border-color: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.8);
+        }
+        .site-header--landing .region-btn:hover {
+          border-color: #FF385C;
+          color: #FF385C;
+        }
+        .site-header--landing .auth-link { color: rgba(255,255,255,0.8); }
+        .site-header--landing .auth-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .site-header--landing .auth-link--primary { background: #FF385C; color: white; }
+        .site-header--landing .auth-link--primary:hover { background: #E31C5F; }
+        .site-header--landing .capsule-btn {
+          background: rgba(255,255,255,0.06);
+          border-color: rgba(255,255,255,0.1);
+        }
+        .site-header--landing .capsule-btn:hover { background: rgba(255,255,255,0.1); }
+        .site-header--landing .capsule-btn svg { color: rgba(255,255,255,0.6); }
+        .site-header--landing .notif-btn {
+          background: rgba(255,255,255,0.06);
+          border-color: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.8);
+        }
+        .site-header--landing .notif-btn:hover { background: rgba(255,255,255,0.1); }
+        .site-header--landing .host-link { color: rgba(255,255,255,0.8); }
+        .site-header--landing .host-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .site-header--landing .region-btn-text { color: inherit; }
+        .site-header--landing .search-pill { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
       `}</style>
     </>
   );
