@@ -74,7 +74,7 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
           </p>
           <div className="stats-row" style={s.statsRow}>
             <Stat num="50k+" label="участников" />
-            <Stat num="1.2k" label="челенджей" />
+            <Stat num="1.2k" label="челленджей" />
             <Stat num="4.9" label="рейтинг" />
           </div>
         </div>
@@ -143,8 +143,8 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
 
   const step0Ref = useRef<HTMLDivElement>(null);
   const step1Ref = useRef<HTMLDivElement>(null);
+  const stepPersonalRef = useRef<HTMLDivElement>(null);
   const step2Ref = useRef<HTMLDivElement>(null);
-  const step3Ref = useRef<HTMLDivElement>(null);
   const stepFinalRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -154,9 +154,10 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
 
   const getStepRef = useCallback((idx: number) => {
     if (idx === 0) return step0Ref;
-    if (idx === 1) return step1Ref;
-    if (idx === 2 && isOrganizer) return isBusiness ? step2Ref : stepFinalRef;
-    if (idx === 3 && isBusiness) return stepFinalRef;
+    if (!isOrganizer && idx === 1) return stepPersonalRef;
+    if (isOrganizer && idx === 1) return step1Ref;
+    if (isOrganizer && idx === 2) return isBusiness ? stepPersonalRef : stepFinalRef;
+    if (isOrganizer && idx === 3 && isBusiness) return stepFinalRef;
     return stepFinalRef;
   }, [isOrganizer, isBusiness]);
 
@@ -198,7 +199,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         ))}
       </div>
 
-      <form ref={formRef} action={formAction} style={{ ...s.form, height: formHeight }} onSubmit={(e) => {
+      <form id="register-form" ref={formRef} action={formAction} style={{ ...s.form, height: formHeight }} onSubmit={(e) => {
         if (step < maxStep) { e.preventDefault(); goNext(); }
       }}>
         <input type="hidden" name="accountType" value={accountType} />
@@ -249,7 +250,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         )}
 
         {/* ─── STEP 1 (participant) / STEP 2 (organizer): Personal Info ─── */}
-        <div ref={step1Ref} style={{
+        <div ref={stepPersonalRef} style={{
           ...s.stepPane,
           opacity: step === (isOrganizer ? 2 : 1) ? 1 : 0,
           transform: step === (isOrganizer ? 2 : 1) ? 'translateX(0) scale(1)' : `translateX(${direction === 'forward' ? 30 : -30}px) scale(0.97)`,
@@ -333,9 +334,8 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
             Далее <ArrowRight size={18} />
           </button>
         ) : (
-          <button type="submit" form="" disabled={isPending} style={s.submitBtn} onClick={() => {
-            const form = document.querySelector('form');
-            form?.requestSubmit();
+          <button type="button" disabled={isPending} style={s.submitBtn} onClick={() => {
+            formRef.current?.requestSubmit();
           }}>
             {isPending ? 'Создаём...' : 'Зарегистрироваться'} <ArrowRight size={18} />
           </button>
@@ -387,7 +387,7 @@ function LoginForm({ action }: { action: (state: AuthActionState, formData: Form
   return (
     <div>
       <h2 className="auth-form-title" style={s.formTitle}>С возвращением!</h2>
-      <p style={s.formSubtitle}>Войдите в NEWSY, чтобы продолжить свои челенджи</p>
+      <p style={s.formSubtitle}>Войдите в NEWSY, чтобы продолжить свои челленджи</p>
 
       <form action={formAction} style={s.form}>
         <InputField icon={<Mail size={18} />} name="identifier" placeholder="demo@newsy.ru" label="Email или Телефон" />
@@ -660,18 +660,63 @@ const globalCSS = `
 
   .reg-name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  @media (max-width: 860px) {
-    .auth-wrapper { flex-direction: column !important; }
-    .auth-left { flex: 0 0 auto !important; min-height: 180px !important; padding: 36px 24px !important; }
-    .auth-left .brand-subtitle, .auth-left .stats-row { display: none !important; }
-    .auth-left .brand-title { font-size: 36px !important; margin: 8px 0 0 !important; }
-    .auth-right { padding: 24px 16px !important; }
+  @media (max-width: 1024px) {
+    .auth-wrapper { flex-direction: column; }
+    .auth-left { flex: 0 0 auto; padding: 40px 20px; width: 100%; }
+    .auth-left .brand-subtitle, .auth-left .stats-row { display: none; }
+    .auth-left .brand-title { font-size: 32px; margin: 8px 0 0; }
+    .auth-right { padding: 20px; width: 100%; }
+    .formContainer { max-width: 100%; padding: 20px; }
+    .rightPanel { padding: 20px; }
+  }
+  @media (max-width: 768px) {
+    .leftPanel { padding: 30px 15px; }
+    .brand-title { font-size: 28px; }
+    .brand-subtitle { font-size: 13px; margin-bottom: 30px; }
+    .stats-row { gap: 16px; flex-direction: row; justify-content: center; }
+    .stat div:first-child { font-size: 18px; }
+    .stat div:last-child { font-size: 10px; }
+    .tabs { margin-bottom: 24px; }
+    .formTitle { font-size: 22px; }
+    .accountTypeGrid { grid-template-columns: 1fr; }
+    .reg-name-row { grid-template-columns: 1fr; }
+    .inputWrap { height: 44px; }
+    .submitBtn, .nextBtn, .backBtn { height: 44px; }
   }
   @media (max-width: 480px) {
-    .auth-left { min-height: 120px !important; padding: 24px 16px !important; }
-    .auth-left .brand-title { font-size: 28px !important; }
-    .auth-left .brand-logo { width: 40px !important; height: 40px !important; }
-    .reg-name-row { grid-template-columns: 1fr !important; }
-    .auth-form-title { font-size: 22px !important; }
+    .auth-wrapper { min-height: 100vh; }
+    .leftPanel, .rightPanel { padding: 20px 15px; }
+    .brandBlock { text-align: center; }
+    .brand-title { font-size: 24px; }
+    .brand-subtitle { font-size: 12px; margin: 0 auto 20px; }
+    .stats-row { gap: 12px; }
+    .stat div:first-child { font-size: 16px; }
+    .stat div:last-child { font-size: 9px; }
+    .formContainer { max-width: 100%; width: 100%; }
+    .formTitle { font-size: 20px; }
+    .formSubtitle { font-size: 13px; }
+    .inputWrap { height: 42px; }
+    .submitBtn, .nextBtn, .backBtn { height: 42px; }
+    .tab { font-size: 13px; }
+    .accountTypeCard { padding: 12px 8px; }
+    .accountTypeLabel { font-size: 12px; }
+    .accountTypeDesc { font-size: 10px; }
+    .reg-name-row { gap: 10px; }
+    .inputGroup { gap: 4px; }
+    .label { font-size: 11px; }
+  }
+  @media (max-width: 360px) {
+    .brand-title { font-size: 22px; }
+    .formTitle { font-size: 18px; }
+    .inputWrap { height: 40px; }
+    .submitBtn, .nextBtn, .backBtn { height: 40px; font-size: 14px; }
+    .accountTypeCard { padding: 10px 6px; }
+    .accountTypeLabel { font-size: 11px; }
+    .accountTypeDesc { font-size: 9px; }
+  }
+  
+  /* Ensure proper spacing and sizing on all devices */
+  .inputWrap, .submitBtn, .nextBtn, .backBtn {
+    min-height: 44px; /* Minimum touch target size */
   }
 `;

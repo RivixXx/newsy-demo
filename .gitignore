@@ -37,6 +37,7 @@ public/uploads/
 
 # Deployment secrets
 DEPLOY.md
+implementation_plan.md
 
 # MiMoCode tool state
 .mimocode/

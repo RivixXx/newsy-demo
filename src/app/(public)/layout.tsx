@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="public-layout">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'WebSite',
@@ -35,7 +35,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         logo: 'https://chillenge-russia.ru/icon.png',
         description: 'Платформа интерактивных челленджей для бизнеса, блогеров и каждого.',
       }} />
-      {children}
-    </>
+      <main className="main-content">{children}</main>
+    </div>
   );
 }

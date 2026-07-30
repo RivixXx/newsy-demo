@@ -13,11 +13,11 @@ export function PageShell({ children, variant = 'compact' }: PageShellProps) {
   return (
     <div className="page-shell-root" style={styles.root}>
       <div
-        className={variant === 'public' ? 'page-shell public-shell' : 'page-shell'}
+        className={`${variant === 'public' ? 'page-shell public-shell' : 'page-shell'} container`}
         style={variant === 'public' ? styles.publicShell : styles.shell}
       >
         <SiteNav variant={variant} />
-        <div style={variant === 'public' ? styles.publicContent : styles.content}>{children}</div>
+        <main className="main-content" style={variant === 'public' ? styles.publicContent : styles.content}>{children}</main>
       </div>
       <SiteFooter />
     </div>

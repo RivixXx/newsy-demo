@@ -130,6 +130,18 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
           height: 180px;
           overflow: hidden;
         }
+        
+        @media (max-width: 768px) {
+          .card-image-container {
+            height: 160px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .card-image-container {
+            height: 140px;
+          }
+        }
 
         .card-image {
           width: 100%;
@@ -229,6 +241,18 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
           line-height: 1.2;
           color: black;
         }
+        
+        @media (max-width: 768px) {
+          .challenge-title {
+            font-size: 17px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .challenge-title {
+            font-size: 16px;
+          }
+        }
 
         .social-proof {
           display: flex;
@@ -304,9 +328,26 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
           gap: 8px;
           transition: background 0.2s ease;
         }
-
+        
         .action-button.joined {
           background: #ff385c;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .card-content { padding: 16px; }
+          .card-tags { margin-bottom: 10px; }
+          .social-proof { flex-direction: column; align-items: flex-start; gap: 8px; }
+          .action-button { padding: 12px; }
+        }
+        
+        @media (max-width: 480px) {
+          .card-content { padding: 12px; }
+          .organizer-text { font-size: 11px; }
+          .card-footer-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+          .action-button { padding: 10px; font-size: 14px; }
+          .category-badge { top: 12px; left: 12px; padding: 4px 8px; font-size: 9px; }
+          .card-tag { padding: 3px 8px; font-size: 10px; }
         }
       `}</style>
     </Link>

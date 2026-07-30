@@ -85,7 +85,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
       setNotifications(data.notifications || []);
       await fetch('/api/notifications/mark-read', { method: 'POST' });
       setUnreadCount(0);
-    } catch {}
+    } catch { }
   };
 
   const close = () => setIsMenuOpen(false);
@@ -125,7 +125,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
             {session && (
               <Link href="/dashboard/challenges/new" className="host-link hide-tablet" prefetch={true}>
-                Создать челендж
+                Создать челлендж
               </Link>
             )}
 
@@ -191,7 +191,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                       <DDItem href="/dashboard/profile" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
                       <DDItem href="/favorites" icon={<Heart size={18} />} label="Избранное" onClick={close} />
                       <div className="dd-divider" />
-                      <DDItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
+                      <DDItem href="/dashboard/challenges/new" icon={<Plus size={18} />} label="Создать челлендж" onClick={close} />
                       {session.user?.roles?.includes('admin') && (
                         <DDItem href="/admin" icon={<Shield size={18} />} label="Админ-панель" onClick={close} />
                       )}
@@ -210,7 +210,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                       <DDItem href="/login" icon={<LogOut size={18} />} label="Войти" bold onClick={close} />
                       <DDItem href="/register" icon={<Plus size={18} />} label="Зарегистрироваться" onClick={close} />
                       <div className="dd-divider" />
-                      <DDItem href="/register" icon={<Plus size={18} />} label="Создать челендж" onClick={close} />
+                      <DDItem href="/register" icon={<Plus size={18} />} label="Создать челлендж" onClick={close} />
                       <DDItem href="/help" icon={<HelpCircle size={18} />} label="Помощь" onClick={close} />
                     </>
                   )}
@@ -414,11 +414,22 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
           .brand-logo { width: 28px; height: 28px; }
           .search-pill { display: none; }
           .host-link { display: none; }
+          
+          /* Mobile menu adjustments */
+          .nav-center { justify-content: flex-start; }
+          .nav-right { gap: 8px; }
+          .region-btn { padding: 6px 10px; font-size: 12px; }
+          .region-btn-text { max-width: 80px; }
         }
 
         @media (max-width: 480px) {
           .nav-wrapper { padding: 0 12px; }
           .brand-name { font-size: 18px; letter-spacing: -0.5px; }
+          
+          /* Extra small screen adjustments */
+          .brand { gap: 8px; }
+          .brand-logo { width: 24px; height: 24px; }
+          .capsule-wrap { margin-left: 4px; }
         }
       `}</style>
     </>
