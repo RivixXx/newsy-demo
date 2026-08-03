@@ -97,7 +97,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats row */}
-        <div style={s.statsRow}>
+        <div className="dash-stats-row">
           <div style={{ ...s.statCard, borderLeft: '4px solid #FF385C' }}>
             <div style={s.statIcon}><span style={{ fontSize: 24 }}>🏆</span></div>
             <div style={s.statInfo}>
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
         {/* Quick actions */}
         <div style={s.section}>
           <h2 style={s.sectionTitle}>Быстрые действия</h2>
-          <div style={s.actions}>
+          <div className="dash-actions-grid">
             <Link href="/explore" style={{ ...s.actionBtn, ...s.actionPrimary }}>
               <span style={{ fontSize: 20 }}>🔍</span>
               <span>Исследовать челенджи</span>
@@ -183,6 +183,16 @@ export default async function DashboardPage() {
       </main>
 
       <style>{`
+        .dash-stats-row {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 14px;
+        }
+        .dash-actions-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 10px;
+        }
         @media (max-width: 768px) {
           .dash-stats-row { grid-template-columns: 1fr 1fr !important; }
         }

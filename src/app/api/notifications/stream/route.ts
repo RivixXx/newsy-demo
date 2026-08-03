@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { getCurrentAuthSession } from '@/lib/session';
 import { notificationBus } from '@/lib/notification-bus';
+import { prisma } from '@/lib/db';
+import { buildAccessContext } from '@/modules/access-control/services/access-context';
+import { isAdmin } from '@/modules/access-control/services/permission-service';
 
 export async function GET(req: NextRequest) {
   const session = await getCurrentAuthSession();
@@ -30,9 +33,10 @@ export async function GET(req: NextRequest) {
       });
 
       // If admin, also subscribe to global events
-      const isAdmin = session.user?.roles?.includes('admin');
+      const accessCtx = await buildAccessContext(prisma, session.user.id);
+      const adminCheck = isAdmin(accessCtx.permissionSet);
       let unsubGlobal: (() => void) | null = null;
-      if (isAdmin) {
+      if (adminCheck) {
         unsubGlobal = notificationBus.subscribeAll((event, data) => {
           // Only forward events meant for admins or targeting this user
           if (event === 'moderation_needed' || event === 'admin_broadcast') {

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services/access-context';
+import { isAdmin } from '@/modules/access-control/services/permission-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,8 +61,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Только для админов
-    const isAdmin = session.user.roles?.includes('admin');
-    if (!isAdmin) {
+    const accessCtx = await buildAccessContext(prisma, session.user.id);
+    if (!isAdmin(accessCtx.permissionSet)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

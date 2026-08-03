@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services/access-context';
+import { isAdmin } from '@/modules/access-control/services/permission-service';
 
 async function safeCount(fn: () => Promise<number>): Promise<number> {
   try { return await fn(); } catch { return 0; }
@@ -17,8 +19,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const isAdmin = session.user.roles?.includes('admin');
-    if (!isAdmin) {
+    const accessCtx = await buildAccessContext(prisma, session.user.id);
+    if (!isAdmin(accessCtx.permissionSet)) {
       return NextResponse.json({ error: 'Доступ запрещён' }, { status: 403 });
     }
 

@@ -13,6 +13,9 @@ const unbounded = Unbounded({ subsets: ['cyrillic', 'latin'], variable: '--font-
 
 export const viewport: Viewport = {
   themeColor: '#ff385c',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export const metadata: Metadata = {
