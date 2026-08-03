@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
   }
 
   const userId = session.user.id;
+  const accessCtx = await buildAccessContext(prisma, session.user.id);
+  const adminCheck = isAdmin(accessCtx.permissionSet);
 
   // Create SSE stream
   const stream = new ReadableStream({
@@ -33,8 +35,6 @@ export async function GET(req: NextRequest) {
       });
 
       // If admin, also subscribe to global events
-      const accessCtx = await buildAccessContext(prisma, session.user.id);
-      const adminCheck = isAdmin(accessCtx.permissionSet);
       let unsubGlobal: (() => void) | null = null;
       if (adminCheck) {
         unsubGlobal = notificationBus.subscribeAll((event, data) => {
