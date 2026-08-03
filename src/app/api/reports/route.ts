@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 import { buildAccessContext } from '@/modules/access-control/services/access-context';
 import { isAdmin } from '@/modules/access-control/services/permission-service';
