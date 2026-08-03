@@ -1,7 +1,5 @@
 'use client';
 
-import './auth-card.css';
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useActionState } from 'react';
@@ -107,7 +105,6 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
             <Stat num="4.9" label="рейтинг" />
           </div>
         </div>
-      </div>
 
         {/* Right form panel */}
         <div className="auth-form-panel">
@@ -135,7 +132,6 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
           </div>
         </div>
       </div>
-
     </div>
   );
 }
@@ -456,5 +452,4 @@ function Field({ icon, name, placeholder, label, type = 'text', trailing, maxLen
     </div>
   );
 }
-
 
