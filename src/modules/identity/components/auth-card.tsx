@@ -97,8 +97,8 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
         </div>
       </div>
 
-      <style>{css}</style>
-    </div >
+      <style jsx>{css}</style>
+    </div>
   );
 }
 
