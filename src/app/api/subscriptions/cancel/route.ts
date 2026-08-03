@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
-import { createYooKassaService } from '@/modules/payments/services/yookassa-service';
+import { createStripeService } from '@/modules/payments/services/stripe-service';
 import { createSubscriptionService } from '@/modules/payments/services/subscription-service';
 
 export async function POST(req: NextRequest) {
@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'subscriptionId is required' }, { status: 400 });
     }
 
-    const yookassa = createYooKassaService();
-    const subscriptionService = createSubscriptionService(prisma, yookassa);
+    const stripeService = createStripeService();
+    const subscriptionService = createSubscriptionService(prisma, stripeService);
     await subscriptionService.cancelSubscription(session.user.id, subscriptionId);
 
     return NextResponse.json({ success: true });

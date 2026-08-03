@@ -59,7 +59,7 @@ export default function TermsPage() {
       <section style={{ marginTop: 32 }}>
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>5. Платежи</h2>
         <p>
-          Платежи обрабатываются через платёжный сервис ЮKassa. Платформа не хранит
+          Платежи обрабатываются через платёжный сервис Stripe. Платформа не хранит
           данные банковских карт пользователей.
         </p>
         <p style={{ marginTop: 12 }}>

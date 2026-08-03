@@ -1,103 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac } from 'node:crypto';
+import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
-import { createYooKassaService } from '@/modules/payments/services/yookassa-service';
+import { createStripeService } from '@/modules/payments/services/stripe-service';
 import { createPaymentService } from '@/modules/payments/services/payment-service';
 import { createSubscriptionService } from '@/modules/payments/services/subscription-service';
 import { rateLimit } from '@/lib/rate-limit';
 import type { PaymentWebhookPayload } from '@/modules/payments/types';
 
-// Полный список IP-адресов ЮKassa (https://yookassa.ru/developers/using-api/webhooks)
-const YOOKASSA_IP_PREFIXES = [
-  '185.71.76.',
-  '185.71.77.',
-  '77.75.153.',
-  '77.75.156.',
-  '77.75.154.',
-  '77.75.155.',
-  '2a02:5180:',
-];
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-01-27.acacia' as any,
+  typescript: true,
+});
 
-function isYooKassaIP(ip: string): boolean {
-  return YOOKASSA_IP_PREFIXES.some((prefix) => ip.startsWith(prefix));
-}
-
-/**
- * Верифицирует HMAC-SHA256 подпись тела webhook, если задан YOOKASSA_WEBHOOK_SECRET.
- * Используется для дополнительной защиты от подделки запросов.
- */
-function verifyWebhookSignature(body: string, signature: string | null): boolean {
-  const secret = process.env.YOOKASSA_WEBHOOK_SECRET;
-  if (!secret) {
-    // Секрет не настроен — пропускаем верификацию подписи
+function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
+  if (!STRIPE_WEBHOOK_SECRET || !signature) return false;
+  try {
+    stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
     return true;
+  } catch {
+    return false;
   }
-  if (!signature) return false;
-  const expected = createHmac('sha256', secret).update(body).digest('hex');
-  return expected === signature;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limiting (глобальный для webhook-эндпоинта)
-    const rl = await rateLimit('webhook:yookassa', { windowMs: 60_000, max: 120 });
+    const rl = await rateLimit('webhook:stripe', { windowMs: 60_000, max: 120 });
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    // IP-проверка: блокируем, если IP не из диапазона ЮKassa
-    const forwarded = req.headers.get('x-forwarded-for');
-    const clientIP = forwarded?.split(',')[0]?.trim() ?? req.headers.get('x-real-ip') ?? 'unknown';
+    const rawBody = await req.text();
+    const signature = req.headers.get('stripe-signature');
 
-    if (clientIP !== 'unknown' && !isYooKassaIP(clientIP)) {
-      console.warn(`[webhook] Blocked request from unknown IP: ${clientIP}`);
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!signature) {
+      console.warn('[webhook] Missing Stripe signature header');
+      return NextResponse.json({ error: 'Missing signature' }, { status: 403 });
     }
 
-    // Читаем тело запроса как текст для верификации подписи
-    const rawBody = await req.text();
-
-    // HMAC-подпись (опциональная)
-    const signature = req.headers.get('x-yookassa-signature');
     if (!verifyWebhookSignature(rawBody, signature)) {
-      console.warn('[webhook] Invalid HMAC signature');
+      console.warn('[webhook] Invalid Stripe signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
     }
 
-    let payload: { event?: string; object?: { id?: string; status?: string; metadata?: Record<string, string> } };
+    let payload: { type?: string; data?: { object?: { id?: string; status?: string; metadata?: Record<string, string> | null } } };
     try {
       payload = JSON.parse(rawBody);
     } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    const { event, object } = payload;
+    const eventType = payload.type;
+    const stripeObject = payload.data?.object;
 
-    if (!event || !object?.id) {
+    if (!eventType || !stripeObject?.id) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    const yookassa = createYooKassaService();
+    const stripeService = createStripeService();
 
-    // Верифицируем состояние платежа через API ЮKassa (не доверяем webhook-телу)
-    const verifiedPayment = await yookassa.getPayment(object.id);
-    if (verifiedPayment.status !== object.status) {
-      console.warn(
-        `[webhook] Status mismatch for ${object.id}: claimed=${object.status}, actual=${verifiedPayment.status}. Skipping.`
-      );
-      // Возвращаем 200, чтобы ЮKassa не повторяла запрос, но ничего не обрабатываем
-      return NextResponse.json({ status: 'ok' });
-    }
+    if (eventType === 'payment_intent.succeeded' || eventType === 'payment_intent.payment_failed') {
+      const verifiedPayment = await stripeService.getPaymentIntent(stripeObject.id);
+      const metadata = verifiedPayment.metadata ?? stripeObject.metadata;
+      const paymentType = metadata?.type;
 
-    const metadata = verifiedPayment.metadata ?? object.metadata;
-    const paymentType = metadata?.type;
-
-    if (paymentType === 'SUBSCRIPTION') {
-      const subscriptionService = createSubscriptionService(prisma, yookassa);
-      await subscriptionService.handleWebhook({ event: event as PaymentWebhookPayload['event'], type: 'notification', object: verifiedPayment });
-    } else {
-      const paymentService = createPaymentService(prisma, yookassa);
-      await paymentService.handleWebhook({ event: event as PaymentWebhookPayload['event'], type: 'notification', object: verifiedPayment });
+      if (paymentType === 'SUBSCRIPTION') {
+        const subscriptionService = createSubscriptionService(prisma, stripeService);
+        const convertedPayload: PaymentWebhookPayload = {
+          event: eventType === 'payment_intent.succeeded' ? 'payment.succeeded' : 'payment.canceled',
+          type: 'notification',
+          object: {
+            id: stripeObject.id,
+            status: verifiedPayment.status as 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled',
+            amount: { value: '0', currency: 'RUB' },
+            created_at: new Date().toISOString(),
+            metadata: metadata ?? undefined,
+          },
+        };
+        await subscriptionService.handleWebhook(convertedPayload);
+      } else {
+        const paymentService = createPaymentService(prisma, stripeService);
+        const convertedPayload: PaymentWebhookPayload = {
+          event: eventType === 'payment_intent.succeeded' ? 'payment.succeeded' : 'payment.canceled',
+          type: 'notification',
+          object: {
+            id: stripeObject.id,
+            status: verifiedPayment.status as 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled',
+            amount: { value: '0', currency: 'RUB' },
+            created_at: new Date().toISOString(),
+            metadata: metadata ?? undefined,
+          },
+        };
+        await paymentService.handleWebhook(convertedPayload);
+      }
     }
 
     return NextResponse.json({ status: 'ok' });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services';
 
 const DEFAULT_REJECTION_REASON = 'Челлендж не соответствует требованиям платформы. Пожалуйста, проверьте описание, этапы и категорию, затем повторите попытку.';
 
@@ -14,7 +15,8 @@ export async function POST(
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    if (!session.user.roles?.includes('admin')) {
+    const context = await buildAccessContext(prisma, session.user.id);
+    if (!context.roleKeys.includes('admin')) {
       return NextResponse.json({ error: 'Доступ запрещён' }, { status: 403 });
     }
 

@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services';
 
 export async function GET() {
   try {
+    const session = await getCurrentAuthSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const context = await buildAccessContext(prisma, session.user.id);
+    if (!context.roleKeys.includes('admin')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const organizations = await prisma.organizer.findMany({
       where: { deletedAt: null },
       include: {

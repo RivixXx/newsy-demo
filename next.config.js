@@ -26,7 +26,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'",
+              "script-src 'self'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://images.unsplash.com https://*.supabase.co https://*.supabase.in https://picsum.photos https://api.dicebear.com https://www.gstatic.com data: blob:",
               "font-src 'self'",

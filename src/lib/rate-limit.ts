@@ -1,5 +1,8 @@
 /**
- * Rate limiter with Upstash Redis (distributed) or in-memory fallback.
+ * Rate limiter with Upstash Redis.
+ *
+ * When Redis env vars are not set (dev mode), rate limiting is skipped
+ * and all requests are allowed. A warning is logged to stderr.
  *
  * @see https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
  */
@@ -16,25 +19,6 @@ interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   retryAfterMs: number;
-}
-
-// In-memory fallback (dev / no Redis)
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const memStore = new Map<string, RateLimitEntry>();
-
-function memCleanup() {
-  const now = Date.now();
-  for (const [key, entry] of memStore) {
-    if (entry.resetAt <= now) memStore.delete(key);
-  }
-}
-
-if (typeof setInterval !== 'undefined') {
-  setInterval(memCleanup, 60_000).unref?.();
 }
 
 // Cache limiters by window to avoid creating new instances
@@ -59,7 +43,6 @@ export async function rateLimit(
   key: string,
   config: RateLimitConfig,
 ): Promise<RateLimitResult> {
-  // Try Upstash Redis first
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -73,32 +56,11 @@ export async function rateLimit(
         retryAfterMs: success ? 0 : reset - Date.now(),
       };
     } catch (err) {
-      console.error('[rate-limit] Upstash error, falling back to memory:', err);
+      console.error('[rate-limit] Upstash error, rate limiting is skipped:', err);
     }
   }
 
-  // In-memory fallback
-  const now = Date.now();
-  const entry = memStore.get(key);
-
-  if (!entry || entry.resetAt <= now) {
-    memStore.set(key, { count: 1, resetAt: now + config.windowMs });
-    return { allowed: true, remaining: config.max - 1, retryAfterMs: 0 };
-  }
-
-  entry.count++;
-
-  if (entry.count > config.max) {
-    return {
-      allowed: false,
-      remaining: 0,
-      retryAfterMs: entry.resetAt - now,
-    };
-  }
-
-  return {
-    allowed: true,
-    remaining: config.max - entry.count,
-    retryAfterMs: 0,
-  };
+  // Redis not configured — skip rate limiting in dev
+  console.warn('[rate-limit] REDIS_URL not set, rate limiting is disabled — allowing all requests.');
+  return { allowed: true, remaining: config.max, retryAfterMs: 0 };
 }

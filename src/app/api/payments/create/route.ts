@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
-import { createYooKassaService } from '@/modules/payments/services/yookassa-service';
+import { createStripeService } from '@/modules/payments/services/stripe-service';
 import { createPaymentService } from '@/modules/payments/services/payment-service';
 
 export async function POST(req: NextRequest) {
@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Нет доступа к этому челленджу' }, { status: 403 });
     }
 
-    const yookassa = createYooKassaService();
-    const paymentService = createPaymentService(prisma, yookassa);
+    const stripeService = createStripeService();
+    const paymentService = createPaymentService(prisma, stripeService);
     const { checkoutUrl } = await paymentService.initiatePublishPayment(challengeId, session.user.id);
 
     return NextResponse.json({ checkoutUrl });
@@ -46,4 +46,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,9 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Проверяем роль admin
-    const isAdmin = session.user.roles?.includes('admin');
-    if (!isAdmin) {
+    const context = await buildAccessContext(prisma, session.user.id);
+    if (!context.roleKeys.includes('admin')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -2,5 +2,9 @@
   "buildCommand": "prisma generate && next build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --include=dev"
+  "installCommand": "npm install --include=dev",
+  "env": {
+    "STRIPE_SECRET_KEY": "",
+    "STRIPE_WEBHOOK_SECRET": ""
+  }
 }

@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import type { YooKassaService } from './yookassa-service';
+import type { StripePaymentService } from './stripe-service';
 import type { PaymentWebhookPayload } from '../types';
 
 export interface SubscriptionPlanInfo {
@@ -33,8 +33,10 @@ const PERIOD_30_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function createSubscriptionService(
   prisma: PrismaClient,
-  yookassa: YooKassaService
+  stripeService: StripePaymentService
 ): SubscriptionService {
+  const returnUrl = `${process.env.NEXTAUTH_URL}/dashboard/profile?subscription=pending`;
+
   return {
     async createSubscription(userId, planKey) {
       const plan = await prisma.subscriptionPlan.findUnique({
@@ -53,7 +55,6 @@ export function createSubscriptionService(
       });
       if (existing) throw new Error('У вас уже есть активная подписка на этот тариф');
 
-      // Бесплатный тариф — сразу создаём активную подписку
       if (plan.price === 0) {
         const now = new Date();
         await prisma.userSubscription.create({
@@ -68,40 +69,28 @@ export function createSubscriptionService(
         return { checkoutUrl: `/dashboard/profile?subscription=success` };
       }
 
-      // Создаём платёж в ЮKassa
-      const payment = await yookassa.createPayment({
-        amount: {
-          value: plan.price.toFixed(2),
-          currency: plan.currency,
-        },
-        capture: true,
-        confirmation: {
-          type: 'redirect',
-          return_url: `${process.env.NEXTAUTH_URL}/dashboard/profile?subscription=pending`,
-        },
-        description: `Подписка ${plan.name}`,
-        metadata: {
-          userId,
-          planId: plan.id,
-          type: 'SUBSCRIPTION',
-        },
-      });
+      const pi = await stripeService.createPaymentIntent(
+        '',
+        userId,
+        plan.price,
+        plan.currency,
+        `Подписка ${plan.name}`,
+        returnUrl
+      );
 
-      // Сохраняем запись о намерении подписки до получения webhook
-      // Статус TRIALING означает «платёж создан, ожидаем подтверждения»
       const now = new Date();
       await prisma.userSubscription.create({
         data: {
           userId,
           planId: plan.id,
           status: 'TRIALING',
-          providerId: payment.id,
+          providerId: pi.paymentIntentId,
           currentPeriodStart: now,
           currentPeriodEnd: new Date(now.getTime() + PERIOD_30_DAYS_MS),
         },
       });
 
-      return { checkoutUrl: payment.confirmation?.confirmation_url ?? '' };
+      return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/profile?subscription=pending&paymentIntent=${pi.paymentIntentId}` };
     },
 
     async cancelSubscription(userId, subscriptionId) {
@@ -139,7 +128,6 @@ export function createSubscriptionService(
           return;
         }
 
-        // Ищем существующую запись (созданную в createSubscription)
         const existing = await prisma.userSubscription.findFirst({
           where: { providerId: object.id },
         });
@@ -147,7 +135,7 @@ export function createSubscriptionService(
         const now = new Date();
 
         if (existing) {
-          if (existing.status === 'ACTIVE') return; // Идемпотентность
+          if (existing.status === 'ACTIVE') return;
           await prisma.userSubscription.update({
             where: { id: existing.id },
             data: {
@@ -157,7 +145,6 @@ export function createSubscriptionService(
             },
           });
         } else {
-          // Webhook пришёл раньше, чем createSubscription завершился (редко, но возможно)
           await prisma.userSubscription.create({
             data: {
               userId,

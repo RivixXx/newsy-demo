@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { prisma } from '@/lib/db';
+import { getCurrentAuthSession } from '@/lib/session';
+import { buildAccessContext } from '@/modules/access-control/services';
 
 const CONFIG_PATH = join(process.cwd(), 'data', 'ad-config.json');
 
@@ -39,12 +42,31 @@ async function writeConfig(config: Record<string, unknown>) {
   await writeFile(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
 }
 
+async function requireAdmin() {
+  const session = await getCurrentAuthSession();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const context = await buildAccessContext(prisma, session.user.id);
+  if (!context.roleKeys.includes('admin')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  return null;
+}
+
 export async function GET() {
+  const err = await requireAdmin();
+  if (err) return err;
+
   const config = await readConfig();
   return NextResponse.json(config);
 }
 
 export async function POST(req: Request) {
+  const err = await requireAdmin();
+  if (err) return err;
+
   try {
     const body = await req.json();
     const config = { ...DEFAULT_CONFIG, ...body };

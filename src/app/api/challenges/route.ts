@@ -72,6 +72,7 @@ export async function GET() {
         startTime: c.startTime ?? null,
         description: c.description ?? '',
         entryFee: c.entryFee,
+        maxParticipants: c.maxParticipants,
         isDemo: false,
       };
     });
