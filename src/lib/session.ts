@@ -48,7 +48,7 @@ export async function verifySessionHMAC(payload: string, signature: string): Pro
     const sig = await crypto.subtle.verify(
       'HMAC',
       key,
-      base64urlToUint8Array(signature),
+      base64urlToUint8Array(signature) as BufferSource,
       enc.encode(payload),
     );
     return sig;
@@ -195,7 +195,7 @@ export function parseTemp2faToken(value: string): TwoFactorTempSession | null {
     return null;
   }
 
-  if (!timingSafeEqual(expectedBuffer, actualBuffer)) {
+  if (!timingSafeEqual(expectedBuffer as Buffer, actualBuffer as Buffer)) {
     return null;
   }
 
