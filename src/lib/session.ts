@@ -103,7 +103,7 @@ export async function parseSessionCookieValue(value: string, currentFingerprint?
 
   try {
     const decoded = decode(payload);
-    const parsed = JSON.parse(decoded) as AuthenticatedUser & { expiresAt?: string; fingerprint?: string; issuedAt?: string };
+    const parsed = JSON.parse(decoded) as AuthSession & { expiresAt?: string; fingerprint?: string; issuedAt?: string };
     if (!parsed.user?.id || !parsed.expiresAt) {
       return null;
     }
