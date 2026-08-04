@@ -49,7 +49,7 @@ export async function POST(
       const activeCount = await prisma.userProgress.count({
         where: {
           challengeId: id,
-          status: { not: 'CANCELLED' },
+          status: { not: 'WITHDRAWN' },
         },
       });
       if (activeCount >= challenge.maxParticipants) {
