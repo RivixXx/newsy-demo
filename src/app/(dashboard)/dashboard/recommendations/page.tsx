@@ -166,6 +166,13 @@ const styles: Record<string, CSSProperties> = {
     background: '#f3f4f6',
   },
   reasonBadge: {
+    padding: '3px 8px',
+    background: '#f3f4f6',
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 600,
+    color: '#666',
+  },
   cardBody: {
     padding: 16,
   },

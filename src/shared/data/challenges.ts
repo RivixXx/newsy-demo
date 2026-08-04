@@ -25,19 +25,6 @@ export interface CatalogChallenge {
 }
 
 export function getChallengeById(id: string): CatalogChallenge | undefined {
-  return undefined;
-}
-
-function combineDateAndTime(date: Date, time?: string | null): Date {
-  const d = new Date(date);
-  if (time) {
-    const [h, m] = time.split(':').map(Number);
-    if (!isNaN(h)) d.setHours(h, m || 0, 0, 0);
-  }
-  return d;
-}
-
-export function getChallengeById(id: string): CatalogChallenge | undefined {
   return MOCK_CHALLENGES.find(c => c.id === id);
 }
 
