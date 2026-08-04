@@ -20,64 +20,39 @@ export function TwoFactorVerify({ onBack }: TwoFactorVerifyProps) {
 
   return (
     <div className="form-wrap">
-      <div className="form-header" style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: 'rgba(255,56,92,0.1)', border: '1px solid rgba(255,56,92,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 16px',
-        }}>
-          <Shield size={28} style={{ color: '#FF385C' }} />
+      <div className="form-header">
+        <div className="tf-icon-wrap">
+          <Shield size={28} />
         </div>
         <h2>Двухфакторная аутентификация</h2>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', margin: '6px 0 0', lineHeight: 1.5 }}>
+        <p>
           {isBackup
             ? 'Введите один из резервных кодов'
             : 'Введите код из приложения-аутентификатора'}
         </p>
       </div>
 
-      <form action={formAction} className="auth-form" style={{ marginTop: 16 }}>
-        <div className="field-group" style={{ marginBottom: 8 }}>
-          <label className="field-label" style={{ textAlign: 'center', fontSize: 12, marginBottom: 8 }}>
+      <form action={formAction} className="auth-form">
+        <div className="field-group">
+          <label className="field-label">
             {isBackup ? 'Резервный код' : 'Код подтверждения'}
           </label>
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: 8,
-          }}>
-            <input
-              name="code"
-              type="text"
-              inputMode={isBackup ? 'text' : 'numeric'}
-              autoComplete="one-time-code"
-              maxLength={isBackup ? 13 : 6}
-              placeholder={isBackup ? 'XXXXXX-XXXXXX' : '• • • • • •'}
-              className="field-input"
-              style={{
-                width: isBackup ? 200 : 200,
-                height: 52,
-                textAlign: 'center',
-                fontSize: isBackup ? 16 : 24,
-                letterSpacing: isBackup ? 2 : 8,
-                fontWeight: 700,
-                fontFamily: isBackup ? 'inherit' : 'monospace',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1.5px solid rgba(255,255,255,0.12)',
-                borderRadius: 12,
-                color: 'white',
-                outline: 'none',
-              }}
-              onFocus={e => { e.target.style.borderColor = '#FF385C'; e.target.style.boxShadow = '0 0 0 3px rgba(255,56,92,0.2)'; }}
-              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none'; }}
-              autoFocus
-            />
-          </div>
+          <input
+            name="code"
+            type="text"
+            inputMode={isBackup ? 'text' : 'numeric'}
+            autoComplete="one-time-code"
+            maxLength={isBackup ? 13 : 6}
+            placeholder={isBackup ? 'XXXXXX-XXXXXX' : '• • • • • •'}
+            className={`field-input tf-input ${isBackup ? 'tf-input--backup' : ''}`}
+            autoFocus
+          />
         </div>
 
         <input type="hidden" name="isBackup" value={isBackup ? 'true' : 'false'} />
 
         {state.error && (
-          <div className="msg msg--error" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="msg msg--error">
             <AlertCircle size={14} />
             {state.error}
           </div>
@@ -91,34 +66,16 @@ export function TwoFactorVerify({ onBack }: TwoFactorVerifyProps) {
       <button
         type="button"
         onClick={() => setIsBackup(v => !v)}
-        style={{
-          display: 'block', width: '100%', textAlign: 'center',
-          background: 'none', border: 'none',
-          fontSize: 13, fontWeight: 600,
-          color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
-          marginTop: 12, padding: 8, borderRadius: 8,
-          transition: 'color 0.15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.color = '#FF385C'; }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
+        className="tf-secondary-btn"
       >
-        <KeyRound size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+        <KeyRound size={14} />
         {isBackup ? 'Ввести код из приложения' : 'Использовать резервный код'}
       </button>
 
       <button
         type="button"
         onClick={onBack}
-        style={{
-          display: 'block', width: '100%', textAlign: 'center',
-          background: 'none', border: 'none',
-          fontSize: 13, fontWeight: 600,
-          color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
-          marginTop: 4, padding: 8, borderRadius: 8,
-          transition: 'color 0.15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
+        className="tf-back-btn"
       >
         ← Назад
       </button>
