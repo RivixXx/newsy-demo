@@ -9,6 +9,6 @@
     </style>
   </defs>
   <rect width="100" height="100" rx="22" fill="#E11D48"/>
-  <text class="chi-letter spin-c" x="38" y="67">Ч</text>
-  <text class="chi-letter spin-i" x="62" y="67" letter-spacing="-2">И</text>
+  <text class="chi-letter spin-c" x="30" y="68" text-anchor="middle">Ч</text>
+  <text class="chi-letter spin-i" x="70" y="68" text-anchor="middle">И</text>
 </svg>
