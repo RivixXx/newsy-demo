@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // Капитан автоматически вступает в команду
     await prisma.teamMember.create({
       data: {
-        teamId: team.id,
+        teamId: team!.id,
         userId: session.user.id,
         role: 'CAPTAIN',
       },
