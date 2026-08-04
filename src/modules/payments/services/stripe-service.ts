@@ -1,27 +1,28 @@
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia' as any,
-  typescript: true,
-});
-
 export interface StripePaymentService {
   createPaymentIntent(challengeId: string, userId: string, amount: number, currency: string, description: string, returnUrl: string): Promise<{ clientSecret: string; paymentIntentId: string }>;
   getPaymentIntent(paymentIntentId: string): Promise<{ status: string; metadata: Record<string, string> | null }>;
 }
 
-function isMock(): boolean {
-  return !process.env.STRIPE_SECRET_KEY;
+function getStripeInstance(): Stripe | null {
+  const apiKey = process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) return null;
+  return new Stripe(apiKey, {
+    apiVersion: '2025-01-27.acacia' as any,
+    typescript: true,
+  });
 }
 
 export function createStripeService(): StripePaymentService {
   return {
     async createPaymentIntent(challengeId, userId, amount, currency, description, returnUrl) {
-      if (isMock()) {
+      const stripe = getStripeInstance();
+      if (!stripe) {
         console.warn('[Stripe] Credentials missing. Returning mock payment intent (dev only).');
-        const mockId = `pi_mock_${Date.now()}`;
+        const mockId = 'pi_mock_' + Date.now();
         return {
-          clientSecret: `${mockId}_client_secret`,
+          clientSecret: mockId + '_client_secret',
           paymentIntentId: mockId,
         };
       }
@@ -31,8 +32,8 @@ export function createStripeService(): StripePaymentService {
         currency,
         description,
         metadata: {
-          challengeId,
-          userId,
+          challengeId: challengeId,
+          userId: userId,
           type: 'PUBLISH_CHALLENGE',
         },
         confirmation_method: 'manual',
@@ -50,11 +51,16 @@ export function createStripeService(): StripePaymentService {
     },
 
     async getPaymentIntent(paymentIntentId) {
-      if (isMock() || paymentIntentId.startsWith('mock_')) {
+      if (paymentIntentId.startsWith('mock_')) {
         return {
           status: 'succeeded',
           metadata: null,
         };
+      }
+
+      const stripe = getStripeInstance();
+      if (!stripe) {
+        return { status: 'processing', metadata: null };
       }
 
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
