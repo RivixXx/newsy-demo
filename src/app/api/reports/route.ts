@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
 
     const { challengeId, userId, reason, description } = await request.json();
 
+    const sanitisedDescription = description ? String(description).replace(/<[^>]*>/g, '') : null;
+
     if (!reason) {
       return NextResponse.json({ error: 'Укажите причину жалобы' }, { status: 400 });
     }
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
         challengeId: challengeId || null,
         userId: userId || null,
         reason,
-        description: description || null,
+        description: sanitisedDescription,
       },
     });
 

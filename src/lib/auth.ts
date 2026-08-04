@@ -8,6 +8,7 @@ export interface AuthenticatedUser {
   lastName?: string | null;
   roles: string[];
   organizationIds: string[];
+  fingerprint?: string | null;
 }
 
 export interface AuthSession {

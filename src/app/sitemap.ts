@@ -1,9 +1,9 @@
 import type { MetadataRoute } from 'next';
-import { MOCK_CHALLENGES } from '@/shared/data/challenges';
+import { prisma } from '@/lib/db';
 
 const BASE_URL = 'https://chillenge-russia.ru';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -11,12 +11,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/search`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
   ];
 
-  const challengePages: MetadataRoute.Sitemap = MOCK_CHALLENGES.map(c => ({
-    url: `${BASE_URL}/challenges/${c.id}`,
-    lastModified: now,
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }));
+  try {
+    const challenges = await prisma.challenge.findMany({
+      where: { deletedAt: null, status: 'PUBLISHED' },
+      select: { updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    });
 
-  return [...staticPages, ...challengePages];
+    const challengePages: MetadataRoute.Sitemap = challenges.map(c => ({
+      url: `${BASE_URL}/challenges/${c.id}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }));
+
+    return [...staticPages, ...challengePages];
+  } catch {
+    return staticPages;
+  }
 }

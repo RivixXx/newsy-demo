@@ -17,7 +17,7 @@ async function checkParticipation(userId: string, challengeId: string): Promise<
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -27,6 +27,11 @@ export async function GET(
     }
 
     const { id } = await params;
+
+    const rl = await rateLimit(`chat:get:${session.user.id}:${id}`, { windowMs: 60_000, max: 60 });
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Слишком много запросов. Подождите.' }, { status: 429 });
+    }
 
     const isParticipant = await checkParticipation(session.user.id, id);
     if (!isParticipant) {
@@ -105,7 +110,18 @@ export async function POST(
     const challenge = await prisma.challenge.findUnique({ where: { id }, select: { title: true } });
     const senderName = message.user.firstName ? `${message.user.firstName} ${message.user.lastName || ''}`.trim() : 'Пользователь';
 
-    if (participants.length > 0) {
+    // Batch notifications — only notify if user hasn't received one in last 5 min
+    const recentNotifications = await prisma.notification.count({
+      where: {
+        userId: { in: participants.map(p => p.userId) },
+        type: 'SYSTEM',
+        createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+      },
+    });
+
+    const shouldNotify = recentNotifications === 0;
+
+    if (shouldNotify && participants.length > 0) {
       await prisma.notification.createMany({
         data: participants.map(p => ({
           userId: p.userId,

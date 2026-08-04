@@ -33,6 +33,9 @@ export async function GET(
         media: { orderBy: { sortOrder: 'asc' } },
         steps: { orderBy: { order: 'asc' } },
         participations: {
+          where: {},
+          take: 20,
+          skip: 0,
           include: {
             stepProgress: {
               select: { submission: true, stepId: true, status: true },

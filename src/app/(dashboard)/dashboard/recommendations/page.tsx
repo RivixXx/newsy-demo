@@ -65,18 +65,9 @@ async function getRecommendations(userId?: string) {
   }
 }
 
-// Mock рекомендации для демонстрации
-const MOCK_RECOMMENDATIONS = [
-  { id: '1', title: 'Марафон ЗОЖ', category: 'sport', organizer: 'Nike Run Club', participants: 45, imageUrl: '/images/challenge-placeholder.svg', reason: 'Похоже на ваши интересы' },
-  { id: '2', title: 'Код за 30 дней', category: 'education', organizer: 'Яндекс.Практикум', participants: 120, imageUrl: '/images/challenge-placeholder.svg', reason: 'Популярно среди участников' },
-  { id: '3', title: 'Фото-охота', category: 'art', organizer: 'Nikon Russia', participants: 78, imageUrl: '/images/challenge-placeholder.svg', reason: 'Из вашей любимой категории' },
-  { id: '4', title: 'Эко-акция', category: 'quest', organizer: 'ЭкоГород', participants: 56, imageUrl: '/images/challenge-placeholder.svg', reason: 'Рекомендуем попробовать' },
-];
-
 export default async function RecommendationsPage() {
   const session = await getCurrentAuthSession();
   const recommendations = await getRecommendations(session?.user.id);
-  const items = recommendations.length > 0 ? recommendations : MOCK_RECOMMENDATIONS;
 
   return (
     <PageShell>
@@ -93,26 +84,29 @@ export default async function RecommendationsPage() {
           </div>
         </header>
 
-        <div style={styles.grid}>
-          {items.map((item: any) => (
-            <Link key={item.id} href={`/challenges/${item.id}`} style={styles.card}>
-              <div style={styles.cardImage}>
-                <img src={item.imageUrl || item.media?.[0]?.url || '/images/challenge-placeholder.svg'} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={styles.reasonBadge}>{item.reason || 'Рекомендуем'}</div>
-              </div>
-              <div style={styles.cardBody}>
-                <h3 style={styles.cardTitle}>{item.title}</h3>
-                <p style={styles.cardOrganizer}>{item.organizer?.name || item.organizer}</p>
-                <div style={styles.cardMeta}>
-                  <span style={styles.metaItem}>
-                    <Users size={14} /> {item._count?.participations || item.participants}
-                  </span>
-                  <span style={styles.categoryBadge}>{item.category}</span>
+        {recommendations.length === 0 ? (
+          <p style={{ textAlign: 'center', padding: '60px 0', color: '#888' }}>Рекомендаций пока нет</p>
+        ) : (
+          <div style={styles.grid}>
+            {(recommendations as any[]).map((item: any) => (
+              <Link key={item.id} href={`/challenges/${item.id}`} style={styles.card}>
+                <div style={styles.cardImage}>
+                  <img src={item.media?.[0]?.url || '/images/challenge-placeholder.svg'} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div style={styles.cardBody}>
+                  <h3 style={styles.cardTitle}>{item.title}</h3>
+                  <p style={styles.cardOrganizer}>{item.organizer?.name}</p>
+                  <div style={styles.cardMeta}>
+                    <span style={styles.metaItem}>
+                      <Users size={14} /> {item._count?.participations}
+                    </span>
+                    <span style={styles.categoryBadge}>{item.category}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
     </PageShell>
   );
@@ -172,16 +166,6 @@ const styles: Record<string, CSSProperties> = {
     background: '#f3f4f6',
   },
   reasonBadge: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    padding: '4px 10px',
-    background: 'rgba(139, 92, 246, 0.9)',
-    color: 'white',
-    borderRadius: 6,
-    fontSize: 11,
-    fontWeight: 700,
-  },
   cardBody: {
     padding: 16,
   },

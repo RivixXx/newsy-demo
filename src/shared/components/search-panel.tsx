@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, MapPin, Users } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
+import { type CatalogChallenge } from '@/shared/data/challenges';
 import { ChallengeModal, type ModalChallenge } from '@/shared/components/challenge-modal';
 import { useSession } from '@/shared/components/session-provider';
 
@@ -57,9 +57,9 @@ export function SearchPanel() {
       .then(r => r.json())
       .then(data => {
         const real = Array.isArray(data) ? data : [];
-        setAllChallenges(isAdmin ? [...MOCK_CHALLENGES, ...real] : real);
+        setAllChallenges(real);
       })
-      .catch(() => setAllChallenges(isAdmin ? [...MOCK_CHALLENGES] : []));
+      .catch(() => setAllChallenges([]));
   }, [isAdmin]);
 
   const inputRef = useRef<HTMLInputElement>(null);

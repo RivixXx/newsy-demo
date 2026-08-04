@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 
 export interface StripePaymentService {
-  createPaymentIntent(challengeId: string, userId: string, amount: number, currency: string, description: string, returnUrl: string): Promise<{ clientSecret: string; paymentIntentId: string }>;
+  createPaymentIntent(challengeId: string, planId: string, userId: string, amount: number, currency: string, description: string, returnUrl: string): Promise<{ clientSecret: string; paymentIntentId: string }>;
   getPaymentIntent(paymentIntentId: string): Promise<{ status: string; metadata: Record<string, string> | null }>;
 }
 
@@ -16,15 +16,10 @@ function getStripeInstance(): Stripe | null {
 
 export function createStripeService(): StripePaymentService {
   return {
-    async createPaymentIntent(challengeId, userId, amount, currency, description, returnUrl) {
+    async createPaymentIntent(challengeId, planId, userId, amount, currency, description, returnUrl) {
       const stripe = getStripeInstance();
       if (!stripe) {
-        console.warn('[Stripe] Credentials missing. Returning mock payment intent (dev only).');
-        const mockId = 'pi_mock_' + Date.now();
-        return {
-          clientSecret: mockId + '_client_secret',
-          paymentIntentId: mockId,
-        };
+        throw new Error('Stripe secret key is not configured. Set STRIPE_SECRET_KEY environment variable.');
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
@@ -33,6 +28,7 @@ export function createStripeService(): StripePaymentService {
         description,
         metadata: {
           challengeId: challengeId,
+          planId: planId,
           userId: userId,
           type: 'PUBLISH_CHALLENGE',
         },
@@ -60,7 +56,7 @@ export function createStripeService(): StripePaymentService {
 
       const stripe = getStripeInstance();
       if (!stripe) {
-        return { status: 'processing', metadata: null };
+        throw new Error('Stripe secret key is not configured.');
       }
 
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);

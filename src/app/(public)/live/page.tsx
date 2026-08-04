@@ -1,34 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Radio, Calendar, Clock } from 'lucide-react';
 import { LiveStreamEmbed } from '@/shared/components/live-stream-embed';
 
-const MOCK_STREAMS = [
-  {
-    id: '1',
-    platform: 'youtube' as const,
-    videoId: 'dQw4w9WgXcQ',
-    title: 'Старт марафона ЗОЖ 2026',
-    challenge: 'Марафон ЗОЖ',
-    scheduledAt: '2026-07-15T10:00:00Z',
-    isLive: true,
-  },
-  {
-    id: '2',
-    platform: 'youtube' as const,
-    videoId: 'jNQXAC9IVRw',
-    title: 'Объявление победителей фото-охоты',
-    challenge: 'Фото-охота',
-    scheduledAt: '2026-07-20T18:00:00Z',
-    isLive: false,
-  },
-];
+interface Stream {
+  id: string;
+  platform: 'youtube' | 'vimeo' | 'other';
+  videoId: string;
+  title: string;
+  challenge: string;
+  scheduledAt: string;
+  isLive: boolean;
+}
+
+async function fetchStreams(): Promise<Stream[]> {
+  try {
+    const res = await fetch('/api/streams');
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
 
 export default function LivePage() {
-  const liveStream = MOCK_STREAMS.find(s => s.isLive);
-  const scheduledStreams = MOCK_STREAMS.filter(s => !s.isLive);
+  const [streams, setStreams] = useState<Stream[]>([]);
+
+  useEffect(() => {
+    fetchStreams().then(setStreams);
+  }, []);
+
+  const liveStream = streams.find(s => s.isLive);
+  const scheduledStreams = streams.filter(s => !s.isLive);
 
   return (
     <div className="live-page">

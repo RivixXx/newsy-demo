@@ -183,8 +183,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('[telegram-webhook] Error:', error);
-    return NextResponse.json({ ok: true }); // Always return 200 to Telegram
+    console.error('[telegram-webhook] Critical error processing webhook:', error instanceof Error ? error.message : error);
+    return NextResponse.json({ ok: true }); // Always return 200 to prevent Telegram retries
   }
 }
 

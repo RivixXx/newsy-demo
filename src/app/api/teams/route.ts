@@ -28,17 +28,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Вы уже состоите в команде в этом челлендже' }, { status: 409 });
     }
 
-    const inviteCode = randomBytes(4).toString('hex');
+    let inviteCode = randomBytes(4).toString('hex');
+    let team;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-    const team = await prisma.team.create({
-      data: {
-        challengeId,
-        name,
-        captainId: session.user.id,
-        inviteCode,
-        maxMembers: maxMembers || 10,
-      },
-    });
+    do {
+      try {
+        team = await prisma.team.create({
+          data: {
+            challengeId,
+            name,
+            captainId: session.user.id,
+            inviteCode,
+            maxMembers: maxMembers || 10,
+          },
+        });
+        break;
+      } catch (createErr: any) {
+        if (createErr?.code === 'P2002' && attempts < maxAttempts) {
+          inviteCode = randomBytes(4).toString('hex');
+          attempts++;
+          continue;
+        }
+        throw createErr;
+      }
+    } while (attempts < maxAttempts);
 
     // Капитан автоматически вступает в команду
     await prisma.teamMember.create({

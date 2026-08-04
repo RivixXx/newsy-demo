@@ -71,6 +71,7 @@ export function createSubscriptionService(
 
       const pi = await stripeService.createPaymentIntent(
         '',
+        plan.id,
         userId,
         plan.price,
         plan.currency,
@@ -128,34 +129,51 @@ export function createSubscriptionService(
           return;
         }
 
-        const existing = await prisma.userSubscription.findFirst({
-          where: { providerId: object.id },
+        await prisma.$transaction(async (tx) => {
+          const existing = await tx.userSubscription.findFirst({
+            where: { providerId: object.id },
+          });
+
+          const now = new Date();
+
+          if (existing) {
+            if (existing.status === 'ACTIVE') return;
+            await tx.userSubscription.update({
+              where: { id: existing.id },
+              data: {
+                status: 'ACTIVE',
+                currentPeriodStart: now,
+                currentPeriodEnd: new Date(now.getTime() + PERIOD_30_DAYS_MS),
+              },
+            });
+          } else {
+            const dup = await tx.userSubscription.findFirst({
+              where: { userId, status: 'ACTIVE' },
+            });
+            if (dup) {
+              await tx.userSubscription.update({
+                where: { id: dup.id },
+                data: {
+                  providerId: object.id,
+                  status: 'ACTIVE',
+                  currentPeriodStart: now,
+                  currentPeriodEnd: new Date(now.getTime() + PERIOD_30_DAYS_MS),
+                },
+              });
+              return;
+            }
+            await tx.userSubscription.create({
+              data: {
+                userId,
+                planId,
+                status: 'ACTIVE',
+                providerId: object.id,
+                currentPeriodStart: now,
+                currentPeriodEnd: new Date(now.getTime() + PERIOD_30_DAYS_MS),
+              },
+            });
+          }
         });
-
-        const now = new Date();
-
-        if (existing) {
-          if (existing.status === 'ACTIVE') return;
-          await prisma.userSubscription.update({
-            where: { id: existing.id },
-            data: {
-              status: 'ACTIVE',
-              currentPeriodStart: now,
-              currentPeriodEnd: new Date(now.getTime() + PERIOD_30_DAYS_MS),
-            },
-          });
-        } else {
-          await prisma.userSubscription.create({
-            data: {
-              userId,
-              planId,
-              status: 'ACTIVE',
-              providerId: object.id,
-              currentPeriodStart: now,
-              currentPeriodEnd: new Date(now.getTime() + PERIOD_30_DAYS_MS),
-            },
-          });
-        }
       } else if (event === 'payment.canceled') {
         const existing = await prisma.userSubscription.findFirst({
           where: { providerId: object.id },

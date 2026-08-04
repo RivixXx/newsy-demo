@@ -45,6 +45,15 @@ export async function POST(
       return NextResponse.json({ error: 'Этап не найден' }, { status: 404 });
     }
 
+    if (step.challengeId !== id) {
+      return NextResponse.json({ error: 'Этот этап не относится к указанному челленджу' }, { status: 400 });
+    }
+
+    const allSteps = await prisma.step.findMany({ where: { challengeId: id }, orderBy: { order: 'asc' } });
+    if (allSteps.length === 0) {
+      return NextResponse.json({ error: 'У этого челленджа нет шагов' }, { status: 400 });
+    }
+
     const existingProgress = await prisma.stepProgress.findUnique({
       where: { userProgressId_stepId: { userProgressId: progress.id, stepId } },
     });
@@ -128,18 +137,18 @@ export async function POST(
       }
     }
 
-    await prisma.stepProgress.upsert({
-      where: { userProgressId_stepId: { userProgressId: progress.id, stepId } },
-      update: { status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
-      create: { userProgressId: progress.id, stepId, status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
-    });
+    await prisma.$transaction([
+      prisma.stepProgress.upsert({
+        where: { userProgressId_stepId: { userProgressId: progress.id, stepId } },
+        update: { status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
+        create: { userProgressId: progress.id, stepId, status: 'APPROVED', completedAt: new Date(), submission, pointsEarned: step.rewardPoints },
+      }),
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: { points: { increment: step.rewardPoints } },
+      }),
+    ]);
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { points: { increment: step.rewardPoints } },
-    });
-
-    const allSteps = await prisma.step.findMany({ where: { challengeId: id }, orderBy: { order: 'asc' } });
     const completedSteps = await prisma.stepProgress.count({
       where: { userProgressId: progress.id, status: 'APPROVED' },
     });

@@ -7,6 +7,8 @@ export interface StorageService {
   getPublicUrl(bucket: string, path: string): string;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 const BUCKETS = {
   challenges: 'challenges',
   avatars: 'avatars',
@@ -15,15 +17,28 @@ const BUCKETS = {
 
 export type BucketName = keyof typeof BUCKETS;
 
+function sanitizePath(rawPath: string): string {
+  return rawPath
+    .split('/')
+    .filter((seg) => seg !== '' && seg !== '..' && seg !== '.')
+    .join('/');
+}
+
 export function createStorageService(): StorageService {
   const supabase = getSupabaseAdmin();
 
   return {
     async uploadFile(bucket, path, file) {
+      const sanitizedPath = sanitizePath(path);
       const buffer = Buffer.from(await file.arrayBuffer());
+
+      if (buffer.length > MAX_FILE_SIZE) {
+        throw new Error('Файл слишком большой (макс. 10 МБ)');
+      }
+
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(path, buffer, {
+        .upload(sanitizedPath, buffer, {
           contentType: file.type,
           upsert: true,
         });
@@ -38,9 +53,15 @@ export function createStorageService(): StorageService {
     },
 
     async uploadBuffer(bucket, path, buffer, contentType) {
+      const sanitizedPath = sanitizePath(path);
+
+      if (buffer.length > MAX_FILE_SIZE) {
+        throw new Error('Файл слишком большой (макс. 10 МБ)');
+      }
+
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(path, buffer, {
+        .upload(sanitizedPath, buffer, {
           contentType,
           upsert: true,
         });
@@ -55,17 +76,19 @@ export function createStorageService(): StorageService {
     },
 
     async deleteFile(bucket, path) {
+      const sanitizedPath = sanitizePath(path);
       const { error } = await supabase.storage
         .from(bucket)
-        .remove([path]);
+        .remove([sanitizedPath]);
 
       if (error) throw new Error(`Delete failed: ${error.message}`);
     },
 
     getPublicUrl(bucket, path) {
+      const sanitizedPath = sanitizePath(path);
       const { data } = supabase.storage
         .from(bucket)
-        .getPublicUrl(path);
+        .getPublicUrl(sanitizedPath);
 
       return data.publicUrl;
     },

@@ -2,59 +2,98 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createReferralService } from '@/modules/identity/services/referral-service';
 
-export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get('token');
-
+async function verifyToken(token: string | null) {
   if (!token) {
-    return NextResponse.redirect(new URL('/login?error=missing-token', req.url));
+    return null;
   }
 
+  const record = await prisma.emailVerificationToken.findUnique({
+    where: { token },
+  });
+
+  if (!record) {
+    return { error: 'invalid-token' };
+  }
+
+  if (record.usedAt) {
+    return { error: 'already-verified' };
+  }
+
+  if (record.expiresAt < new Date()) {
+    return { error: 'token-expired' };
+  }
+
+  return { record };
+}
+
+async function succeed(record: { id: string; userId: string }, redirectUrl: string) {
+  await prisma.$transaction([
+    prisma.emailVerificationToken.update({
+      where: { id: record.id },
+      data: { usedAt: new Date() },
+    }),
+    prisma.user.update({
+      where: { id: record.userId },
+      data: { status: 'ACTIVE' },
+    }),
+  ]);
+
   try {
-    const record = await prisma.emailVerificationToken.findUnique({
-      where: { token },
+    const user = await prisma.user.findUnique({
+      where: { id: record.userId },
+      select: { referredBy: true },
     });
+    if (user?.referredBy) {
+      const referralService = createReferralService(prisma);
+      await referralService.trackRegistration(record.userId, user.referredBy);
+    }
+  } catch (refErr) {
+    console.error('[verify-email] Referral tracking failed:', refErr);
+  }
 
-    if (!record) {
-      return NextResponse.redirect(new URL('/login?error=invalid-token', req.url));
+  return NextResponse.redirect(new URL(`${redirectUrl}?info=verified`));
+}
+
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get('token');
+  const baseUrl = req.nextUrl.origin;
+
+  try {
+    const result = await verifyToken(token);
+
+    if (result?.error) {
+      return NextResponse.redirect(new URL(`/login?error=${result.error}`, baseUrl));
     }
 
-    if (record.usedAt) {
-      return NextResponse.redirect(new URL('/login?info=already-verified', req.url));
+    if (!result?.record) {
+      return NextResponse.redirect(new URL('/login?error=missing-token', baseUrl));
     }
 
-    if (record.expiresAt < new Date()) {
-      return NextResponse.redirect(new URL('/login?error=token-expired', req.url));
-    }
-
-    // Атомарно: помечаем токен как использованный + активируем пользователя
-    await prisma.$transaction([
-      prisma.emailVerificationToken.update({
-        where: { id: record.id },
-        data: { usedAt: new Date() },
-      }),
-      prisma.user.update({
-        where: { id: record.userId },
-        data: { status: 'ACTIVE' },
-      }),
-    ]);
-
-    // Трекаем реферальную регистрацию
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: record.userId },
-        select: { id: true, referredBy: true },
-      });
-      if (user?.referredBy) {
-        const referralService = createReferralService(prisma);
-        await referralService.trackRegistration(user.id, user.referredBy);
-      }
-    } catch (refErr) {
-      console.error('[verify-email] Referral tracking failed:', refErr);
-    }
-
-    return NextResponse.redirect(new URL('/login?info=verified', req.url));
+    return succeed({ id: result.record.id, userId: result.record.userId }, `${baseUrl}/login`);
   } catch (error) {
     console.error('[verify-email] Error:', error);
-    return NextResponse.redirect(new URL('/login?error=server-error', req.url));
+    return NextResponse.redirect(new URL('/login?error=server-error', baseUrl));
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const baseUrl = req.nextUrl.origin;
+
+  try {
+    const { token }: { token: string } = await req.json();
+    const result = await verifyToken(token);
+
+    if (result?.error) {
+      return NextResponse.json({ error: result.error === 'invalid-token' ? 'Недействительный токен' : result.error === 'token-expired' ? 'Токен истек' : 'Ошибка верификации' }, { status: 400 });
+    }
+
+    if (!result?.record) {
+      return NextResponse.json({ error: 'Токен не указан' }, { status: 400 });
+    }
+
+    return succeed({ id: result.record.id, userId: result.record.userId }, `${baseUrl}/login`);
+  } catch (error) {
+    console.error('[verify-email] Error:', error);
+    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
   }
 }

@@ -35,20 +35,10 @@ async function getUserPoints(userId?: string): Promise<number> {
   }
 }
 
-// Mock prizes для демонстрации
-const MOCK_PRIZES: ShopPrize[] = [
-  { id: '1', name: 'Мерч ЧИ — футболка', description: 'Чёрная футболка с логотипом ЧИ', imageUrl: null, cost: 500, stock: 50 },
-  { id: '2', name: 'Скидка 20% на партнёров', description: 'Промокод на скидку у магазинов-партнёров', imageUrl: null, cost: 200, stock: 100 },
-  { id: '3', name: 'Стикерпак ЧИ', description: 'Набор из 10 стикеров для мессенджеров', imageUrl: null, cost: 100, stock: 200 },
-  { id: '4', name: 'Бейдж «Эксклюзив»', description: 'Эксклюзивный бейдж в профиле', imageUrl: null, cost: 300, stock: 999 },
-  { id: '5', name: 'Кружка ЧИ', description: 'Керамическая кружка с логотипом', imageUrl: null, cost: 400, stock: 30 },
-  { id: '6', name: 'Пропуск на мероприятие', description: 'Билет на офлайн-мероприятие ЧИ', imageUrl: null, cost: 1000, stock: 10 },
-];
-
 export default async function ShopPage() {
   const session = await getCurrentAuthSession();
   const userPoints = await getUserPoints(session?.user.id);
-  const prizes = MOCK_PRIZES; // В продакшене: await getPrizes()
+  const prizes = await getPrizes();
 
   return (
     <PageShell>
@@ -79,42 +69,46 @@ export default async function ShopPage() {
           <h2 style={styles.sectionTitle}>
             <Gift size={18} /> Каталог призов
           </h2>
-          <div style={styles.prizesGrid}>
-            {prizes.map(prize => {
-              const canAfford = userPoints >= prize.cost;
-              return (
-                <div key={prize.id} style={{
-                  ...styles.prizeCard,
-                  opacity: canAfford ? 1 : 0.7,
-                }}>
-                  <div style={styles.prizeImage}>
-                    <Gift size={32} color="#FF385C" />
-                  </div>
-                  <div style={styles.prizeInfo}>
-                    <h3 style={styles.prizeName}>{prize.name}</h3>
-                    <p style={styles.prizeDesc}>{prize.description}</p>
-                    <div style={styles.prizeMeta}>
-                      <span style={styles.prizeCost}>
-                        <Star size={14} color="#FFD700" /> {prize.cost}
-                      </span>
-                      <span style={styles.prizeStock}>Осталось: {prize.stock}</span>
+          {prizes.length === 0 ? (
+            <p style={{ textAlign: 'center', padding: '40px 0', color: '#888' }}>Призов пока нет</p>
+          ) : (
+            <div style={styles.prizesGrid}>
+              {prizes.map(prize => {
+                const canAfford = userPoints >= prize.cost;
+                return (
+                  <div key={prize.id} style={{
+                    ...styles.prizeCard,
+                    opacity: canAfford ? 1 : 0.7,
+                  }}>
+                    <div style={styles.prizeImage}>
+                      <Gift size={32} color="#FF385C" />
                     </div>
+                    <div style={styles.prizeInfo}>
+                      <h3 style={styles.prizeName}>{prize.name}</h3>
+                      <p style={styles.prizeDesc}>{prize.description}</p>
+                      <div style={styles.prizeMeta}>
+                        <span style={styles.prizeCost}>
+                          <Star size={14} color="#FFD700" /> {prize.cost}
+                        </span>
+                        <span style={styles.prizeStock}>Осталось: {prize.stock}</span>
+                      </div>
+                    </div>
+                    <button
+                      style={{
+                        ...styles.buyBtn,
+                        background: canAfford ? '#FF385C' : '#e5e7eb',
+                        color: canAfford ? 'white' : '#999',
+                        cursor: canAfford ? 'pointer' : 'not-allowed',
+                      }}
+                      disabled={!canAfford}
+                    >
+                      {canAfford ? 'Обменять' : 'Не хватает'}
+                    </button>
                   </div>
-                  <button
-                    style={{
-                      ...styles.buyBtn,
-                      background: canAfford ? '#FF385C' : '#e5e7eb',
-                      color: canAfford ? 'white' : '#999',
-                      cursor: canAfford ? 'pointer' : 'not-allowed',
-                    }}
-                    disabled={!canAfford}
-                  >
-                    {canAfford ? 'Обменять' : 'Не хватает'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Информация */}

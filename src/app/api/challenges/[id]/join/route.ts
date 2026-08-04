@@ -45,24 +45,40 @@ export async function POST(
       return NextResponse.json({ success: true, message: 'Вы уже участвуете', progressId: existing.id });
     }
 
-    const progress = await prisma.userProgress.create({
-      data: {
-        userId: session.user.id,
-        challengeId: id,
-        status: 'IN_PROGRESS',
-      },
+    if (challenge.maxParticipants !== null && challenge.maxParticipants !== undefined) {
+      const activeCount = await prisma.userProgress.count({
+        where: {
+          challengeId: id,
+          status: { not: 'CANCELLED' },
+        },
+      });
+      if (activeCount >= challenge.maxParticipants) {
+        return NextResponse.json({ error: 'Челлендж заполнен' }, { status: 409 });
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const progress = await tx.userProgress.create({
+        data: {
+          userId: session.user.id,
+          challengeId: id,
+          status: 'IN_PROGRESS',
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: session.user.id,
+          type: 'CHALLENGE_CREATED',
+          title: 'Вы присоединились к челленджу',
+          body: `Теперь вы участвуете в «${challenge.title}». Удачи!`,
+        },
+      });
+
+      return progress;
     });
 
-    await prisma.notification.create({
-      data: {
-        userId: session.user.id,
-        type: 'CHALLENGE_CREATED',
-        title: 'Вы присоединились к челленджу',
-        body: `Теперь вы участвуете в «${challenge.title}». Удачи!`,
-      },
-    });
-
-    return NextResponse.json({ success: true, progressId: progress.id });
+    return NextResponse.json({ success: true, progressId: result.id });
   } catch (error: any) {
     console.error('Join error:', error);
     return NextResponse.json({ error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : error.message }, { status: 500 });

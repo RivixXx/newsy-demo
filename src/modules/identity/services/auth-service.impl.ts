@@ -8,6 +8,8 @@ import { normalizeIdentifier, TwoFactorRequiredError } from './auth-service';
 import { verifyPassword, hashPassword } from './password-hash';
 import { createEmailService, generateVerificationToken } from './email-service';
 import { verifyTOTP, verifyBackupCode } from './totp-service';
+import { createHash } from 'crypto';
+import { rateLimit } from '@/lib/rate-limit';
 
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
@@ -67,8 +69,11 @@ export function createAuthService(prisma: PrismaClient) {
       });
     },
 
-    async logout(_sessionId: string): Promise<void> {
-      return;
+    async logout(sessionToken: string): Promise<void> {
+      const sessionHash = createHash('sha256').update(sessionToken).digest('hex');
+      await prisma.revokedSession.create({
+        data: { sessionTokenHash: sessionHash },
+      });
     },
 
     async requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
@@ -138,7 +143,19 @@ export function createAuthService(prisma: PrismaClient) {
       ]);
     },
 
-    async verify2fa(userId: string, token: string): Promise<AuthSession> {
+    async verify2fa(userId: string, sessionToken: string): Promise<AuthSession> {
+      const rateResult = await rateLimit(`2fa:${userId}`, { windowMs: 15 * 60 * 1000, max: 5 });
+      if (!rateResult.allowed) {
+        throw new Error(`Слишком много попыток. Попробуйте через ${Math.ceil(rateResult.retryAfterMs / 60000)} мин.`);
+      }
+
+      const revoked = await prisma.revokedSession.findFirst({
+        where: { sessionTokenHash: createHash('sha256').update(sessionToken).digest('hex') },
+      });
+      if (revoked) {
+        throw new Error('Сессия отозвана. Выполните повторный вход.');
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -156,27 +173,46 @@ export function createAuthService(prisma: PrismaClient) {
       let isValid = false;
 
       // Check if it's a backup code (12 hex chars with dash: XXXXXX-XXXXXX)
-      if (/^[0-9A-F]{6}-[0-9A-F]{6}$/i.test(token.trim())) {
+      if (/^[0-9A-F]{6}-[0-9A-F]{6}$/i.test(sessionToken.trim())) {
         const hashedCodes: string[] = user.totpBackupCodes
           ? JSON.parse(user.totpBackupCodes)
           : [];
         const { verifyBackupCode } = await import('./totp-service');
-        const idx = verifyBackupCode(token.trim(), hashedCodes);
+        const idx = verifyBackupCode(sessionToken.trim(), hashedCodes);
         if (idx !== -1) {
-          // Remove the used backup code
-          hashedCodes.splice(idx, 1);
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              totpBackupCodes: hashedCodes.length > 0
-                ? JSON.stringify(hashedCodes)
-                : null,
-            },
-          });
-          isValid = true;
+          // Timing-safe comparison using timing-safe equal
+          const inputHash = createHash('sha256').update(sessionToken.trim()).digest('hex');
+          let anyMismatch = 0;
+          const expectedLen = inputHash.length;
+
+          for (const code of hashedCodes) {
+            if (code.length !== expectedLen) {
+              anyMismatch |= 1;
+              continue;
+            }
+            let equal = 1;
+            for (let i = 0; i < expectedLen; i++) {
+              equal &= inputHash.charCodeAt(i) ^ code.charCodeAt(i);
+            }
+            anyMismatch |= ~equal & 1;
+          }
+
+          if (anyMismatch === 0) {
+            // Remove the used backup code
+            hashedCodes.splice(idx, 1);
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                totpBackupCodes: hashedCodes.length > 0
+                  ? JSON.stringify(hashedCodes)
+                  : null,
+              },
+            });
+            isValid = true;
+          }
         }
       } else {
-        isValid = await verifyTOTP(token.trim(), user.totpSecret);
+        isValid = await verifyTOTP(sessionToken.trim(), user.totpSecret);
       }
 
       if (!isValid) {

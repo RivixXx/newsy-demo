@@ -32,7 +32,6 @@ async function getStats(userId?: string) {
     const createdChallenges = userId ? await prisma.challenge.count({
       where: { organizer: { members: { some: { userId } } }, deletedAt: null },
     }) : 0;
-
     const pendingReview = userId ? await prisma.challenge.count({
       where: { organizer: { members: { some: { userId } } }, status: 'PENDING_REVIEW' },
     }) : 0;
@@ -57,22 +56,16 @@ async function getStats(userId?: string) {
     };
   } catch (e) {
     return {
-      challengeCount: 12,
-      participationCount: 3,
-      achievementsCount: 5,
-      createdChallenges: 2,
-      pendingReview: 1,
-      email: 'demo@newsy.ru',
-      name: 'Демо',
-      memberSince: 'январь 2025',
+      challengeCount: 0,
+      participationCount: 0,
+      achievementsCount: 0,
+      createdChallenges: 0,
+      pendingReview: 0,
+      email: 'Гость',
+      name: 'Гость',
+      memberSince: '',
       recentParticipations: [],
-      categoryStats: [
-        { name: 'Спорт', value: 4 },
-        { name: 'Обучение', value: 3 },
-        { name: 'Квесты', value: 5 },
-        { name: 'Искусство', value: 2 },
-        { name: 'Технологии', value: 3 },
-      ],
+      categoryStats: [],
     };
   }
 }

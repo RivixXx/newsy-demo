@@ -28,6 +28,12 @@ export function createChallengeService(prisma: PrismaClient): ChallengeService {
     },
 
     async updateChallenge(id, data) {
+      const organizer = await prisma.challengeOrganizer.findUnique({
+        where: { challengeId_organizerId: { challengeId: id, organizerId: data.organizerId } },
+      });
+      if (!organizer) {
+        throw new Error('Только организатор может редактировать челлендж');
+      }
       return prisma.challenge.update({
         where: { id },
         data,

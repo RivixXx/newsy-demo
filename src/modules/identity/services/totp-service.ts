@@ -22,7 +22,7 @@ export async function verifyTOTP(code: string, secret: string): Promise<boolean>
     const result = await otplibVerify({
       secret,
       token: code,
-      epochTolerance: 90, // ±1 step of 30s
+      epochTolerance: 1, // ±1 step of 30s — standard TOTP window
     });
     return result.valid;
   } catch {

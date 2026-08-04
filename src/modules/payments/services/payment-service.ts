@@ -53,6 +53,7 @@ export function createPaymentService(
 
         const pi = await stripeService.createPaymentIntent(
           challengeId,
+          '',
           userId,
           amount,
           'RUB',
@@ -60,18 +61,26 @@ export function createPaymentService(
           `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status`
         );
 
-        await tx.paymentTransaction.create({
-          data: {
-            organizerId: challenge.organizerId,
-            challengeId,
-            amount: Number(amount),
-            currency: 'RUB',
-            provider: 'STRIPE',
-            providerId: pi.paymentIntentId,
-            type: 'PUBLISH_CHALLENGE',
-            status: 'PENDING',
-          },
-        });
+        try {
+          await tx.paymentTransaction.create({
+            data: {
+              organizerId: challenge.organizerId,
+              challengeId,
+              amount: Number(amount),
+              currency: 'RUB',
+              provider: 'STRIPE',
+              providerId: pi.paymentIntentId,
+              type: 'PUBLISH_CHALLENGE',
+              status: 'PENDING',
+            },
+          });
+        } catch (err: unknown) {
+          const maybePrisma = err as { code?: string };
+          if (maybePrisma.code === 'P2002') {
+            return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status?paymentIntent=${pi.paymentIntentId}`, isExisting: true };
+          }
+          throw err;
+        }
 
         return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status?paymentIntent=${pi.paymentIntentId}`, isExisting: false };
       });
@@ -115,13 +124,41 @@ export function createPaymentService(
           `[payment] Challenge ${transaction.challengeId} published. ` +
             `Commission will be tracked per participant entry.`
         );
-      } else if (event === 'payment.canceled') {
+      } else if (event === 'payment.canceled' || event === 'payment_intent.canceled') {
         if (transaction.status === 'CANCELED') return;
 
         await prisma.paymentTransaction.update({
           where: { id: transaction.id },
           data: { status: 'CANCELED' },
         });
+      } else if (event === 'payment_intent.payment_failed') {
+        if (transaction.status === 'FAILED') return;
+
+        await prisma.paymentTransaction.update({
+          where: { id: transaction.id },
+          data: { status: 'FAILED' },
+        });
+
+        console.warn(
+          `[payment] Payment failed for challenge ${transaction.challengeId}.`
+        );
+      } else if (event === 'charge.refunded' || event === 'payment_intent.refund_created') {
+        if (transaction.status === 'REFUNDED') return;
+
+        await prisma.paymentTransaction.update({
+          where: { id: transaction.id },
+          data: { status: 'REFUNDED' },
+        });
+
+        console.info(
+          `[payment] Refund processed for challenge ${transaction.challengeId}.`
+        );
+      } else if (event === 'payment_intent.requires_payment_method') {
+        if (transaction.status === 'PENDING') {
+          console.info(
+            `[payment] Payment method required for challenge ${transaction.challengeId}. Not marking as failed yet — user may update card.`
+          );
+        }
       }
     },
   };

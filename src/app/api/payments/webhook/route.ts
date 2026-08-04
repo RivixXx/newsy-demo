@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
 import {
   createStripeService,
@@ -9,7 +10,14 @@ import { createSubscriptionService } from '@/modules/payments/services/subscript
 import { rateLimit } from '@/lib/rate-limit';
 import type { PaymentWebhookPayload } from '@/modules/payments/types';
 
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+if (!webhookSecret) {
+  console.warn('[webhook] STRIPE_WEBHOOK_SECRET is not configured. Webhook signature verification is DISABLED.');
+}
+
 let stripeServiceCache: StripePaymentService | null = null;
+let stripeClientCache: Stripe | null = null;
 
 function getStripeService(): StripePaymentService {
   if (!stripeServiceCache) {
@@ -18,16 +26,14 @@ function getStripeService(): StripePaymentService {
   return stripeServiceCache;
 }
 
-function verifyWebhookSignature(rawBody: string, signature: string, secret: string, apiKey: string): boolean {
-  if (!signature || !secret || !apiKey) return false;
-  try {
-    const Stripe = require('stripe');
-    const stripe = new Stripe(apiKey);
-    stripe.webhooks.constructEvent(rawBody, signature, secret);
-    return true;
-  } catch {
-    return false;
+function getStripeClient(): Stripe {
+  if (!stripeClientCache) {
+    stripeClientCache = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-01-27.acacia' as any,
+      typescript: true,
+    });
   }
+  return stripeClientCache;
 }
 
 export async function POST(req: NextRequest) {
@@ -38,66 +44,109 @@ export async function POST(req: NextRequest) {
     }
 
     const rawBody = await req.text();
-    const signature = req.headers.get('stripe-signature') || '';
+    const signature = req.headers.get('stripe-signature');
+
+    if (!webhookSecret) {
+      console.error('[webhook] STRIPE_WEBHOOK_SECRET is not configured. Rejecting webhook.');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
 
     if (!signature) {
       console.warn('[webhook] Missing Stripe signature header');
-      return NextResponse.json({ error: 'Missing signature' }, { status: 403 });
+      return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    if (!verifyWebhookSignature(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET || '', process.env.STRIPE_SECRET_KEY || '')) {
-      console.warn('[webhook] Invalid Stripe signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
-    }
-
-    let payload: { type?: string; data?: { object?: { id?: string; status?: string; metadata?: Record<string, string> | null } } };
+    let event: Stripe.Event;
     try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+      const stripe = getStripeClient();
+      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    } catch (error) {
+      console.warn('[webhook] Invalid Stripe signature:', error instanceof Error ? error.message : 'Unknown error');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-    const eventType = payload.type;
-    const stripeObject = payload.data?.object;
+    const eventType = event.type;
+    const stripeObject = event.data?.object;
 
-    if (!eventType || !stripeObject?.id) {
+    if (!stripeObject || typeof stripeObject !== 'object' || !('id' in stripeObject)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    const stripeService = createStripeService();
+    const stripeService = getStripeService();
 
     if (eventType === 'payment_intent.succeeded' || eventType === 'payment_intent.payment_failed') {
-      const verifiedPayment = await stripeService.getPaymentIntent(stripeObject.id);
-      const metadata = verifiedPayment.metadata ?? stripeObject.metadata;
+      const verifiedPayment = await stripeService.getPaymentIntent((stripeObject as Stripe.PaymentIntent).id);
+      const metadata = verifiedPayment.metadata ?? ((stripeObject as Stripe.PaymentIntent).metadata as Record<string, string> | null);
       const paymentType = metadata?.type;
+
+      let convertedEvent: string;
+      if (eventType === 'payment_intent.succeeded') {
+        convertedEvent = 'payment.succeeded';
+      } else if (eventType === 'payment_intent.payment_failed') {
+        convertedEvent = 'payment_intent.payment_failed';
+        if (verifiedPayment.status === 'requires_payment_method') {
+          convertedEvent = 'payment_intent.requires_payment_method';
+        }
+      } else {
+        convertedEvent = 'payment.canceled';
+      }
+
+      const convertedPayload: PaymentWebhookPayload = {
+        event: convertedEvent as PaymentWebhookPayload['event'],
+        type: 'notification',
+        object: {
+          id: (stripeObject as Stripe.PaymentIntent).id,
+          status: verifiedPayment.status as 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled',
+          amount: { value: '0', currency: 'RUB' },
+          created_at: new Date().toISOString(),
+          metadata: metadata ?? undefined,
+        },
+      };
 
       if (paymentType === 'SUBSCRIPTION') {
         const subscriptionService = createSubscriptionService(prisma, stripeService);
-        const convertedPayload: PaymentWebhookPayload = {
-          event: eventType === 'payment_intent.succeeded' ? 'payment.succeeded' : 'payment.canceled',
-          type: 'notification',
-          object: {
-            id: stripeObject.id,
-            status: verifiedPayment.status as 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled',
-            amount: { value: '0', currency: 'RUB' },
-            created_at: new Date().toISOString(),
-            metadata: metadata ?? undefined,
-          },
-        };
         await subscriptionService.handleWebhook(convertedPayload);
       } else {
         const paymentService = createPaymentService(prisma, stripeService);
-        const convertedPayload: PaymentWebhookPayload = {
-          event: eventType === 'payment_intent.succeeded' ? 'payment.succeeded' : 'payment.canceled',
-          type: 'notification',
-          object: {
-            id: stripeObject.id,
-            status: verifiedPayment.status as 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled',
-            amount: { value: '0', currency: 'RUB' },
-            created_at: new Date().toISOString(),
-            metadata: metadata ?? undefined,
-          },
-        };
+        await paymentService.handleWebhook(convertedPayload);
+      }
+    }
+
+    if (eventType === 'charge.refunded') {
+      const refundCharge = stripeObject as Stripe.Charge;
+      const paymentIntentId = refundCharge.payment_intent as string | null;
+      if (!paymentIntentId) {
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      let verifiedPayment: Stripe.PaymentIntent;
+      try {
+        verifiedPayment = await stripeService.getPaymentIntent(paymentIntentId);
+      } catch {
+        console.warn('[webhook] Could not find PaymentIntent for refund event:', paymentIntentId);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      const metadata = verifiedPayment.metadata ?? {};
+      const paymentType = metadata?.type;
+
+      const convertedPayload: PaymentWebhookPayload = {
+        event: 'charge.refunded',
+        type: 'notification',
+        object: {
+          id: paymentIntentId,
+          status: verifiedPayment.status as 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled',
+          amount: { value: '0', currency: 'RUB' },
+          created_at: new Date().toISOString(),
+          metadata: metadata ?? undefined,
+        },
+      };
+
+      if (paymentType === 'SUBSCRIPTION') {
+        const subscriptionService = createSubscriptionService(prisma, stripeService);
+        await subscriptionService.handleWebhook(convertedPayload);
+      } else {
+        const paymentService = createPaymentService(prisma, stripeService);
         await paymentService.handleWebhook(convertedPayload);
       }
     }

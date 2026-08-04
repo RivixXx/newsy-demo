@@ -107,6 +107,9 @@ export async function registerAction(
   if (password.length < 8) {
     return { error: 'Пароль должен быть не менее 8 символов.' };
   }
+  if (password.length > 128) {
+    return { error: 'Пароль слишком длинный (максимум 128 символов)' };
+  }
   if (password !== confirm) {
     return { error: 'Пароли не совпадают.' };
   }
@@ -149,11 +152,6 @@ export async function registerAction(
   }
 
   try {
-    const existing = await prisma.user.findFirst({ where: { email } });
-    if (existing) {
-      return { error: 'Этот email уже зарегистрирован.' };
-    }
-
     const userData: Record<string, unknown> = {
       email,
       firstName,
@@ -182,7 +180,14 @@ export async function registerAction(
       userData.platformName = platformName;
     }
 
-    const user = await prisma.user.create({ data: userData as any });
+    const user = await prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findFirst({ where: { email } });
+      if (existing) {
+        throw new Error('Этот email уже зарегистрирован.');
+      }
+
+      return tx.user.create({ data: userData as any });
+    });
 
     // Если пользователь — организатор, создаём Organizer + OrganizerMember
     const userRole = (formData.get('userRole') as string) || 'participant';
@@ -272,6 +277,7 @@ export async function requestPasswordResetAction(
     await authService.requestPasswordReset({ identifier: email, provider: 'email' });
     return { success: 'Если email зарегистрирован, мы отправили ссылку для сброса пароля.' };
   } catch (error) {
+    console.error('[auth-reset] Failed to send reset email:', error);
     return { success: 'Если email зарегистрирован, мы отправили ссылку для сброса пароля.' };
   }
 }

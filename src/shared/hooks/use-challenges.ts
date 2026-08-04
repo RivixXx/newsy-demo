@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from '@/shared/components/session-provider';
-import { MOCK_CHALLENGES, type CatalogChallenge } from '@/shared/data/challenges';
+import { type CatalogChallenge } from '@/shared/data/challenges';
 
 export function useChallenges() {
   const session = useSession();
@@ -21,9 +21,7 @@ export function useChallenges() {
       .catch(() => setLoading(false));
   }, []);
 
-  const challenges = isAdmin
-    ? [...MOCK_CHALLENGES, ...dbChallenges]
-    : dbChallenges;
+  const challenges = dbChallenges;
 
   return { challenges, loading, isAdmin, dbChallenges };
 }

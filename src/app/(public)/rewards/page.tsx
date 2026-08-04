@@ -30,19 +30,30 @@ const REWARD_COLORS: Record<string, string> = {
   experience: '#16a34a',
 };
 
-const MOCK_REWARDS: Reward[] = [
-  { id: '1', name: 'Футболка ЧИ', description: 'Официальная футболка платформы. Размеры S-XL.', pointsCost: 500, category: 'merchandise', imageUrl: '', available: true },
-  { id: '2', name: 'Скидка 20% на партнёров', description: 'Скидочный код на товары партнёров платформы.', pointsCost: 300, category: 'discount', imageUrl: '', available: true },
-  { id: '3', name: 'Премиум на 1 месяц', description: 'Бесплатный доступ к Профи-тарифу.', pointsCost: 800, category: 'digital', imageUrl: '', available: true },
-  { id: '4', name: 'Мастер-класс от эксперта', description: 'Персональный мастер-класс по выбору.', pointsCost: 1200, category: 'experience', imageUrl: '', available: true },
-  { id: '5', name: 'Стикерпак ЧИ', description: 'Набор стикеров для мессенджеров.', pointsCost: 100, category: 'digital', imageUrl: '', available: true },
-  { id: '6', name: 'Брендированный кейс', description: 'Чехол для телефона с логотипом ЧИ.', pointsCost: 600, category: 'merchandise', imageUrl: '', available: false },
-];
+async function fetchRewards(): Promise<Reward[]> {
+  try {
+    const res = await fetch('/api/rewards');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description || '',
+      pointsCost: r.pointsCost || r.cost,
+      category: r.category || 'merchandise',
+      imageUrl: r.imageUrl || '',
+      available: r.stock > 0,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export default function RewardsPage() {
   const session = useSession();
   const [filter, setFilter] = useState<string>('all');
   const [userPoints, setUserPoints] = useState(0);
+  const [rewards, setRewards] = useState<Reward[]>([]);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -53,10 +64,14 @@ export default function RewardsPage() {
     }
   }, [session]);
 
+  useEffect(() => {
+    fetchRewards().then(setRewards);
+  }, []);
+
   const categories = ['all', 'merchandise', 'discount', 'digital', 'experience'];
   const categoryLabels: Record<string, string> = { all: 'Все', merchandise: 'Мерч', discount: 'Скидки', digital: 'Цифровые', experience: 'Впечатления' };
 
-  const filtered = filter === 'all' ? MOCK_REWARDS : MOCK_REWARDS.filter(r => r.category === filter);
+  const filtered = filter === 'all' ? rewards : rewards.filter(r => r.category === filter);
 
   return (
     <PageShell variant="public">
@@ -83,30 +98,36 @@ export default function RewardsPage() {
         </div>
 
         <div className="rew-grid">
-          {filtered.map(reward => {
-            const canAfford = userPoints >= reward.pointsCost;
-            return (
-              <div key={reward.id} className={`rew-card ${!reward.available ? 'unavailable' : ''}`}>
-                <div className="rew-icon" style={{ background: `${REWARD_COLORS[reward.category]}12`, color: REWARD_COLORS[reward.category] }}>
-                  {REWARD_ICONS[reward.category] || <Gift size={20} />}
+          {filtered.length === 0 ? (
+            <p className="empty-text" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 0', color: '#888' }}>
+              Наград пока нет
+            </p>
+          ) : (
+            filtered.map(reward => {
+              const canAfford = userPoints >= reward.pointsCost;
+              return (
+                <div key={reward.id} className={`rew-card ${!reward.available ? 'unavailable' : ''}`}>
+                  <div className="rew-icon" style={{ background: `${REWARD_COLORS[reward.category]}12`, color: REWARD_COLORS[reward.category] }}>
+                    {REWARD_ICONS[reward.category] || <Gift size={20} />}
+                  </div>
+                  <h3>{reward.name}</h3>
+                  <p>{reward.description}</p>
+                  <div className="rew-footer">
+                    <span className="rew-cost">
+                      <Zap size={12} /> {reward.pointsCost}
+                    </span>
+                    {session ? (
+                      <button className={`rew-btn ${canAfford && reward.available ? '' : 'disabled'}`} disabled={!canAfford || !reward.available}>
+                        {reward.available ? (canAfford ? 'Обменять' : 'Мало баллов') : 'Нет в наличии'}
+                      </button>
+                    ) : (
+                      <Link href="/login" className="rew-btn">Войти</Link>
+                    )}
+                  </div>
                 </div>
-                <h3>{reward.name}</h3>
-                <p>{reward.description}</p>
-                <div className="rew-footer">
-                  <span className="rew-cost">
-                    <Zap size={12} /> {reward.pointsCost}
-                  </span>
-                  {session ? (
-                    <button className={`rew-btn ${canAfford && reward.available ? '' : 'disabled'}`} disabled={!canAfford || !reward.available}>
-                      {reward.available ? (canAfford ? 'Обменять' : 'Мало баллов') : 'Нет в наличии'}
-                    </button>
-                  ) : (
-                    <Link href="/login" className="rew-btn">Войти</Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {!session && (
