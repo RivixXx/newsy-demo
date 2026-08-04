@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const challenges = await prisma.challenge.findMany({
       where: { deletedAt: null, status: 'PUBLISHED' },
-      select: { updatedAt: true },
+      select: { id: true, updatedAt: true },
       orderBy: { updatedAt: 'desc' },
     });
 
