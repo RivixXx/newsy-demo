@@ -92,7 +92,7 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'r
         {/* Left branding panel */}
         <div className="auth-brand">
           <Link href="/welcome" className="brand-link">
-            <img src="/icon.png" alt="" className="brand-logo" />
+            <img src="/icon.svg" alt="" className="brand-logo" />
             <span className="brand-name">ЧИ</span>
           </Link>
           <h2 className="brand-headline">Соревнуйся.<br/>Побеждай.<br/>Получай награды.</h2>
@@ -221,7 +221,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
   const showRole = step === 0;
   const showAccountType = step === 1 || (isOrganizer && step === 2);
   const showBusiness = isBusiness && step === 3;
-  const showPassword = isOrganizer && step === 2 && !isBusiness || (!isOrganizer && step > 1);
+  const showPassword = isOrganizer && step === 2 && !isBusiness || (!isOrganizer && step >= 1);
 
   const totalSteps = isOrganizer ? (isBusiness ? 4 : 3) : 2;
   const isLastStep = step >= maxStep;
@@ -268,7 +268,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         ))}
       </div>
 
-      <form ref={formRef} action={formAction} style={{ height: formHeight }} onSubmit={(e) => {
+      <form ref={formRef} action={formAction} onSubmit={(e) => {
         if (step < maxStep) { e.preventDefault(); goNext(); }
       }}>
         <input type="hidden" name="accountType" value={accountType} />
@@ -319,7 +319,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
               </div>
             )}
             {step >= 1 && (
-              <InputField icon={<Mail size={18} />} name="email" placeholder="demo@newsy.ru" label="Email" type="email" />
+              <InputField icon={<Mail size={18} />} name="email" placeholder="demo@chi.ru" label="Email" type="email" />
             )}
             {step >= 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -393,7 +393,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
         ) : (
           <button type="submit" disabled={isPending} onClick={() => {
             formRef.current?.requestSubmit();
-          }}>
+          }} className="submit-final">
             {isPending ? 'Создаём...' : 'Зарегистрироваться'} <ArrowRight size={18} />
           </button>
         )}

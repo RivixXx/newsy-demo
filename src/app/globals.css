@@ -619,7 +619,7 @@ video {
 
 .field-input {
   width: 100%;
-  padding: 14px 14px;
+  padding: 14px 50px 14px 42px;
   border: 1.5px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   background: rgba(255,255,255,0.04);
@@ -649,8 +649,6 @@ video {
 .input-wrap--focus .input-icon {
   color: #FF385C;
 }
-
-/* -- Eye button -- */
 
 .eye-btn {
   position: absolute;
@@ -949,6 +947,33 @@ video {
 .next-btn:hover {
   border-color: rgba(255,255,255,0.15);
   background: rgba(255,255,255,0.08);
+}
+
+/* -- Submit final button (register) -- */
+
+.submit-final {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  background: #FF385C;
+  color: white;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.submit-final:hover {
+  background: #E31C5F;
+}
+
+.submit-final:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* -- Reg name row / field row -- */
