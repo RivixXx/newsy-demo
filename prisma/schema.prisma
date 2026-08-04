@@ -142,11 +142,11 @@ model User {
   status         UserStatus      @default(PENDING)
   points         Int             @default(0)
   rating         Float           @default(0)
-  lastLoginAt    DateTime?
-  totpSecret     String?
-  totpEnabled    Boolean     @default(false)
-  totpBackupCodes String?
-  totpVerifiedAt DateTime?
+  lastLoginAt       DateTime?
+  totpEnabled       Boolean       @default(false) @map("totp_enabled")
+  totpSecret        String?       @map("totp_secret")
+  totpBackupCodes   String?       @map("totp_backup_codes")
+  totpVerifiedAt    DateTime?     @map("totp_verified_at")
   referredBy     String?
   referralCode   String?         @unique
   gender         String?
