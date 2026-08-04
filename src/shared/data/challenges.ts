@@ -24,6 +24,36 @@ export interface CatalogChallenge {
   isDemo?: boolean;
 }
 
+const MOCK_CHALLENGES: CatalogChallenge[] = [
+  {
+    id: '1',
+    title: 'Бегаем к лету',
+    organizer: 'FitTeam',
+    category: 'sport',
+    imageUrl: '/images/challenge-placeholder.svg',
+    participantsCount: 1240,
+    maxParticipants: 2000,
+    isJoined: true,
+    badges: ['top10'],
+    isRecommended: true,
+    achievement: '10 дней подряд',
+    reward: 'Фитнес-браслет',
+    location: 'Москва',
+    region: 'Москва',
+    latitude: 55.7558,
+    longitude: 37.6173,
+    endDate: '30.06.2026',
+    startDate: new Date().toISOString(),
+    startTime: '07:00',
+    description: 'Бегать каждый день в течение месяца',
+    requirements: 'Приложение для подсчета шагов',
+    refundPolicy: 'Возврат возможен',
+    isDemo: true,
+  },
+];
+
+export { MOCK_CHALLENGES };
+
 export function getChallengeById(id: string): CatalogChallenge | undefined {
   return MOCK_CHALLENGES.find(c => c.id === id);
 }
