@@ -144,6 +144,7 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
       <style jsx>{`
         .catalog-card {
           width: 300px;
+          min-width: 260px;
           flex-shrink: 0;
           background: rgba(255,255,255,0.65);
           backdrop-filter: blur(20px);
@@ -169,6 +170,72 @@ function CatalogCard({ challenge, onOpen, isFav, onToggleFav }: {
           height: 180px;
           position: relative;
           overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+          .catalog-card {
+            width: 280px;
+            min-width: 240px;
+          }
+          .card-image-box {
+            height: 160px;
+          }
+          .card-body {
+            height: 160px;
+            padding: 14px;
+          }
+          .carousel-btn {
+            width: 32px;
+            height: 32px;
+          }
+          .carousel-btn.prev {
+            left: -8px;
+          }
+          .carousel-btn.next {
+            right: -8px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .catalog-card {
+            width: 260px;
+            min-width: 220px;
+          }
+          .card-image-box {
+            height: 140px;
+          }
+          .card-body {
+            height: 150px;
+            padding: 12px;
+            gap: 8px;
+          }
+          .card-title {
+            font-size: 14px;
+          }
+          .card-organizer {
+            font-size: 11px;
+          }
+          .card-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+          }
+          .card-image-box {
+            height: 130px;
+          }
+          .carousel-btn {
+            width: 28px;
+            height: 28px;
+          }
+          .carousel-btn svg {
+            width: 16px;
+            height: 16px;
+          }
+          .carousel-btn.prev {
+            left: -4px;
+          }
+          .carousel-btn.next {
+            right: -4px;
+          }
         }
         .card-bg-img {
           width: 100%; height: 100%;

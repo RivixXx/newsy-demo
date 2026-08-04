@@ -1,9 +1,33 @@
-import { PrismaClient, ChallengeStatus } from '@prisma/client';
+import { PrismaClient, ChallengeStatus, Challenge, ChallengeOrganizer } from '@prisma/client';
+
+export interface CreateChallengeData {
+  title: string;
+  description?: string;
+  organizerId: string;
+  status?: ChallengeStatus;
+  startDate?: Date;
+  endDate?: Date;
+  regionId?: string;
+  categoryId?: string;
+  coverImage?: string;
+}
+
+export interface UpdateChallengeData {
+  title?: string;
+  description?: string;
+  status?: ChallengeStatus;
+  startDate?: Date;
+  endDate?: Date;
+  regionId?: string;
+  categoryId?: string;
+  coverImage?: string;
+  organizerId: string;
+}
 
 export interface ChallengeService {
-  getChallenge(id: string): Promise<any>;
-  createChallenge(data: any): Promise<any>;
-  updateChallenge(id: string, data: any): Promise<any>;
+  getChallenge(id: string): Promise<Challenge | null>;
+  createChallenge(data: CreateChallengeData): Promise<Challenge>;
+  updateChallenge(id: string, data: UpdateChallengeData): Promise<Challenge>;
 }
 
 export function createChallengeService(prisma: PrismaClient): ChallengeService {

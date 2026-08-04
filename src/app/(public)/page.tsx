@@ -176,7 +176,7 @@ function HeroSection() {
             <div className="hero-actions">
               <Link href="/register" className="btn btn--primary btn--lg">
                 <span>Создать челлендж</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </Link>
               <Link href="/explore" className="btn btn--ghost btn--lg">
                 Смотреть каталог
@@ -462,7 +462,7 @@ function PricingSection() {
                 <ul className="price-feats">
                   {t.features.map((f, j) => (
                     <li key={j}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
                       {f}
                     </li>
                   ))}
@@ -540,7 +540,7 @@ function CtaSection() {
           <div className="hero-actions" style={{ justifyContent: 'center' }}>
             <Link href="/register" className="btn btn--primary btn--lg">
               <span>Начать бесплатно</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>
             <Link href="/explore" className="btn btn--ghost btn--lg">
               Смотреть каталог
@@ -1340,6 +1340,9 @@ export default function LandingPage() {
   .step-visual { flex-direction: column; margin-bottom: 20px; }
   .step-line { display: none; }
   .step-body p { max-width: none; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .show-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -1354,6 +1357,13 @@ export default function LandingPage() {
   .feed-panel { max-width: 100%; }
   .feed-track { height: 160px; }
   .scroll-hint { display: none; }
+
+  .price-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .show-visual { height: 160px; }
+  .show-emoji { font-size: 48px; }
+  .step-circle { width: 48px; height: 48px; font-size: 15px; }
+  .step-body h3 { font-size: 18px; }
+  .step-body p { font-size: 13px; max-width: 100%; }
 }
 
 @media (max-width: 480px) {
@@ -1365,6 +1375,31 @@ export default function LandingPage() {
   .price-card { padding: 32px 24px; }
   .faq-item summary { padding: 14px 16px; font-size: 14px; }
   .faq-body { padding: 0 16px 14px; }
+
+  .hero-text h1 { font-size: 32px; }
+  .hero-desc { font-size: 15px; }
+  .hero-stats { flex-direction: column; gap: 12px; }
+  .hero-stat-dash { display: none; }
+  .hero-stat { flex-direction: column; }
+
+  .stats-grid { grid-template-columns: 1fr; }
+  .stat-num { font-size: 32px; }
+
+  .show-visual { height: 140px; }
+  .show-emoji { font-size: 40px; }
+  .show-body h3 { font-size: 17px; }
+  .show-body p { font-size: 13px; }
+
+  .price-num, .price-free { font-size: 32px; }
+  .price-name { font-size: 15px; }
+  .price-feats li { font-size: 13px; }
+
+  .feed-emoji { font-size: 24px; }
+  .feed-body { font-size: 13px; }
+
+  .sec-title { font-size: 28px; margin-bottom: 32px; }
+  .feat-title { font-size: 17px; }
+  .feat-desc { font-size: 13px; }
 }
 
 /* ═══════════ REDUCED MOTION ═══════════ */

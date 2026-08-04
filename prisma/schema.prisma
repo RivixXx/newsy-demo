@@ -110,6 +110,7 @@ enum TransactionStatus {
   SUCCEEDED
   FAILED
   CANCELED
+  REFUNDED
 }
 
 enum SubscriptionStatus {

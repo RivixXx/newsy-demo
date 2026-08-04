@@ -28,7 +28,7 @@ export interface PaymentResponse {
 }
 
 export interface PaymentWebhookPayload {
-  event: 'payment.succeeded' | 'payment.canceled' | 'payment_intent.payment_failed' | 'charge.refunded' | 'payment_intent.requires_payment_method' | 'payment_intent.canceled';
+  event: 'payment.succeeded' | 'payment.canceled' | 'payment_intent.payment_failed' | 'charge.refunded' | 'payment_intent.refund_created' | 'payment_intent.requires_payment_method' | 'payment_intent.canceled';
   type: 'notification';
   object: PaymentResponse;
 }

@@ -81,7 +81,7 @@ export default function FavoritesPage() {
         isJoined: data.isJoined,
       };
       setSelectedChallenge(modal);
-    } catch {}
+    } catch { }
     setOpeningId(null);
   };
 
@@ -253,7 +253,34 @@ export default function FavoritesPage() {
         .fav-skel-text { height: 12px; width: 40%; background: #f0f0f0; border-radius: 6px; animation: favPulse 1.5s infinite; }
         @keyframes favFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes favPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-        @media (max-width: 640px) { .fav-grid { grid-template-columns: 1fr; } .fav-title { font-size: 22px; } }
+        @media (max-width: 768px) {
+          .fav-page { padding: 32px 20px 60px; }
+          .fav-title { font-size: 24px; }
+          .fav-empty h2 { font-size: 20px; }
+        }
+        @media (max-width: 640px) {
+          .fav-grid { grid-template-columns: 1fr; }
+          .fav-title { font-size: 22px; }
+          .fav-card-img { height: 140px; }
+        }
+        @media (max-width: 480px) {
+          .fav-page { padding: 24px 16px 48px; }
+          .fav-header { margin-bottom: 24px; }
+          .fav-title { font-size: 20px; gap: 8px; }
+          .fav-title svg { width: 24px; height: 24px; }
+          .fav-subtitle { font-size: 13px; }
+          .fav-empty { padding: 60px 16px; }
+          .fav-empty h2 { font-size: 18px; }
+          .fav-empty p { font-size: 13px; }
+          .fav-card-img { height: 120px; }
+          .fav-card-body { padding: 14px; }
+          .fav-card-title { font-size: 14px; }
+          .fav-card-org { font-size: 11px; }
+          .fav-card-meta { font-size: 10px; gap: 8px; }
+          .fav-card-actions { gap: 4px; }
+          .fav-remove { width: 28px; height: 28px; }
+          .fav-go { padding: 5px 10px; font-size: 11px; }
+        }
       `}</style>
     </PageShell>
   );

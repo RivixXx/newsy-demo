@@ -81,11 +81,11 @@ export function SearchPanel() {
 
   useEffect(() => {
     if (dateRange[0] && dateRange[1]) {
-      const fmt = (d: Date) => `${d.getDate()}.${d.getMonth()+1}`;
+      const fmt = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}`;
       setBarWhen(`${fmt(dateRange[0])} — ${fmt(dateRange[1])}`);
       setShowCalendar(false);
     } else if (dateRange[0]) {
-      const fmt = (d: Date) => `${d.getDate()}.${d.getMonth()+1}`;
+      const fmt = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}`;
       setBarWhen(`${fmt(dateRange[0])} — ...`);
     }
   }, [dateRange]);
@@ -137,12 +137,12 @@ export function SearchPanel() {
         {/* Category */}
         <div className="sb-seg" ref={catRef}>
           <button className="sb-btn" onClick={() => { setShowCategoryDrop(!showCategoryDrop); setShowCalendar(false); }}>
-            <span className="sb-value">{CATEGORIES.find(c=>c.id===barCategory)?.label}</span>
+            <span className="sb-value">{CATEGORIES.find(c => c.id === barCategory)?.label}</span>
           </button>
           {showCategoryDrop && (
             <div className="sb-drop">
               {CATEGORIES.map(c => (
-                <button key={c.id} className={`sb-drop-item ${barCategory===c.id?'active':''}`}
+                <button key={c.id} className={`sb-drop-item ${barCategory === c.id ? 'active' : ''}`}
                   onClick={() => { setBarCategory(c.id); setShowCategoryDrop(false); }}>
                   {c.label}
                 </button>
@@ -220,7 +220,7 @@ export function SearchPanel() {
               <div className="mh-left">
                 <span className="mh-count">{results.length} челенджей</span>
                 <span className="mh-filters">
-                  {barCategory !== 'all' && <span className="mh-tag">{CATEGORIES.find(c=>c.id===barCategory)?.label}</span>}
+                  {barCategory !== 'all' && <span className="mh-tag">{CATEGORIES.find(c => c.id === barCategory)?.label}</span>}
                   {barWhen && <span className="mh-tag">{barWhen}</span>}
                   {barWho.trim() && <span className="mh-tag">"{barWho}"</span>}
                 </span>
@@ -282,7 +282,7 @@ export function SearchPanel() {
           display: flex; align-items: center; background: white;
           border-radius: 99px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
           border: 1px solid #e5e7eb; height: 52px; padding: 4px;
-          min-width: 600px; position: relative; z-index: 50;
+          width: 100%; max-width: 600px; position: relative; z-index: 50;
         }
         .sb-seg { position: relative; flex: 1; }
         .sb-btn {
@@ -443,12 +443,30 @@ export function SearchPanel() {
         .empty span { font-size: 14px; color: #888; }
 
         @media (max-width: 768px) {
-          .search-bar { min-width: 100%; }
+          .search-bar { width: 100%; max-width: 100%; }
           .sb-when { display: none; }
           .sb-drop-calendar { width: calc(100vw - 40px); left: 50%; transform: translateX(-50%); }
           .modal-overlay { padding: 12px; padding-top: 60px; }
           .result-card { flex-direction: column; }
           .rc-img { width: 100%; height: 140px; }
+        }
+
+        @media (max-width: 480px) {
+          .search-bar { height: 48px; padding: 2px; }
+          .sb-btn { padding: 0 12px; height: 40px; }
+          .sb-value { font-size: 13px; }
+          .sb-search { width: 38px; height: 38px; }
+          .sb-drop { min-width: 180px; }
+          .sb-drop-calendar { width: calc(100vw - 24px); }
+          .modal-overlay { padding: 8px; padding-top: 50px; }
+          .modal-panel { border-radius: 16px; max-height: calc(100vh - 80px); }
+          .modal-body { padding: 16px; }
+          .result-card { padding: 12px; }
+          .rc-img { height: 120px; }
+          .rc-title { font-size: 14px; }
+          .rc-org { font-size: 11px; }
+          .rc-tag { font-size: 11px; }
+          .rc-foot { font-size: 11px; }
         }
       `}</style>
     </>

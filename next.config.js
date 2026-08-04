@@ -12,8 +12,6 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.supabase.in' },
     ],
   },
-
-  optimizePackageImports: ['lucide-react', '@tabler/icons-react'],
   async headers() {
     return [
       {

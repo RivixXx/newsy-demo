@@ -25,18 +25,13 @@ export function createEmailService(): EmailService {
 
   async function send(to: string, subject: string, html: string) {
     if (!resend) {
-      console.log(`[email-service] No RESEND_API_KEY configured. Would send to ${to}:`);
-      console.log(`  Subject: ${subject}`);
-      console.log(`  Body preview: ${html.replace(/<[^>]+>/g, '').slice(0, 200)}...`);
       return;
     }
 
     const { error } = await resend.emails.send({ from, to, subject, html });
     if (error) {
-      console.error(`[email-service] Resend error:`, error);
       throw new Error(`Email send failed: ${error.message}`);
     }
-    console.log(`[email-service] Email sent to ${to}: ${subject}`);
   }
 
   return {

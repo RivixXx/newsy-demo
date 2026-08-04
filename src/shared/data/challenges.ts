@@ -1,3 +1,12 @@
+function combineDateAndTime(date: Date, time?: string | null): Date {
+  const d = new Date(date);
+  if (time) {
+    const [h, m] = time.split(':').map(Number);
+    if (!isNaN(h)) d.setHours(h, m || 0, 0, 0);
+  }
+  return d;
+}
+
 export interface CatalogChallenge {
   id: string;
   title: string;

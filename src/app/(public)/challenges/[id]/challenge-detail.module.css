@@ -110,9 +110,9 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 60px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
 }
 
 .statCard {
@@ -402,6 +402,330 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageWrapper {
+    padding-bottom: 100px;
+  }
+
+  .heroSection {
+    height: 300px;
+    padding: 24px 16px;
+  }
+
+  .heroTitle {
+    font-size: 28px;
+  }
+
+  .categoryPill {
+    font-size: 11px;
+    padding: 4px 12px;
+  }
+
+  .backLink {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .mainContent {
+    padding: 0 16px;
+    margin-top: -30px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+    margin-top: -40px;
+  }
+
+  .statCard {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .statIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .statVal {
+    font-size: 18px;
+  }
+
+  .statLbl {
+    font-size: 11px;
+  }
+
+  .contentGrid {
+    gap: 32px;
+  }
+
+  .sectionHeading {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .descriptionText {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .rulesBlock {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .rulesBlock h3 {
+    font-size: 16px;
+  }
+
+  .rulesBlock p {
+    font-size: 14px;
+  }
+
+  .timelineItem {
+    gap: 16px;
+  }
+
+  .markerCircle {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .glassCard {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .stepTitle {
+    font-size: 16px;
+  }
+
+  .stepDesc {
+    font-size: 13px;
+  }
+
+  .stickyActionBar {
+    padding: 12px 16px;
+  }
+
+  .actionPrice strong {
+    font-size: 20px;
+  }
+
+  .joinBtn {
+    padding: 14px 24px;
+    font-size: 16px;
+    gap: 8px;
+  }
+
+  .locationBlock {
+    padding: 14px 16px;
+    border-radius: 12px;
+    gap: 10px;
+  }
+
+  .locationLabel {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageWrapper {
+    padding-bottom: 90px;
+  }
+
+  .heroSection {
+    height: 260px;
+    padding: 16px 12px;
+  }
+
+  .heroTitle {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .categoryPill {
+    font-size: 10px;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+  }
+
+  .backLink {
+    padding: 6px 12px;
+    font-size: 12px;
+    gap: 6px;
+    top: 12px;
+    left: 0;
+  }
+
+  .organizerBlock {
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .orgAvatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .mainContent {
+    padding: 0 12px;
+    margin-top: -20px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+    margin-top: -30px;
+  }
+
+  .statCard {
+    padding: 14px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
+  .statIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .statVal {
+    font-size: 16px;
+  }
+
+  .statLbl {
+    font-size: 10px;
+  }
+
+  .contentGrid {
+    gap: 24px;
+  }
+
+  .sectionHeading {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .descriptionText {
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .rulesBlock {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .rulesBlock h3 {
+    font-size: 15px;
+  }
+
+  .rulesBlock p {
+    font-size: 13px;
+  }
+
+  .timelineItem {
+    gap: 12px;
+  }
+
+  .markerCircle {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .markerLine {
+    width: 1.5px;
+  }
+
+  .glassCard {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .stepHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .stepTypeBadge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .stepPoints {
+    font-size: 14px;
+  }
+
+  .stepTitle {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .stepDesc {
+    font-size: 12px;
+  }
+
+  .stickyActionBar {
+    padding: 10px 12px;
+  }
+
+  .actionBarContent {
+    gap: 12px;
+  }
+
+  .actionPrice span {
+    font-size: 11px;
+  }
+
+  .actionPrice strong {
+    font-size: 18px;
+  }
+
+  .joinBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .actionLinks {
+    width: 100%;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .reportBtn,
+  .leaderboardLink {
+    padding: 8px 12px;
+    font-size: 12px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .locationBlock {
+    padding: 12px;
+    border-radius: 10px;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .locationLabel {
+    font-size: 10px;
   }
 }
 

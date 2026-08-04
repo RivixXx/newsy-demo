@@ -103,7 +103,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
           <div className="nav-center">
             {session && (
-              <Suspense fallback={<div style={{ width: 500, height: 52 }} />}>
+              <Suspense fallback={<div style={{ width: '100%', maxWidth: 600, height: 52 }} />}>
                 <SearchPanel />
               </Suspense>
             )}
