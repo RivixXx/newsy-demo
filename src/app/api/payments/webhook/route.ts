@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ status: 'ok' });
       }
 
-      let verifiedPayment: Stripe.PaymentIntent;
+      let verifiedPayment: { status: string; metadata: Record<string, string> | null };
       try {
         verifiedPayment = await stripeService.getPaymentIntent(paymentIntentId);
       } catch {
