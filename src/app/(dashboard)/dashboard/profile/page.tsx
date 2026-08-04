@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/shared/components/page-shell';
 import { PageSpinner } from '@/shared/components/spinner';
-import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Crown, Trophy, Target } from 'lucide-react';
+import { Settings, LogOut, CreditCard, Shield, Eye, Bell, Heart, Edit3, Target } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ProfileEditModal } from './components/profile-edit-modal';
@@ -25,7 +24,6 @@ interface ProfileData {
   name: string;
   email: string;
   points: number;
-  level: { level: number; name: string; xp: number; color: string; xpInLevel: number; xpNeeded: number; progress: number };
   streak: number;
   activeChallenges: number;
   completedChallenges: number;
@@ -44,20 +42,38 @@ export default function ProfilePage() {
   const session = useSession();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<ModalChallenge | null>(null);
   const [favStats, setFavStats] = useState<{ isOrganizer: boolean; totalFavorites: number; challenges: { id: string; title: string; favoritesCount: number }[] } | null>(null);
 
-  useEffect(() => {
-    fetch('/api/user/profile-stats')
-      .then(r => r.json())
-      .then(d => {
-        if (d.error || !d.level) { setLoading(false); return; }
-        setProfileData(d);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      fetch('/api/user/profile-stats').then(r => r.json()).catch(() => null),
+      fetch('/api/organizer/favorites-stats').then(r => r.json()).catch(() => null),
+    ]).then(([profile, fav]) => {
+      if (profile && !profile.error) {
+        setProfileData(profile);
+      }
+      if (fav) {
+        setFavStats(fav);
+      }
+      setLoading(false);
+    }).catch(() => {
+      setError('Не удалось загрузить профиль');
+      setLoading(false);
+    });
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const refetchProfile = () => {
+    loadData();
+  };
 
   const handleChallengeClick = (challengeId: string) => {
     fetch(`/api/challenges/${challengeId}`)
@@ -73,19 +89,12 @@ export default function ProfilePage() {
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   };
-
-  const refetchProfile = () => {
-    fetch('/api/user/profile-stats').then(r => r.json()).then(d => setProfileData(d)).catch(() => {});
-  };
-
-  useEffect(() => {
-    fetch('/api/organizer/favorites-stats').then(r => r.json()).then(d => setFavStats(d)).catch(() => {});
-  }, []);
 
   const userName = session?.user ? `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'Пользователь' : 'Пользователь';
   const isOrganizer = (session?.user?.organizationIds?.length ?? 0) > 0;
+  const [expanded, setExpanded] = useState(false);
 
   if (loading) {
     return (
@@ -97,9 +106,19 @@ export default function ProfilePage() {
     );
   }
 
+  if (error) {
+    return (
+      <PageShell>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <p className="text-destructive text-lg font-semibold">{error}</p>
+          <Button onClick={loadData} variant="outline">Попробовать снова</Button>
+        </div>
+      </PageShell>
+    );
+  }
+
   const data = profileData || {
     name: userName, email: session?.user?.email || '', points: 0,
-    level: { level: 1, name: 'Новичок', xp: 0, color: '#94a3b8', xpInLevel: 0, xpNeeded: 100, progress: 0 },
     streak: 0, activeChallenges: 0, completedChallenges: 0, achievements: 0, rating: 0,
     gender: null, birthDate: null, bio: '', avatarUrl: '',
     memberSince: '', activity: [], calendar: [],
@@ -129,10 +148,6 @@ export default function ProfilePage() {
               <div className="flex-1 min-w-0 text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{data.name}</h1>
-                  <Badge variant="secondary" className="gap-1">
-                    <Crown className="h-3 w-3" />
-                    Ур. {data.level.level}
-                  </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">{data.email}</p>
                 <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
@@ -170,14 +185,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* XP Progress */}
-            <div className="mt-4 sm:mt-6 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">{data.level.name}</span>
-                <span className="font-medium">{data.level.xp}/{data.level.xpNeeded} XP</span>
-              </div>
-              <Progress value={data.level.progress} className="h-2" />
-            </div>
           </CardContent>
         </Card>
 
@@ -265,17 +272,35 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               <Card>
                 <CardContent className="p-4 sm:p-6 space-y-2">
-                  <SettingRow icon={<Bell className="h-5 w-5 text-primary" />} title="Уведомления" desc="Управление уведомлениями" />
+                  <a href="/dashboard/settings/notifications" className="flex items-center gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer block">
+                    <SettingRowInner icon={<Bell className="h-5 w-5 text-primary" />} title="Уведомления" desc="Управление уведомлениями" />
+                  </a>
                   <Separator />
-                  <SecuritySection />
+                  <div onClick={() => setExpanded(v => !v)}>
+                    <SettingRowInner icon={<Shield className="h-5 w-5 text-primary" />} title="Безопасность" desc="Пароль, двухфакторная аутентификация" />
+                  </div>
+                  {expanded && (
+                    <div className="px-2 sm:px-3 pb-3 pt-1">
+                      <div className="rounded-lg bg-muted/30 p-3 sm:p-4 space-y-3">
+                        <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Двухфакторная аутентификация
+                        </h5>
+                        <TwoFactorSetup />
+                      </div>
+                    </div>
+                  )}
                   <Separator />
                   <Link href="/dashboard/subscription" className="block">
-                    <SettingRow icon={<CreditCard className="h-5 w-5 text-primary" />} title="Подписка" desc="Управление тарифом и оплатой" />
+                    <SettingRowInner icon={<CreditCard className="h-5 w-5 text-primary" />} title="Подписка" desc="Управление тарифом и оплатой" />
                   </Link>
                   <Separator />
-                  <SettingRow icon={<Eye className="h-5 w-5 text-primary" />} title="Приватность" desc="Видимость профиля" />
+                  <a href="/dashboard/settings/privacy" className="flex items-center gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer block">
+                    <SettingRowInner icon={<Eye className="h-5 w-5 text-primary" />} title="Приватность" desc="Видимость профиля" />
+                  </a>
                   <Separator />
-                  <SettingRow icon={<Heart className="h-5 w-5 text-primary" />} title="Избранное" desc="Сохранённые челенджи" />
+                  <Link href="/favorites" className="block">
+                    <SettingRowInner icon={<Heart className="h-5 w-5 text-primary" />} title="Избранное" desc="Сохранённые челленджи" />
+                  </Link>
                 </CardContent>
               </Card>
 
@@ -311,9 +336,9 @@ export default function ProfilePage() {
   );
 }
 
-function SettingRow({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function SettingRowInner({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="flex items-center gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+    <div className="flex items-center gap-3 p-2 sm:p-3 rounded-lg">
       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
@@ -321,27 +346,6 @@ function SettingRow({ icon, title, desc }: { icon: React.ReactNode; title: strin
         <h4 className="text-sm font-semibold">{title}</h4>
         <p className="text-xs text-muted-foreground truncate">{desc}</p>
       </div>
-    </div>
-  );
-}
-
-function SecuritySection() {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div>
-      <div onClick={() => setExpanded(v => !v)}>
-        <SettingRow icon={<Shield className="h-5 w-5 text-primary" />} title="Безопасность" desc="Пароль, двухфакторная аутентификация" />
-      </div>
-      {expanded && (
-        <div className="px-2 sm:px-3 pb-3 pt-1">
-          <div className="rounded-lg bg-muted/30 p-3 sm:p-4 space-y-3">
-            <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Двухфакторная аутентификация
-            </h5>
-            <TwoFactorSetup />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

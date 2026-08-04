@@ -28,7 +28,23 @@ const styles: Record<string, CSSProperties> = {
   root: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100vh',
+    minHeight: '100dvh',
+  },
+  shell: {
+    flex: '1 1 auto',
+    width: '100%',
+  },
+  publicShell: {
+    flex: '1 1 auto',
+    width: '100%',
+  },
+  content: {
+    flex: '1 1 auto',
+    width: '100%',
+  },
+  publicContent: {
+    flex: '1 1 auto',
+    width: '100%',
   },
   main: {
     flex: '1 1 auto',
