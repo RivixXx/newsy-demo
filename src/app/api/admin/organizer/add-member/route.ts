@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'userId обязателен' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true },
+    });
     if (!user) {
       return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 });
     }

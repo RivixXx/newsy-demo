@@ -40,7 +40,10 @@ export async function GET(req: NextRequest) {
 
     // Трекаем реферальную регистрацию
     try {
-      const user = await prisma.user.findUnique({ where: { id: record.userId } });
+      const user = await prisma.user.findUnique({
+        where: { id: record.userId },
+        select: { id: true, referredBy: true },
+      });
       if (user?.referredBy) {
         const referralService = createReferralService(prisma);
         await referralService.trackRegistration(user.id, user.referredBy);

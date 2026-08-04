@@ -21,6 +21,7 @@ export function createReferralService(prisma: PrismaClient): ReferralService {
 
       const referrer = await prisma.user.findFirst({
         where: { referralCode, deletedAt: null },
+        select: { id: true, referralCode: true },
       });
       if (!referrer || referrer.id === referredUserId) return;
 
@@ -52,11 +53,15 @@ export function createReferralService(prisma: PrismaClient): ReferralService {
     },
 
     async trackFirstChallenge(userId) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { referredBy: true },
+      });
       if (!user?.referredBy) return;
 
       const referrer = await prisma.user.findFirst({
         where: { referralCode: user.referredBy, deletedAt: null },
+        select: { id: true, referralCode: true },
       });
       if (!referrer || referrer.id === userId) return;
 
@@ -87,11 +92,15 @@ export function createReferralService(prisma: PrismaClient): ReferralService {
     },
 
     async trackPayment(userId, amount) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { referredBy: true },
+      });
       if (!user?.referredBy) return;
 
       const referrer = await prisma.user.findFirst({
         where: { referralCode: user.referredBy, deletedAt: null },
+        select: { id: true, referralCode: true },
       });
       if (!referrer || referrer.id === userId) return;
 
