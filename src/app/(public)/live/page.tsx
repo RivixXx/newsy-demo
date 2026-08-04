@@ -7,7 +7,7 @@ import { LiveStreamEmbed } from '@/shared/components/live-stream-embed';
 
 interface Stream {
   id: string;
-  platform: 'youtube' | 'vimeo' | 'other';
+  platform: 'youtube' | 'vk' | 'twitch';
   videoId: string;
   title: string;
   challenge: string;
