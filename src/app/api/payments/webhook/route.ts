@@ -1,22 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
-import { createStripeService } from '@/modules/payments/services/stripe-service';
+import {
+  createStripeService,
+  type StripePaymentService,
+} from '@/modules/payments/services/stripe-service';
 import { createPaymentService } from '@/modules/payments/services/payment-service';
 import { createSubscriptionService } from '@/modules/payments/services/subscription-service';
 import { rateLimit } from '@/lib/rate-limit';
 import type { PaymentWebhookPayload } from '@/modules/payments/types';
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia' as any,
-  typescript: true,
-});
+let stripeServiceCache: StripePaymentService | null = null;
 
-function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
-  if (!STRIPE_WEBHOOK_SECRET || !signature) return false;
+function getStripeService(): StripePaymentService {
+  if (!stripeServiceCache) {
+    stripeServiceCache = createStripeService();
+  }
+  return stripeServiceCache;
+}
+
+function verifyWebhookSignature(rawBody: string, signature: string, secret: string, apiKey: string): boolean {
+  if (!signature || !secret || !apiKey) return false;
   try {
-    stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    const Stripe = require('stripe');
+    const stripe = new Stripe(apiKey);
+    stripe.webhooks.constructEvent(rawBody, signature, secret);
     return true;
   } catch {
     return false;
@@ -31,14 +38,14 @@ export async function POST(req: NextRequest) {
     }
 
     const rawBody = await req.text();
-    const signature = req.headers.get('stripe-signature');
+    const signature = req.headers.get('stripe-signature') || '';
 
     if (!signature) {
       console.warn('[webhook] Missing Stripe signature header');
       return NextResponse.json({ error: 'Missing signature' }, { status: 403 });
     }
 
-    if (!verifyWebhookSignature(rawBody, signature)) {
+    if (!verifyWebhookSignature(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET || '', process.env.STRIPE_SECRET_KEY || '')) {
       console.warn('[webhook] Invalid Stripe signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
     }
