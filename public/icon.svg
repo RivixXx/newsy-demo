@@ -4,8 +4,8 @@
       .chi-letter { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 52px; font-weight: 900; fill: white; transform-box: fill-box; transform-origin: center; }
       @keyframes spinLeft { to { transform: rotate(-360deg); } }
       @keyframes spinRight { to { transform: rotate(360deg); } }
-      .spin-c { animation: spinLeft 7s linear infinite; }
-      .spin-i { animation: spinRight 7s linear infinite 7s; }
+      .spin-c { animation: spinLeft 7s ease-in-out infinite; }
+      .spin-i { animation: spinRight 7s ease-in-out infinite -7s; }
     </style>
   </defs>
   <rect width="100" height="100" rx="22" fill="#E11D48"/>
