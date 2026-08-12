@@ -104,7 +104,7 @@ describe('API Response utilities', () => {
       });
 
       const mockRequest = {} as any;
-      const response = await handler(mockRequest, {});
+      const response = await handler(mockRequest, { params: Promise.resolve({}) });
       expect(response.status).toBe(404);
     });
 
@@ -114,7 +114,7 @@ describe('API Response utilities', () => {
       });
 
       const mockRequest = {} as any;
-      const response = await handler(mockRequest, {});
+      const response = await handler(mockRequest, { params: Promise.resolve({}) });
       expect(response.status).toBe(200);
       expect(response.json()).resolves.toEqual({ success: true, data: 'ok' });
     });
@@ -136,7 +136,7 @@ describe('API Response utilities', () => {
         json: vi.fn().mockResolvedValue({ name: 'Valid Name' }),
       } as any;
 
-      const response = await handler(mockRequest, {});
+      const response = await handler(mockRequest, { params: Promise.resolve({}) });
       expect(response.status).toBe(200);
       expect(response.json()).resolves.toEqual({ success: true, data: { name: 'Valid Name' } });
     });
@@ -152,7 +152,7 @@ describe('API Response utilities', () => {
         json: vi.fn().mockResolvedValue({ name: '' }),
       } as any;
 
-      const response = await handler(mockRequest, {});
+      const response = await handler(mockRequest, { params: Promise.resolve({}) });
       expect(response.status).toBe(400);
     });
   });

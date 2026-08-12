@@ -5,7 +5,6 @@ export interface AuthService {
   logout(sessionId: string): Promise<void>;
   requestPasswordReset(payload: PasswordResetRequest): Promise<void>;
   confirmPasswordReset(payload: PasswordResetConfirmation): Promise<void>;
-  verify2fa(userId: string, token: string): Promise<AuthSession>;
 }
 
 export class TwoFactorRequiredError extends Error {

@@ -148,6 +148,7 @@ model User {
   totpSecret        String?       @map("totp_secret")
   totpBackupCodes   String?       @map("totp_backup_codes")
   totpVerifiedAt    DateTime?     @map("totp_verified_at")
+  totpLastUsedStep  Int?          @map("totp_last_used_step")
   referredBy     String?
   referralCode   String?         @unique
   gender         String?

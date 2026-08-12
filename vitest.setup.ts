@@ -85,13 +85,21 @@ vi.mock('@upstash/redis', () => ({
   },
 }));
 
-vi.mock('@upstash/ratelimit', () => ({
-  Ratelimit: vi.fn().mockImplementation(() => ({
-    limit: vi.fn().mockResolvedValue({ success: true, remaining: 100, reset: Date.now() + 60000 }),
-  })),
-  slidingWindow: vi.fn(),
-  fixedWindow: vi.fn(),
-}));
+vi.mock('@upstash/ratelimit', () => {
+  const Ratelimit = Object.assign(vi.fn().mockImplementation(function () {
+    return {
+      limit: vi.fn().mockResolvedValue({ success: true, remaining: 100, reset: Date.now() + 60000 }),
+    };
+  }), {
+    slidingWindow: vi.fn(),
+    fixedWindow: vi.fn(),
+  });
+  return {
+    Ratelimit,
+    slidingWindow: vi.fn(),
+    fixedWindow: vi.fn(),
+  };
+});
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({

@@ -7,9 +7,7 @@ import { createUserService } from './user-service';
 import { normalizeIdentifier, TwoFactorRequiredError } from './auth-service';
 import { verifyPassword, hashPassword } from './password-hash';
 import { createEmailService, generateVerificationToken } from './email-service';
-import { verifyTOTP, verifyBackupCode } from './totp-service';
 import { createHash } from 'crypto';
-import { rateLimit } from '@/lib/rate-limit';
 
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
@@ -141,84 +139,6 @@ export function createAuthService(prisma: PrismaClient) {
           data: { usedAt: new Date() },
         }),
       ]);
-    },
-
-    async verify2fa(userId: string, sessionToken: string): Promise<AuthSession> {
-      const rateResult = await rateLimit(`2fa:${userId}`, { windowMs: 15 * 60 * 1000, max: 5 });
-      if (!rateResult.allowed) {
-        throw new Error(`Слишком много попыток. Попробуйте через ${Math.ceil(rateResult.retryAfterMs / 60000)} мин.`);
-      }
-
-      const revoked = await prisma.revokedSession.findFirst({
-        where: { sessionTokenHash: createHash('sha256').update(sessionToken).digest('hex') },
-      });
-      if (revoked) {
-        throw new Error('Сессия отозвана. Выполните повторный вход.');
-      }
-
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          totpSecret: true,
-          totpEnabled: true,
-          totpBackupCodes: true,
-        },
-      });
-
-      if (!user || !user.totpEnabled || !user.totpSecret) {
-        throw new Error('2FA не настроена для этого аккаунта.');
-      }
-
-      let isValid = false;
-
-      // Check if it's a backup code (format: XXXXXX-XXXXXX)
-      if (/^[0-9A-F]{6}-[0-9A-F]{6}$/i.test(sessionToken.trim())) {
-        const hashedCodes: string[] = user.totpBackupCodes
-          ? JSON.parse(user.totpBackupCodes)
-          : [];
-        
-        const idx = verifyBackupCode(sessionToken.trim(), hashedCodes);
-        if (idx !== -1) {
-          // Remove the used backup code
-          hashedCodes.splice(idx, 1);
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              totpBackupCodes: hashedCodes.length > 0
-                ? JSON.stringify(hashedCodes)
-                : null,
-            },
-          });
-          isValid = true;
-        }
-      } else {
-        isValid = await verifyTOTP(sessionToken.trim(), user.totpSecret);
-      }
-
-      if (!isValid) {
-        throw new Error('Неверный код.');
-      }
-
-      const authenticated = await userService.getAuthenticatedUser(user.id);
-      if (!authenticated) {
-        throw new Error('User profile is unavailable');
-      }
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date() },
-      });
-
-      return createSessionPayload({
-        userId: authenticated.id,
-        email: authenticated.email,
-        phone: authenticated.phone,
-        firstName: authenticated.firstName,
-        lastName: authenticated.lastName,
-        roles: authenticated.roles,
-        organizationIds: authenticated.organizationIds,
-      });
     },
   };
 }

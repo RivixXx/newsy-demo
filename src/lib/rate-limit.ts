@@ -1,8 +1,14 @@
 /**
  * Rate limiter with Upstash Redis.
  *
- * When Redis env vars are not set (dev mode), rate limiting is skipped
- * and all requests are allowed. A warning is logged to stderr.
+ * Behaviour:
+ * - Redis configured: enforce limits. On Upstash errors the request is DENIED
+ *   (fail-closed) — a silent "allow all" on infra failure would leave auth
+ *   flows (login, 2FA) open to brute-force.
+ * - Redis NOT configured:
+ *   - `production` → DENY (someone forgot to configure Upstash); brute-force
+ *     protection must never silently switch off in production.
+ *   - any other env (dev/test) → allow all so local development keeps working.
  *
  * @see https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
  */
@@ -39,12 +45,17 @@ function getLimiter(windowMs: number, max: number): Ratelimit {
   return limiter;
 }
 
+function deny(retryAfterMs: number): RateLimitResult {
+  return { allowed: false, remaining: 0, retryAfterMs };
+}
+
 export async function rateLimit(
   key: string,
   config: RateLimitConfig,
 ): Promise<RateLimitResult> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const isProduction = process.env.NODE_ENV === 'production';
 
   if (url && token) {
     try {
@@ -56,11 +67,20 @@ export async function rateLimit(
         retryAfterMs: success ? 0 : reset - Date.now(),
       };
     } catch (err) {
-      console.error('[rate-limit] Upstash error, rate limiting is skipped:', err);
+      // Fail closed: if the limiter itself breaks, deny rather than allow.
+      console.error('[rate-limit] Upstash error, request denied:', err);
+      return deny(config.windowMs);
     }
   }
 
-  // Redis not configured — skip rate limiting in dev
-  console.warn('[rate-limit] REDIS_URL not set, rate limiting is disabled — allowing all requests.');
+  if (isProduction) {
+    console.error(
+      '[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN are not set in production — ' +
+        'request denied to keep brute-force protection active.',
+    );
+    return deny(config.windowMs);
+  }
+
+  // Redis not configured outside production — skip rate limiting in dev/test
   return { allowed: true, remaining: config.max, retryAfterMs: 0 };
 }

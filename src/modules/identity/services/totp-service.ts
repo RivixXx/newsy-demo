@@ -7,26 +7,58 @@ const BACKUP_CODE_BYTES = 6; // 12 hex chars
 const TOTP_ISSUER = 'ЧИ';
 
 /**
+ * TOTP period in seconds (RFC 6238 §5.2 default).
+ */
+export const TOTP_PERIOD = 30;
+
+/**
+ * Time tolerance in seconds for TOTP verification.
+ * otplib v13 accepts this value in SECONDS, so `30` means ±1 step of 30s
+ * (RFC 6238 §5.2 recommended window). Passing `1` (as before) would only
+ * accept codes within 1 second — effectively no clock-drift tolerance.
+ */
+export const TOTP_TOKEN_TOLERANCE = TOTP_PERIOD;
+
+/**
  * Generate a new TOTP secret for a user.
  */
 export function generateSecret(): string {
   return otplibGenerateSecret();
 }
 
+export interface TOTPVerifyResult {
+  valid: boolean;
+  /**
+   * RFC 6238 time step at which the code matched. Persist it and pass it back
+   * as `afterTimeStep` in subsequent verifications to prevent replay attacks.
+   */
+  verifiedStep?: number;
+}
+
 /**
  * Verify a TOTP code against a secret.
- * epochTolerance of 90 means ±1 step (30s each), accepting codes from 30s before and after.
+ *
+ * `afterTimeStep` enables replay protection: codes from time steps <= the given
+ * value are rejected. Persist {@link TOTPVerifyResult.verifiedStep} after a
+ * successful verification and pass it on the next attempt.
  */
-export async function verifyTOTP(code: string, secret: string): Promise<boolean> {
+export async function verifyTOTP(
+  code: string,
+  secret: string,
+  afterTimeStep?: number
+): Promise<TOTPVerifyResult> {
   try {
     const result = await otplibVerify({
       secret,
       token: code,
-      epochTolerance: 1, // ±1 step of 30s — standard TOTP window
+      epochTolerance: TOTP_TOKEN_TOLERANCE,
+      ...(typeof afterTimeStep === 'number' ? { afterTimeStep } : {}),
     });
-    return result.valid;
+    return result.valid
+      ? { valid: true, verifiedStep: (result as { timeStep?: number }).timeStep }
+      : { valid: false };
   } catch {
-    return false;
+    return { valid: false };
   }
 }
 

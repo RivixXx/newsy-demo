@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 
 import { prisma } from '@/lib/db';
-import { setAuthSession, setTemp2faCookie, getTemp2faCookie, clearTemp2faCookie } from '@/lib/session';
+import { setAuthSession, getTemp2faCookie, clearTemp2faCookie } from '@/lib/session';
 import { getCurrentAuthSession } from '@/lib/session';
 import { rateLimit } from '@/lib/rate-limit';
 import { verifyPassword } from '@/modules/identity/services/password-hash';
@@ -100,6 +100,7 @@ export async function verifyAndEnable2faAction(
       totpEnabled: true,
       totpBackupCodes: backupCodesJson,
       totpVerifiedAt: new Date(),
+      totpLastUsedStep: null,
     },
   });
 
@@ -143,6 +144,7 @@ export async function disable2faAction(
       totpEnabled: false,
       totpBackupCodes: null,
       totpVerifiedAt: null,
+      totpLastUsedStep: null,
     },
   });
 
@@ -209,6 +211,7 @@ export async function verify2faLoginAction(
       totpSecret: true,
       totpEnabled: true,
       totpBackupCodes: true,
+      totpLastUsedStep: true,
     },
   });
 
@@ -239,8 +242,22 @@ export async function verify2faLoginAction(
       isValid = true;
     }
   } else {
-    // Verify TOTP code
-    isValid = await verifyTOTP(code, user.totpSecret);
+    // Verify TOTP code with replay protection: codes from time steps already
+    // used (or earlier) are rejected.
+    const result = await verifyTOTP(
+      code,
+      user.totpSecret,
+      user.totpLastUsedStep ?? undefined
+    );
+    if (result.valid) {
+      isValid = true;
+      if (result.verifiedStep !== undefined && result.verifiedStep !== user.totpLastUsedStep) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { totpLastUsedStep: result.verifiedStep },
+        });
+      }
+    }
   }
 
   if (!isValid) {

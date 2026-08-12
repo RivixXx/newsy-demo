@@ -9,6 +9,14 @@ export interface ApiResponse<T = unknown> {
   issues?: readonly { path: string; message: string }[];
 }
 
+/**
+ * Route handler context: Next.js 15 always passes a second argument with a
+ * `Promise`-based `params` (even for static routes), so it must not be optional.
+ */
+export interface RouteContext {
+  params: Promise<Record<string, string>>;
+}
+
 export function successResponse<T>(data: T, status = 200): NextResponse {
   return NextResponse.json({ success: true, data }, { status });
 }
@@ -54,12 +62,10 @@ export function handleApiError(error: unknown): NextResponse {
   );
 }
 
-export function withErrorHandler<
-  TContext extends { params?: Promise<Record<string, string>> } = { params?: Promise<Record<string, string>> }
->(
-  handler: (request: NextRequest, context: TContext) => Promise<NextResponse>
+export function withErrorHandler(
+  handler: (request: NextRequest, context: RouteContext) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, context: TContext): Promise<NextResponse> => {
+  return async (request: NextRequest, context: RouteContext): Promise<NextResponse> => {
     try {
       return await handler(request, context);
     } catch (error) {
@@ -68,11 +74,11 @@ export function withErrorHandler<
   };
 }
 
-export function withValidation<T>(
-  schema: import('zod').ZodSchema<T>,
-  handler: (request: NextRequest, data: T, context: { params?: Promise<Record<string, string>> }) => Promise<NextResponse>
+export function withValidation<TSchema extends import('zod').ZodTypeAny, T = import('zod').z.infer<TSchema>>(
+  schema: TSchema,
+  handler: (request: NextRequest, data: T, context: RouteContext) => Promise<NextResponse>
 ) {
-  return withErrorHandler(async (request: NextRequest, context: { params?: Promise<Record<string, string>> }) => {
+  return withErrorHandler(async (request: NextRequest, context: RouteContext) => {
     let data: unknown;
     
     if (request.method === 'GET') {
@@ -102,11 +108,11 @@ export function withValidation<T>(
   });
 }
 
-export function withParamsValidation<T>(
-  schema: import('zod').ZodSchema<T>,
-  handler: (request: NextRequest, params: T, context: { params: Promise<Record<string, string>> }) => Promise<NextResponse>
+export function withParamsValidation<TSchema extends import('zod').ZodTypeAny, T = import('zod').z.infer<TSchema>>(
+  schema: TSchema,
+  handler: (request: NextRequest, params: T, context: RouteContext) => Promise<NextResponse>
 ) {
-  return withErrorHandler(async (request: NextRequest, context: { params: Promise<Record<string, string>> }) => {
+  return withErrorHandler(async (request: NextRequest, context: RouteContext) => {
     const params = await context.params;
     const result = schema.safeParse(params);
     if (!result.success) {

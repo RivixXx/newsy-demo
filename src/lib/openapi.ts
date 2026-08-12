@@ -1,6 +1,10 @@
-import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
+import { OpenAPIRegistry, OpenApiGeneratorV3, extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 import { commonSchemas } from './validation';
+
+// Required: augments Zod schemas with the `.openapi()` metadata method used by
+// OpenAPIRegistry.register() / registerPath().
+extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();
 
