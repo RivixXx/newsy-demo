@@ -1,40 +1,31 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { withErrorHandler, withValidation, successResponse, errorResponse } from '@/lib/api-response';
+import { createAdminService } from '@/modules/admin/services/admin-service';
 import { buildAccessContext } from '@/modules/access-control/services/access-context';
 import { isAdmin } from '@/modules/access-control/services/permission-service';
+import { z } from 'zod';
 
-export async function GET() {
-  try {
-    const session = await getCurrentAuthSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
-    }
+const querySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
 
-    // Используем RBAC-систему вместо string-сравнения roles
-    const accessCtx = await buildAccessContext(prisma, session.user.id);
-    if (!isAdmin(accessCtx.permissionSet)) {
-      return NextResponse.json({ error: 'Доступ запрещён' }, { status: 403 });
-    }
-
-    const challenges = await prisma.challenge.findMany({
-      where: { status: 'PENDING_REVIEW' },
-      include: {
-        organizer: { select: { name: true } },
-        media: { orderBy: { sortOrder: 'asc' }, take: 1 },
-        steps: { select: { title: true, type: true, rewardPoints: true, description: true }, orderBy: { order: 'asc' } },
-        _count: { select: { participations: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return NextResponse.json({ challenges });
-  } catch (error: unknown) {
-    console.error('[admin/challenges/pending] Error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message },
-      { status: 500 }
-    );
+async function handleGet(_req: NextRequest, query: z.infer<typeof querySchema>) {
+  const session = await getCurrentAuthSession();
+  if (!session?.user?.id) {
+    return errorResponse('Необходима авторизация', 401);
   }
+
+  const accessCtx = await buildAccessContext(prisma, session.user.id);
+  if (!isAdmin(accessCtx.permissionSet)) {
+    return errorResponse('Доступ запрещён', 403);
+  }
+
+  const adminService = createAdminService(prisma);
+  const result = await adminService.getPendingChallenges(query.page, query.limit);
+  return successResponse(result);
 }
+
+export const GET = withErrorHandler(withValidation(querySchema, handleGet));

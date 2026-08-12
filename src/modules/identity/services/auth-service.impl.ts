@@ -172,44 +172,25 @@ export function createAuthService(prisma: PrismaClient) {
 
       let isValid = false;
 
-      // Check if it's a backup code (12 hex chars with dash: XXXXXX-XXXXXX)
+      // Check if it's a backup code (format: XXXXXX-XXXXXX)
       if (/^[0-9A-F]{6}-[0-9A-F]{6}$/i.test(sessionToken.trim())) {
         const hashedCodes: string[] = user.totpBackupCodes
           ? JSON.parse(user.totpBackupCodes)
           : [];
-        const { verifyBackupCode } = await import('./totp-service');
+        
         const idx = verifyBackupCode(sessionToken.trim(), hashedCodes);
         if (idx !== -1) {
-          // Timing-safe comparison using timing-safe equal
-          const inputHash = createHash('sha256').update(sessionToken.trim()).digest('hex');
-          let anyMismatch = 0;
-          const expectedLen = inputHash.length;
-
-          for (const code of hashedCodes) {
-            if (code.length !== expectedLen) {
-              anyMismatch |= 1;
-              continue;
-            }
-            let equal = 1;
-            for (let i = 0; i < expectedLen; i++) {
-              equal &= inputHash.charCodeAt(i) ^ code.charCodeAt(i);
-            }
-            anyMismatch |= ~equal & 1;
-          }
-
-          if (anyMismatch === 0) {
-            // Remove the used backup code
-            hashedCodes.splice(idx, 1);
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                totpBackupCodes: hashedCodes.length > 0
-                  ? JSON.stringify(hashedCodes)
-                  : null,
-              },
-            });
-            isValid = true;
-          }
+          // Remove the used backup code
+          hashedCodes.splice(idx, 1);
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              totpBackupCodes: hashedCodes.length > 0
+                ? JSON.stringify(hashedCodes)
+                : null,
+            },
+          });
+          isValid = true;
         }
       } else {
         isValid = await verifyTOTP(sessionToken.trim(), user.totpSecret);

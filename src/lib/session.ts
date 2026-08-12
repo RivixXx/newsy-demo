@@ -1,17 +1,13 @@
-import { createHash, createHmac } from 'crypto';
+import { createHmac } from 'crypto';
 import { timingSafeEqual } from 'crypto';
 
 import { cookies } from 'next/headers';
 
-import type { AuthSession, TwoFactorTempSession, AuthenticatedUser } from './auth';
+import type { AuthSession, TwoFactorTempSession } from './auth';
 
 const SESSION_COOKIE_NAME = '__Host-newsy_session';
 const SESSION_LIFETIME_MS = 1000 * 60 * 60 * 24 * 7;
 const TEMP_TOKEN_LIFETIME_MS = 1000 * 60 * 5; // 5 minutes
-
-function computeFingerprint(ua: string, ip: string): string {
-  return createHash('sha256').update(`${ua}:${ip}`).digest('hex').slice(0, 16);
-}
 
 function getSecret(): string {
   const secret = process.env.NEXTAUTH_SECRET?.trim();

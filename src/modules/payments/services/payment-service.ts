@@ -1,10 +1,15 @@
 import type { PrismaClient } from '@prisma/client';
 import type { StripePaymentService } from './stripe-service';
 import type { PaymentWebhookPayload } from '../types';
+import { OrganizerMemberRole } from '@prisma/client';
 
 export interface PaymentService {
   initiatePublishPayment(challengeId: string, userId: string): Promise<{ checkoutUrl: string; isExisting?: boolean }>;
   handleWebhook(payload: PaymentWebhookPayload): Promise<void>;
+}
+
+function canManageOrganizer(memberRole: OrganizerMemberRole | null): boolean {
+  return memberRole === 'OWNER' || memberRole === 'ADMIN';
 }
 
 export function createPaymentService(
@@ -21,6 +26,19 @@ export function createPaymentService(
       if (!challenge) throw new Error('Челлендж не найден');
       if (challenge.status !== 'DRAFT') {
         throw new Error('Публикация доступна только для черновиков');
+      }
+
+      const membership = await prisma.organizerMember.findUnique({
+        where: {
+          organizerId_userId: {
+            organizerId: challenge.organizerId,
+            userId,
+          },
+        },
+      });
+
+      if (!membership || membership.deletedAt || membership.status !== 'ACTIVE' || !canManageOrganizer(membership.roleInOrganizer)) {
+        throw new Error('Нет прав для публикации этого челленджа. Требуется роль владельца или администратора организации.');
       }
 
       const amount = challenge.publishPrice ?? 0;

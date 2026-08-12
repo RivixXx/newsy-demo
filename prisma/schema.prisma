@@ -881,7 +881,7 @@ model Report {
 }
 
 model RevokedSession {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(uuid())
   sessionTokenHash String  @unique
   createdAt       DateTime @default(now())
 }

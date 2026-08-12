@@ -1,48 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 import { createStripeService } from '@/modules/payments/services/stripe-service';
 import { createPaymentService } from '@/modules/payments/services/payment-service';
+import { withErrorHandler, withValidation, successResponse, errorResponse } from '@/lib/api-response';
+import { z } from 'zod';
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await getCurrentAuthSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
-    }
+const createPaymentSchema = z.object({
+  challengeId: z.string().uuid('Неверный формат ID челленджа'),
+});
 
-    const body = await req.json() as { challengeId?: unknown };
-    const { challengeId } = body;
-
-    if (!challengeId || typeof challengeId !== 'string') {
-      return NextResponse.json({ error: 'challengeId is required and must be a string' }, { status: 400 });
-    }
-
-    const challenge = await prisma.challenge.findUnique({
-      where: { id: challengeId },
-      include: { organizer: { include: { members: true } } },
-    });
-
-    if (!challenge) {
-      return NextResponse.json({ error: 'Челлендж не найден' }, { status: 404 });
-    }
-
-    const isMember = challenge.organizer.members.some((m) => m.userId === session.user.id);
-    if (!isMember) {
-      return NextResponse.json({ error: 'Нет доступа к этому челленджу' }, { status: 403 });
-    }
-
-    const stripeService = createStripeService();
-    const paymentService = createPaymentService(prisma, stripeService);
-    const { checkoutUrl } = await paymentService.initiatePublishPayment(challengeId, session.user.id);
-
-    return NextResponse.json({ checkoutUrl });
-  } catch (error: unknown) {
-    console.error('[payments/create] Error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: process.env.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера' : message },
-      { status: 500 }
-    );
+async function handlePost(request: NextRequest, body: z.infer<typeof createPaymentSchema>) {
+  const session = await getCurrentAuthSession();
+  if (!session?.user?.id) {
+    return errorResponse('Необходима авторизация', 401);
   }
+
+  const { challengeId } = body;
+
+  const challenge = await prisma.challenge.findUnique({
+    where: { id: challengeId },
+    include: { organizer: { include: { members: true } } },
+  });
+
+  if (!challenge) {
+    return errorResponse('Челлендж не найден', 404);
+  }
+
+  const isMember = challenge.organizer.members.some(
+    (m) => m.userId === session.user.id && m.status === 'ACTIVE' && !m.deletedAt
+  );
+  if (!isMember) {
+    return errorResponse('Нет доступа к этому челленджу', 403);
+  }
+
+  const stripeService = createStripeService();
+  const paymentService = createPaymentService(prisma, stripeService);
+  const { checkoutUrl, isExisting } = await paymentService.initiatePublishPayment(challengeId, session.user.id);
+
+  return successResponse({ checkoutUrl, isExisting });
 }
+
+export const POST = withErrorHandler(
+  withValidation(createPaymentSchema, handlePost)
+);
