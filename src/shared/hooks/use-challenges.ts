@@ -15,7 +15,10 @@ export function useChallenges() {
     fetch('/api/challenges')
       .then((r) => r.json())
       .then((data) => {
-        setDbChallenges(data);
+        // API returns { success: true, data: { data: [...], pagination: {...} } }
+        // Extract the actual challenges array from the nested response
+        const challenges = Array.isArray(data?.data?.data) ? data.data.data : [];
+        setDbChallenges(challenges);
         setLoading(false);
       })
       .catch(() => setLoading(false));

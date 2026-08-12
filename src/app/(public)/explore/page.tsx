@@ -487,14 +487,17 @@ export default function ExplorePage() {
   }, [selectedChallenge, handleEscape]);
 
   const regionFiltered = useMemo(() => {
+    if (!Array.isArray(challenges)) return [];
     if (!region) return challenges;
     const matched = challenges.filter(c => !c.region || c.region === region);
     return matched.length > 0 ? matched : challenges;
   }, [challenges, region]);
 
-  const filtered = regionFiltered.filter(c => {
-    return activeCategory === 'Все подряд' || c.category === activeCategory;
-  });
+  const filtered = Array.isArray(regionFiltered)
+    ? regionFiltered.filter(c => {
+        return activeCategory === 'Все подряд' || c.category === activeCategory;
+      })
+    : [];
 
   const sections: { title: string; challenges: CatalogChallenge[]; direction: 'left' | 'right' }[] = [];
 

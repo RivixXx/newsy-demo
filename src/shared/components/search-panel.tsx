@@ -56,7 +56,8 @@ export function SearchPanel() {
     fetch('/api/challenges')
       .then(r => r.json())
       .then(data => {
-        const real = Array.isArray(data) ? data : [];
+        // API returns { success: true, data: { data: [...], pagination: {...} } }
+        const real = Array.isArray(data?.data?.data) ? data.data.data : [];
         setAllChallenges(real);
       })
       .catch(() => setAllChallenges([]));
