@@ -19,6 +19,8 @@ import { Redis } from '@upstash/redis';
 interface RateLimitConfig {
   windowMs: number;
   max: number;
+  /** Keep low-risk flows available if Redis is temporarily unavailable. */
+  failOpen?: boolean;
 }
 
 interface RateLimitResult {
@@ -67,8 +69,10 @@ export async function rateLimit(
         retryAfterMs: success ? 0 : reset - Date.now(),
       };
     } catch (err) {
-      // Fail closed: if the limiter itself breaks, deny rather than allow.
-      console.error('[rate-limit] Upstash error, request denied:', err);
+      console.error('[rate-limit] Upstash error:', err);
+      if (config.failOpen) {
+        return { allowed: true, remaining: config.max, retryAfterMs: 0 };
+      }
       return deny(config.windowMs);
     }
   }
@@ -78,6 +82,9 @@ export async function rateLimit(
       '[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN are not set in production — ' +
         'request denied to keep brute-force protection active.',
     );
+    if (config.failOpen) {
+      return { allowed: true, remaining: config.max, retryAfterMs: 0 };
+    }
     return deny(config.windowMs);
   }
 

@@ -65,6 +65,36 @@ describe('rateLimit', () => {
     expect(result.allowed).toBe(false);
   });
 
+  it('can fail open for an availability-sensitive flow when Redis is missing', async () => {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
+    vi.stubEnv('NODE_ENV', 'production');
+
+    const result = await rateLimit('register:test', {
+      windowMs: 600_000,
+      max: 3,
+      failOpen: true,
+    });
+    expect(result.allowed).toBe(true);
+  });
+
+  it('still enforces a real limit when fail-open is enabled and Redis responds', async () => {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'http://localhost:8079');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NODE_ENV', 'production');
+
+    vi.mocked(Ratelimit).mockImplementationOnce(
+      limitMock({ success: false, remaining: 0, reset: Date.now() + 30_000 })
+    );
+
+    const result = await rateLimit('register:test', {
+      windowMs: 15_000,
+      max: 3,
+      failOpen: true,
+    });
+    expect(result.allowed).toBe(false);
+  });
+
   it('allows everything outside production when Redis is not configured (dev mode)', async () => {
     vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');

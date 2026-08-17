@@ -150,7 +150,14 @@ export async function registerAction(
     }
   }
 
-  const rl = await rateLimit(`register:${email}`, { windowMs: 600_000, max: 3 });
+  // Registration is protected when Redis works, but an infrastructure/configuration
+  // failure must not prevent every new user from creating an account. Email
+  // verification and the unique email constraint remain enforced.
+  const rl = await rateLimit(`register:${email}`, {
+    windowMs: 600_000,
+    max: 3,
+    failOpen: true,
+  });
   if (!rl.allowed) {
     return { error: `Слишком много регистраций. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
   }
