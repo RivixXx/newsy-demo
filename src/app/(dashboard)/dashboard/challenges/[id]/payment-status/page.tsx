@@ -54,16 +54,16 @@ export default function PaymentStatusPage() {
             </div>
             <h1>Оплата прошла успешно!</h1>
             <p>
-              Ваш челлендж опубликован. Теперь участники могут найти его в каталоге.
+              Ваш челлендж оплачен и отправлен на модерацию.
             </p>
             <div className="stats-preview">
               <div className="stat">
                 <span>Статус</span>
-                <strong className="published-badge">Опубликован</strong>
+                <strong className="published-badge">На модерации</strong>
               </div>
               <div className="stat">
                 <span>Видимость</span>
-                <strong>Публичный</strong>
+                <strong>После одобрения</strong>
               </div>
             </div>
           </>

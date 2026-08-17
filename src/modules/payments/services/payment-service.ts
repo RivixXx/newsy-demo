@@ -47,7 +47,7 @@ export function createPaymentService(
       if (amount === 0) {
         await prisma.challenge.update({
           where: { id: challengeId },
-          data: { status: 'PUBLISHED' },
+          data: { status: 'PENDING_REVIEW' },
         });
         return { checkoutUrl: `/dashboard/challenges/${challengeId}/payment-status?status=success` };
       }
@@ -143,12 +143,12 @@ export function createPaymentService(
           }),
           prisma.challenge.update({
             where: { id: transaction.challengeId },
-            data: { status: 'PUBLISHED' },
+            data: { status: 'PENDING_REVIEW' },
           }),
         ]);
 
         console.info(
-          `[payment] Challenge ${transaction.challengeId} published. ` +
+          `[payment] Challenge ${transaction.challengeId} sent for moderation. ` +
             `Commission will be tracked per participant entry.`
         );
       } else if (event === 'payment.canceled' || event === 'payment_intent.canceled') {

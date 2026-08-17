@@ -172,7 +172,7 @@ describe('PaymentService', () => {
       expect(result.checkoutUrl).toContain('status=success');
       expect(mockPrisma.challenge.update).toHaveBeenCalledWith({
         where: { id: 'challenge-1' },
-        data: { status: 'PUBLISHED' },
+        data: { status: 'PENDING_REVIEW' },
       });
     });
 
@@ -253,7 +253,7 @@ describe('PaymentService', () => {
       });
       expect(mockPrisma.challenge.update).toHaveBeenCalledWith({
         where: { id: 'challenge-1' },
-        data: { status: 'PUBLISHED' },
+        data: { status: 'PENDING_REVIEW' },
       });
     });
 

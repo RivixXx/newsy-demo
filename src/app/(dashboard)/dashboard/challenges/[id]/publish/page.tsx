@@ -36,32 +36,21 @@ export default function PublishPage() {
     setError(null);
 
     try {
-      if (tariff.price === 0) {
-        const res = await fetch('/api/payments/confirm-mock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ challengeId: params.id }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          setError(data.error || 'Ошибка публикации');
-          return;
-        }
-        setSubmitted(true);
-        toast('success', 'Челлендж отправлен на модерацию!');
-        return;
-      }
-
       const res = await fetch('/api/payments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ challengeId: params.id }),
+        body: JSON.stringify({ challengeId: params.id, tariffId: tariff.id }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.checkoutUrl) {
-        setError(data.error || 'Ошибка создания платежа');
+      const response = await res.json();
+      const data = response.data;
+      if (!res.ok || !response.success || !data?.checkoutUrl) {
+        setError(response.error || 'Ошибка создания платежа');
+        return;
+      }
+      if (data.isFree) {
+        setSubmitted(true);
+        toast('success', 'Челлендж отправлен на модерацию!');
         return;
       }
       window.location.href = data.checkoutUrl;
