@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 const LEVELS = [
   { level: 1, name: 'Новичок', xp: 0, color: '#94a3b8' },

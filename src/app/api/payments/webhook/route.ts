@@ -10,12 +10,6 @@ import { createSubscriptionService } from '@/modules/payments/services/subscript
 import { rateLimit } from '@/lib/rate-limit';
 import type { PaymentWebhookPayload } from '@/modules/payments/types';
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-if (!webhookSecret) {
-  console.warn('[webhook] STRIPE_WEBHOOK_SECRET is not configured. Webhook signature verification is DISABLED.');
-}
-
 let stripeServiceCache: StripePaymentService | null = null;
 let stripeClientCache: Stripe | null = null;
 
@@ -46,6 +40,7 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const signature = req.headers.get('stripe-signature');
 
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       console.error('[webhook] STRIPE_WEBHOOK_SECRET is not configured. Rejecting webhook.');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });

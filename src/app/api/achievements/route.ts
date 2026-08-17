@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 const DEFAULT_ACHIEVEMENTS = [
   { key: 'first_step', name: 'Первый шаг', description: 'Заверши первый челлендж', pointsRequired: 0 },
