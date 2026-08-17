@@ -1,10 +1,6 @@
 {
-  "buildCommand": "prisma generate && next build",
+  "buildCommand": "prisma db execute --file prisma/migrations/20260812_add_totp_last_used_step.sql --schema prisma/schema.prisma && prisma generate && next build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --include=dev",
-  "env": {
-    "STRIPE_SECRET_KEY": "",
-    "STRIPE_WEBHOOK_SECRET": ""
-  }
+  "installCommand": "npm install --include=dev"
 }

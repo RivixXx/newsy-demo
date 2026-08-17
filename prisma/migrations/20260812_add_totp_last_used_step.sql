@@ -6,4 +6,4 @@
 -- коды из шагов <= сохранённого отклоняются (afterTimeStep в otplib).
 -- =============================================================
 
-ALTER TABLE "User" ADD COLUMN "totp_last_used_step" INTEGER;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totp_last_used_step" INTEGER;
