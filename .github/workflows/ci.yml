@@ -9,6 +9,7 @@ on:
 env:
   NODE_VERSION: '20.x'
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+  DIRECT_URL: postgresql://postgres:postgres@localhost:5432/test
   NEXTAUTH_SECRET: test-secret-key-for-ci-only
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   NEXTAUTH_URL: http://localhost:3000

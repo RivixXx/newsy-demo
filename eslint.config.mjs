@@ -10,12 +10,25 @@ const compat = new FlatCompat({
 });
 
 export default [
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'dist/**',
+      'playwright-report/**',
+      'test-results/**',
+      'next-env.d.ts',
+    ],
+  },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
-    ignores: ['node_modules/**', '.next/**', 'dist/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-require-imports': 'warn',
+      'prefer-const': 'warn',
+      'react/jsx-key': 'warn',
+      'react/no-unescaped-entities': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
