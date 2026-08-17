@@ -62,8 +62,8 @@ export default function AdminPage() {
     fetch('/api/admin/stats')
       .then(r => r.json())
       .then(d => {
-        if (d.error) { setLoading(false); return; }
-        setStats(d);
+        if (!d.success || !d.data) { setLoading(false); return; }
+        setStats(d.data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -71,7 +71,7 @@ export default function AdminPage() {
     fetch('/api/admin/challenges/pending')
       .then(r => r.json())
       .then(d => {
-        if (d.challenges) setPendingChallenges(d.challenges);
+        if (d.success && Array.isArray(d.data?.challenges)) setPendingChallenges(d.data.challenges);
       })
       .catch(() => {});
 

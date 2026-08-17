@@ -23,9 +23,48 @@ async function handleGet(_req: NextRequest, query: z.infer<typeof querySchema>) 
     return errorResponse('Доступ запрещён', 403);
   }
 
-  const adminService = createAdminService(prisma);
-  const result = await adminService.getPendingChallenges(query.page, query.limit);
-  return successResponse(result);
+  const where = { status: 'PENDING_REVIEW' as const, deletedAt: null };
+  const [challenges, total] = await Promise.all([
+    prisma.challenge.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        category: true,
+        format: true,
+        challengeType: true,
+        address: true,
+        city: true,
+        startDate: true,
+        endDate: true,
+        maxParticipants: true,
+        entryFee: true,
+        requirements: true,
+        cancellationPolicy: true,
+        status: true,
+        createdAt: true,
+        organizer: { select: { name: true } },
+        media: { select: { url: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
+        steps: { select: { title: true, type: true, rewardPoints: true, description: true }, orderBy: { order: 'asc' } },
+        _count: { select: { participations: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+    }),
+    prisma.challenge.count({ where }),
+  ]);
+  return successResponse({
+    challenges: challenges.map(challenge => ({
+      ...challenge,
+      startDate: challenge.startDate?.toISOString() ?? null,
+      endDate: challenge.endDate?.toISOString() ?? null,
+      createdAt: challenge.createdAt.toISOString(),
+    })),
+    total,
+    totalPages: Math.ceil(total / query.limit),
+  });
 }
 
 export const GET = withErrorHandler(withValidation(querySchema, handleGet));

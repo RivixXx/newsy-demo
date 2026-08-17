@@ -118,7 +118,20 @@ async function handleGet(request: NextRequest, query: z.infer<typeof commonSchem
   const [challenges, total] = await prisma.$transaction([
     prisma.challenge.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        isCooperative: true,
+        address: true,
+        region: true,
+        endDate: true,
+        startDate: true,
+        startTime: true,
+        description: true,
+        entryFee: true,
+        maxParticipants: true,
+        createdAt: true,
         organizer: { select: { name: true } },
         media: { orderBy: { sortOrder: 'asc' }, take: 1 },
         steps: { select: { rewardPoints: true } },
