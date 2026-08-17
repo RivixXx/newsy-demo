@@ -28,7 +28,16 @@ export default function PaymentStatusPage() {
         .then(d => setStatus(d.success ? 'success' : 'error'))
         .catch(() => setStatus('error'));
     } else if (queryStatus === 'success') {
-      setStatus('success');
+      const checkoutSessionId = searchParams.get('checkout_session_id');
+      if (!checkoutSessionId) { setStatus('error'); return; }
+      fetch('/api/payments/confirm-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeId, checkoutSessionId }),
+      })
+        .then(r => r.json())
+        .then(d => setStatus(d.success ? 'success' : 'error'))
+        .catch(() => setStatus('error'));
     } else {
       setStatus('error');
     }
