@@ -43,7 +43,15 @@ async function handlePost(request: NextRequest, body: z.infer<typeof createPayme
 
   await prisma.challenge.update({
     where: { id: challengeId },
-    data: { publishPrice: tariff.price },
+    data: {
+      publishPrice: tariff.price,
+      // Older clients could mark a zero-price draft as published before the
+      // moderation flow was introduced. Choosing a paid tariff is an explicit
+      // upgrade, so restore that legacy state before initiating checkout.
+      ...(challenge.status === 'PUBLISHED' && (challenge.publishPrice ?? 0) === 0 && tariff.price > 0
+        ? { status: 'DRAFT' as const }
+        : {}),
+    },
   });
 
   const stripeService = createStripeService();
