@@ -46,7 +46,14 @@ export async function loginAction(
     return { error: 'Проверьте логин, пароль и способ входа.' };
   }
 
-  const rl = await rateLimit(`login:${credentialsResult.data.identifier}`, { windowMs: 300_000, max: 5 });
+  // Enforce the real Redis limit, but do not lock every user out when the
+  // rate-limit infrastructure itself is unavailable. Password validation and
+  // the separate 2FA limiter remain in force.
+  const rl = await rateLimit(`login:${credentialsResult.data.identifier}`, {
+    windowMs: 300_000,
+    max: 5,
+    failOpen: true,
+  });
   if (!rl.allowed) {
     return { error: `Слишком много попыток. Попробуйте через ${Math.ceil(rl.retryAfterMs / 60_000)} мин.` };
   }
@@ -72,7 +79,7 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
   await clearAuthSession();
-  redirect('/welcome');
+  redirect('/');
 }
 
 export async function registerAction(
