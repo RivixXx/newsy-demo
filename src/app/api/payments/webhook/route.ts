@@ -74,10 +74,55 @@ export async function POST(req: NextRequest) {
 
     const stripeService = getStripeService();
 
+    if (
+      eventType === 'checkout.session.completed' ||
+      eventType === 'checkout.session.async_payment_succeeded' ||
+      eventType === 'checkout.session.expired'
+    ) {
+      const checkout = stripeObject as Stripe.Checkout.Session;
+      const succeeded = eventType !== 'checkout.session.expired' &&
+        (checkout.payment_status === 'paid' || checkout.payment_status === 'no_payment_required');
+
+      if (eventType !== 'checkout.session.expired' && !succeeded) {
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      const metadata = checkout.metadata as Record<string, string> | null;
+      const convertedPayload: PaymentWebhookPayload = {
+        event: succeeded ? 'payment.succeeded' : 'payment.canceled',
+        type: 'notification',
+        object: {
+          id: checkout.id,
+          status: succeeded ? 'succeeded' : 'canceled',
+          amount: {
+            value: String((checkout.amount_total ?? 0) / 100),
+            currency: (checkout.currency ?? 'rub').toUpperCase(),
+          },
+          created_at: new Date(checkout.created * 1000).toISOString(),
+          metadata: metadata ?? undefined,
+        },
+      };
+
+      if (metadata?.type === 'SUBSCRIPTION') {
+        await createSubscriptionService(prisma, stripeService).handleWebhook(convertedPayload);
+      } else {
+        await createPaymentService(prisma, stripeService).handleWebhook(convertedPayload);
+      }
+
+      return NextResponse.json({ status: 'ok' });
+    }
+
     if (eventType === 'payment_intent.succeeded' || eventType === 'payment_intent.payment_failed') {
       const verifiedPayment = await stripeService.getPaymentIntent((stripeObject as Stripe.PaymentIntent).id);
       const metadata = verifiedPayment.metadata ?? ((stripeObject as Stripe.PaymentIntent).metadata as Record<string, string> | null);
       const paymentType = metadata?.type;
+
+      // Initial subscriptions are finalized by checkout.session.completed,
+      // whose id matches the pending local subscription. Processing the
+      // underlying PaymentIntent as well would create a duplicate record.
+      if (paymentType === 'SUBSCRIPTION') {
+        return NextResponse.json({ status: 'ok' });
+      }
 
       let convertedEvent: string;
       if (eventType === 'payment_intent.succeeded') {
@@ -103,13 +148,8 @@ export async function POST(req: NextRequest) {
         },
       };
 
-      if (paymentType === 'SUBSCRIPTION') {
-        const subscriptionService = createSubscriptionService(prisma, stripeService);
-        await subscriptionService.handleWebhook(convertedPayload);
-      } else {
-        const paymentService = createPaymentService(prisma, stripeService);
-        await paymentService.handleWebhook(convertedPayload);
-      }
+      const paymentService = createPaymentService(prisma, stripeService);
+      await paymentService.handleWebhook(convertedPayload);
     }
 
     if (eventType === 'charge.refunded') {

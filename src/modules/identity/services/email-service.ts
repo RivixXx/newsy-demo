@@ -25,6 +25,10 @@ export function createEmailService(): EmailService {
 
   async function send(to: string, subject: string, html: string) {
     if (!resend) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('RESEND_API_KEY is not configured');
+      }
+      console.warn(`[email] Skipped "${subject}" to ${to}: RESEND_API_KEY is not configured.`);
       return;
     }
 

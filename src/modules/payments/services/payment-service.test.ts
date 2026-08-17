@@ -43,6 +43,7 @@ describe('PaymentService', () => {
       createPaymentIntent: vi.fn().mockResolvedValue({
         paymentIntentId: 'pi_test123',
         clientSecret: 'pi_test123_secret',
+        checkoutUrl: 'https://checkout.stripe.com/c/pay_test123',
       }),
       getPaymentIntent: vi.fn().mockResolvedValue({
         id: 'pi_test123',
@@ -128,7 +129,7 @@ describe('PaymentService', () => {
 
       const result = await paymentService.initiatePublishPayment('challenge-1', 'user-1');
 
-      expect(result.checkoutUrl).toContain('paymentIntent=pi_test123');
+      expect(result.checkoutUrl).toBe('https://checkout.stripe.com/c/pay_test123');
       expect(mockStripeService.createPaymentIntent).toHaveBeenCalled();
     });
 
@@ -149,7 +150,7 @@ describe('PaymentService', () => {
 
       const result = await paymentService.initiatePublishPayment('challenge-1', 'user-1');
 
-      expect(result.checkoutUrl).toContain('paymentIntent=pi_test123');
+      expect(result.checkoutUrl).toBe('https://checkout.stripe.com/c/pay_test123');
     });
 
     it('should publish immediately when price is 0', async () => {
@@ -197,12 +198,13 @@ describe('PaymentService', () => {
         id: 'pi_existing',
         status: 'requires_payment_method',
         metadata: { challengeId: 'challenge-1' },
+        checkoutUrl: 'https://checkout.stripe.com/c/pay_existing',
       });
 
       const result = await paymentService.initiatePublishPayment('challenge-1', 'user-1');
 
       expect(result.isExisting).toBe(true);
-      expect(result.checkoutUrl).toContain('pi_existing');
+      expect(result.checkoutUrl).toBe('https://checkout.stripe.com/c/pay_existing');
     });
   });
 

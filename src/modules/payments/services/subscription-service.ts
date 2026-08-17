@@ -35,7 +35,7 @@ export function createSubscriptionService(
   prisma: PrismaClient,
   stripeService: StripePaymentService
 ): SubscriptionService {
-  const returnUrl = `${process.env.NEXTAUTH_URL}/dashboard/profile?subscription=pending`;
+  const returnUrl = `${process.env.NEXTAUTH_URL}/dashboard/subscription`;
 
   return {
     async createSubscription(userId, planKey) {
@@ -91,7 +91,7 @@ export function createSubscriptionService(
         },
       });
 
-      return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/profile?subscription=pending&paymentIntent=${pi.paymentIntentId}` };
+      return { checkoutUrl: pi.checkoutUrl };
     },
 
     async cancelSubscription(userId, subscriptionId) {
@@ -102,6 +102,10 @@ export function createSubscriptionService(
       if (!subscription) throw new Error('Подписка не найдена');
       if (subscription.userId !== userId) throw new Error('Нет доступа');
       if (subscription.status !== 'ACTIVE') throw new Error('Нельзя отменить неактивную подписку');
+
+      if (subscription.providerId) {
+        await stripeService.cancelSubscription(subscription.providerId);
+      }
 
       await prisma.userSubscription.update({
         where: { id: subscriptionId },

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { TwoFactorRequiredError } from '@/modules/identity/services/auth-service';
 
 describe('AuthService types', () => {
@@ -6,7 +6,7 @@ describe('AuthService types', () => {
     const error = new TwoFactorRequiredError('user-123');
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toBe('Two-factor authentication is required');
-    expect((error as any).userId).toBe('user-123');
+    expect(error.userId).toBe('user-123');
   });
 });
 

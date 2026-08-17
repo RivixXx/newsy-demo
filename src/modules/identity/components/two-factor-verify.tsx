@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useActionState } from 'react';
 import { ArrowRight, Shield, KeyRound, AlertCircle } from 'lucide-react';
 
-import { verify2faLoginAction, type TwoFactorVerifyState } from '@/modules/identity/actions/2fa';
+import { verify2faLoginAction } from '@/modules/identity/actions/2fa';
 
 /* ═══════════════════════════════════════════════════════════════════
    TWO-FACTOR VERIFY — shown inside AuthCard after password login

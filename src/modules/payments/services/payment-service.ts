@@ -60,8 +60,8 @@ export function createPaymentService(
         if (existingPending?.providerId) {
           try {
             const pi = await stripeService.getPaymentIntent(existingPending.providerId);
-            if ((pi.status === 'requires_payment_method' || pi.status === 'processing' || pi.status === 'requires_confirmation') && pi.metadata) {
-              return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status?paymentIntent=${existingPending.providerId}`, isExisting: true };
+            if ((pi.status === 'open' || pi.status === 'requires_payment_method' || pi.status === 'processing' || pi.status === 'requires_confirmation') && pi.metadata && pi.checkoutUrl) {
+              return { checkoutUrl: pi.checkoutUrl, isExisting: true };
             }
           } catch {
           }
@@ -95,12 +95,12 @@ export function createPaymentService(
         } catch (err: unknown) {
           const maybePrisma = err as { code?: string };
           if (maybePrisma.code === 'P2002') {
-            return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status?paymentIntent=${pi.paymentIntentId}`, isExisting: true };
+            return { checkoutUrl: pi.checkoutUrl, isExisting: true };
           }
           throw err;
         }
 
-        return { checkoutUrl: `${process.env.NEXTAUTH_URL}/dashboard/challenges/${challengeId}/payment-status?paymentIntent=${pi.paymentIntentId}`, isExisting: false };
+        return { checkoutUrl: pi.checkoutUrl, isExisting: false };
       });
 
       return { checkoutUrl: result.checkoutUrl, isExisting: result.isExisting };
@@ -113,9 +113,18 @@ export function createPaymentService(
         throw new Error('Invalid webhook payload');
       }
 
-      const transaction = await prisma.paymentTransaction.findUnique({
+      let transaction = await prisma.paymentTransaction.findUnique({
         where: { providerId: object.id },
       });
+
+      // Checkout transactions are stored by Checkout Session id, while
+      // refund and PaymentIntent events reference the underlying intent id.
+      if (!transaction && object.metadata?.challengeId) {
+        transaction = await prisma.paymentTransaction.findFirst({
+          where: { challengeId: object.metadata.challengeId },
+          orderBy: { createdAt: 'desc' },
+        });
+      }
 
       if (!transaction) {
         console.warn(`[payment] Webhook for unknown payment: ${object.id}`);

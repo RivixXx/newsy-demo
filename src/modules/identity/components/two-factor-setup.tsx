@@ -94,7 +94,7 @@ export function TwoFactorSetup() {
         setBackupCodes(result.backupCodes);
         setStep('backup');
       }
-    } catch (e) {
+    } catch {
       setError('Ошибка при проверке кода.');
     } finally {
       setIsPending(false);

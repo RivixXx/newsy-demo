@@ -6,7 +6,6 @@ import {
   Trophy, 
   Zap, 
   Target, 
-  TrendingUp, 
   ChevronRight,
   Award,
   Calendar

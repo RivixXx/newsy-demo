@@ -23,6 +23,10 @@ export interface AuthActionState {
   twoFactorToken?: string;
 }
 
+function publicAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+}
+
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value : '';
@@ -180,18 +184,23 @@ export async function registerAction(
       userData.platformName = platformName;
     }
 
-    const user = await prisma.$transaction(async (tx) => {
+    const registration = await prisma.$transaction(async (tx) => {
       const existing = await tx.user.findFirst({ where: { email } });
       if (existing) {
+        if (existing.status === 'PENDING') {
+          return { user: existing, resumedPending: true };
+        }
         throw new Error('Этот email уже зарегистрирован.');
       }
 
-      return tx.user.create({ data: userData as any });
+      const created = await tx.user.create({ data: userData as any });
+      return { user: created, resumedPending: false };
     });
+    const user = registration.user;
 
     // Если пользователь — организатор, создаём Organizer + OrganizerMember
     const userRole = (formData.get('userRole') as string) || 'participant';
-    if (userRole === 'organizer') {
+    if (userRole === 'organizer' && !registration.resumedPending) {
       // Маппинг AccountType → OrganizerType
       const ORGANIZER_TYPE_MAP: Record<string, string> = {
         IP: 'BRAND', SELF_EMPLOYED: 'BRAND', OOO: 'BRAND', AO: 'BRAND',
@@ -234,20 +243,28 @@ export async function registerAction(
     // Генерируем токен верификации и отправляем письмо
     try {
       const token = generateVerificationToken();
-      await prisma.emailVerificationToken.create({
-        data: {
-          userId: user.id,
-          token,
-          email,
-          expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS),
-        },
-      });
+      await prisma.$transaction([
+        prisma.emailVerificationToken.updateMany({
+          where: { userId: user.id, usedAt: null },
+          data: { usedAt: new Date() },
+        }),
+        prisma.emailVerificationToken.create({
+          data: {
+            userId: user.id,
+            token,
+            email,
+            expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS),
+          },
+        }),
+      ]);
 
       const emailService = createEmailService();
-      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-      await emailService.sendVerificationEmail(email, token, baseUrl);
+      await emailService.sendVerificationEmail(email, token, publicAppUrl());
     } catch (emailErr) {
       console.error('[register] Failed to send verification email:', emailErr);
+      return {
+        error: 'Аккаунт создан, но письмо не отправилось. Попробуйте зарегистрироваться с тем же email ещё раз через несколько минут.',
+      };
     }
 
     return { success: 'Регистрация прошла успешно! Проверьте почту для подтверждения аккаунта.' };

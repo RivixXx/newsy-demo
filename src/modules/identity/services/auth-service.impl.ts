@@ -28,6 +28,10 @@ export function createAuthService(prisma: PrismaClient) {
         throw new Error('Аккаунт заблокирован. Обратитесь в поддержку.');
       }
 
+      if (user.status === 'DELETED') {
+        throw new Error('Invalid credentials');
+      }
+
       if (user.status === 'PENDING') {
         throw new Error('Аккаунт ожидает подтверждения email. Проверьте почту.');
       }
@@ -101,7 +105,7 @@ export function createAuthService(prisma: PrismaClient) {
         },
       });
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
       await emailService.sendPasswordResetEmail(user.email, token, baseUrl);
     },
 

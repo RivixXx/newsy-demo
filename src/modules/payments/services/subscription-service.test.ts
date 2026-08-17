@@ -27,12 +27,14 @@ describe('SubscriptionService', () => {
       createPaymentIntent: vi.fn().mockResolvedValue({
         paymentIntentId: 'pi_sub123',
         clientSecret: 'pi_sub123_secret',
+        checkoutUrl: 'https://checkout.stripe.com/c/pay_sub123',
       }),
       getPaymentIntent: vi.fn().mockResolvedValue({
         id: 'pi_sub123',
         status: 'succeeded',
         metadata: { userId: 'user-1', planId: 'plan-1', type: 'SUBSCRIPTION' },
       }),
+      cancelSubscription: vi.fn().mockResolvedValue(undefined),
     };
 
     subscriptionService = createSubscriptionService(mockPrisma, mockStripeService);
@@ -110,7 +112,7 @@ describe('SubscriptionService', () => {
 
       const result = await subscriptionService.createSubscription('user-1', 'premium');
 
-      expect(result.checkoutUrl).toContain('paymentIntent=pi_sub123');
+      expect(result.checkoutUrl).toBe('https://checkout.stripe.com/c/pay_sub123');
       expect(mockStripeService.createPaymentIntent).toHaveBeenCalled();
       expect(mockPrisma.userSubscription.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -161,9 +163,12 @@ describe('SubscriptionService', () => {
         id: 'sub-1',
         userId: 'user-1',
         status: SubscriptionStatus.ACTIVE,
+        providerId: 'cs_sub123',
       });
 
       await subscriptionService.cancelSubscription('user-1', 'sub-1');
+
+      expect(mockStripeService.cancelSubscription).toHaveBeenCalledWith('cs_sub123');
 
       expect(mockPrisma.userSubscription.update).toHaveBeenCalledWith({
         where: { id: 'sub-1' },

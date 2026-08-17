@@ -128,6 +128,11 @@ export async function disable2faAction(
     return { error: 'Введите пароль для подтверждения.' };
   }
 
+  const rl = await rateLimit(`2fa-disable:${session.user.id}`, { windowMs: 300_000, max: 5 });
+  if (!rl.allowed) {
+    return { error: 'Слишком много попыток. Попробуйте позже.' };
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { passwordHash: true },

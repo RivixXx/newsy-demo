@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useActionState } from 'react';
 import {
@@ -203,14 +203,7 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
   const [step, setStep] = useState(0);
   const [userRole, setUserRole] = useState<'participant' | 'organizer'>('participant');
   const [accountType, setAccountType] = useState('individual');
-  const [formHeight, setFormHeight] = useState<number | 'auto'>('auto');
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
-  const step0Ref = useRef<HTMLDivElement>(null);
-  const step1Ref = useRef<HTMLDivElement>(null);
-  const step2Ref = useRef<HTMLDivElement>(null);
-  const step3Ref = useRef<HTMLDivElement>(null);
-  const stepFinalRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const isOrganizer = userRole === 'organizer';
@@ -226,28 +219,8 @@ function RegisterWizard({ action }: { action: (state: AuthActionState, formData:
   const totalSteps = isOrganizer ? (isBusiness ? 4 : 3) : 2;
   const isLastStep = step >= maxStep;
 
-  const getStepRef = useCallback((idx: number) => {
-    if (idx === 0) return step0Ref;
-    if (idx === 1) return step1Ref;
-    if (idx === 2 && isOrganizer) return isBusiness ? step2Ref : stepFinalRef;
-    if (idx === 3 && isBusiness) return stepFinalRef;
-    return stepFinalRef;
-  }, [isOrganizer, isBusiness]);
-
-  // Measure active step height on step change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const ref = getStepRef(step);
-      if (ref.current) {
-        const h = ref.current.scrollHeight;
-        setFormHeight(h + 24); // +24 for padding
-      }
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [step, getStepRef]);
-
-  const goNext = useCallback(() => { setDirection('forward'); setStep(s => s + 1); }, []);
-  const goBack = useCallback(() => { setDirection('back'); setStep(s => s - 1); }, []);
+  const goNext = useCallback(() => { setStep(s => s + 1); }, []);
+  const goBack = useCallback(() => { setStep(s => s - 1); }, []);
 
   const progressPct = Math.round(((step + 1) / (maxStep + 1)) * 100);
 
@@ -452,4 +425,3 @@ function Field({ icon, name, placeholder, label, type = 'text', trailing, maxLen
     </div>
   );
 }
-

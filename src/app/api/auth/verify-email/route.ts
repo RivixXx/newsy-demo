@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createReferralService } from '@/modules/identity/services/referral-service';
+import { createUserService } from '@/modules/identity/services/user-service';
+import { createSessionPayload } from '@/modules/identity/services/session-service';
+import { setAuthSession } from '@/lib/session';
 
 async function verifyToken(token: string | null) {
   if (!token) {
@@ -51,7 +54,23 @@ async function succeed(record: { id: string; userId: string }, redirectUrl: stri
     console.error('[verify-email] Referral tracking failed:', refErr);
   }
 
-  return NextResponse.redirect(new URL(`${redirectUrl}?info=verified`));
+  const userService = createUserService(prisma);
+  const authenticated = await userService.getAuthenticatedUser(record.userId);
+  if (!authenticated) {
+    return NextResponse.redirect(new URL('/login?error=profile-unavailable', redirectUrl));
+  }
+
+  await setAuthSession(createSessionPayload({
+    userId: authenticated.id,
+    email: authenticated.email,
+    phone: authenticated.phone,
+    firstName: authenticated.firstName,
+    lastName: authenticated.lastName,
+    roles: authenticated.roles,
+    organizationIds: authenticated.organizationIds,
+  }));
+
+  return NextResponse.redirect(new URL('/explore?info=verified', redirectUrl));
 }
 
 export async function GET(req: NextRequest) {
