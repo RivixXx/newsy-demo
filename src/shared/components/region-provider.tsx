@@ -32,8 +32,6 @@ export function RegionProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       setRegionState(stored);
-    } else {
-      setShowModal(true);
     }
     setIsLoaded(true);
   }, []);

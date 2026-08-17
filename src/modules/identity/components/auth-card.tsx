@@ -1,427 +1,104 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import { useActionState, useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useActionState } from 'react';
-import {
-  Mail, Lock, User, ArrowRight, Eye, EyeOff, Tag, Calendar,
-  Building2, Landmark, Users, MapPin, Briefcase, Store,
-  ChevronLeft, Check, UserCircle, Trophy, Zap,
-} from 'lucide-react';
+import Image from 'next/image';
+import { ArrowLeft, ArrowRight, Building2, Eye, EyeOff, Lock, Mail, ShieldCheck, Store, Trophy, User } from 'lucide-react';
 import { loginAction, registerAction, type AuthActionState } from '@/modules/identity/actions';
 import { TwoFactorVerify } from './two-factor-verify';
 
-/* ─────────────────────────── types ─────────────────────────────── */
+const focus = 'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 focus-visible:border-orange-600';
+const input = `min-h-12 w-full rounded-lg border border-slate-400 bg-white px-4 text-base text-slate-950 placeholder:text-slate-500 ${focus}`;
+const primary = `inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 text-[15px] font-bold text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60 ${focus}`;
 
-const ACCOUNT_TYPES = [
-  { id: 'individual', label: 'Физ. лицо', icon: <UserCircle size={22} />, desc: 'Участник' },
-  { id: 'ip', label: 'ИП', icon: <Store size={22} />, desc: 'ИП' },
-  { id: 'ooo', label: 'ООО', icon: <Building2 size={22} />, desc: 'ООО' },
-  { id: 'ao', label: 'АО', icon: <Landmark size={22} />, desc: 'АО' },
-  { id: 'self_employed', label: 'Самозанятый', icon: <Briefcase size={22} />, desc: 'НПД' },
-];
-
-const USER_ROLES = [
-  { id: 'participant' as const, label: 'Участвовать', icon: <Trophy size={24} />, desc: 'Выполнять челленджи' },
-  { id: 'organizer' as const, label: 'Создавать', icon: <Zap size={24} />, desc: 'Запускать конкурсы' },
-];
-
-const COMPANY_SIZES = [
-  { id: '1-5', label: '1–5' }, { id: '6-20', label: '6–20' },
-  { id: '21-50', label: '21–50' }, { id: '51-200', label: '51–200' },
-  { id: '201-1000', label: '201–1 000' }, { id: '1000+', label: '1 000+' },
-];
-
-const IS_BUSINESS = (t: string) => t !== 'individual';
-
-/* ─── Stat component for brand panel ─── */
-
-function Stat({ num, label }: { num: string; label: string }) {
-  return (
-    <div className="bs-item">
-      <span className="bs-num">{num}</span>
-      <span className="bs-label">{label}</span>
+type FieldProps = { name: string; label: string; type?: string; placeholder?: string; icon?: ReactNode; required?: boolean; autoComplete?: string; children?: ReactNode; maxLength?: number };
+function Field({ name, label, type = 'text', placeholder, icon, required = true, autoComplete, children, maxLength }: FieldProps) {
+  const id = useId();
+  return <div className="flex min-w-0 flex-col gap-2">
+    <label htmlFor={id} className="text-sm font-bold text-slate-800">{label}{required && <span aria-hidden> *</span>}</label>
+    <div className="relative">
+      {icon && <span aria-hidden className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500 [&>svg]:size-[18px]">{icon}</span>}
+      <input id={id} name={name} type={type} placeholder={placeholder} required={required} autoComplete={autoComplete} maxLength={maxLength}
+        className={`${input} ${icon ? 'pl-11' : ''} ${children ? 'pr-12' : ''}`} />
+      {children}
     </div>
-  );
+  </div>;
 }
 
-/* ─── InputField (alias for Field with style object support) ─── */
-
-function InputField({ icon, name, placeholder, label, type = 'text', trailing, maxLength, style }: {
-  icon: React.ReactNode; name: string; placeholder: string; label: string;
-  type?: string; trailing?: React.ReactNode; maxLength?: number; style?: React.CSSProperties;
-}) {
-  const [focused, setFocused] = useState(false);
-  const id = `f-${name}`;
-  return (
-    <div className="field-group" style={style}>
-      <label htmlFor={id} className="field-label">{label}</label>
-      <div className={`input-wrap ${focused ? 'input-wrap--focus' : ''}`}>
-        <span className="input-icon">{icon}</span>
-        <input
-          id={id} name={name} type={type} placeholder={placeholder}
-          className="field-input"
-          required={name !== 'confirm' && name !== 'referralCode'}
-          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          maxLength={maxLength}
-        />
-        {trailing}
-      </div>
-    </div>
-  );
+function Notice({ state, prefix }: { state: AuthActionState; prefix: string }) {
+  if (state.error) return <div id={`${prefix}-message`} role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-900">{state.error}</div>;
+  if (state.success) return <div id={`${prefix}-message`} role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">{state.success}</div>;
+  return null;
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   MAIN AUTH CARD
-   ═══════════════════════════════════════════════════════════════════ */
 
 export function AuthCard({ initialMode = 'login' }: { initialMode?: 'login' | 'register' }) {
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
-
-  return (
-    <div className="auth-root">
-      {/* Animated background orbs */}
-      <div className="auth-bg">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-        <div className="auth-grid-pattern" />
-      </div>
-
-      <div className="auth-container">
-        {/* Left branding panel */}
-        <div className="auth-brand">
-          <Link href="/welcome" className="brand-link">
-            <img src="/icon.svg" alt="" className="brand-logo" />
-            <span className="brand-name">ЧИ</span>
-          </Link>
-          <h2 className="brand-headline">Соревнуйся.<br/>Побеждай.<br/>Получай награды.</h2>
-          <p className="brand-desc">
-            Платформа интерактивных челленджей для бизнеса, блогеров и каждого.
-          </p>
-          <div className="stats-row">
-            <Stat num="50k+" label="участников" />
-            <Stat num="1.2k" label="челенджей" />
-            <Stat num="4.9" label="рейтинг" />
-          </div>
+  return <main className="grid min-h-dvh place-items-center bg-slate-50 p-0 text-slate-950 sm:p-8">
+    <section className="grid min-h-dvh w-full max-w-6xl overflow-hidden bg-white sm:min-h-[680px] sm:rounded-2xl sm:border sm:border-slate-200 sm:shadow-xl lg:grid-cols-[.85fr_1.15fr]" aria-label={initialMode === 'login' ? 'Вход' : 'Регистрация'}>
+      <aside className="flex items-center justify-between gap-5 bg-slate-950 px-6 py-5 text-white lg:flex-col lg:items-start lg:p-11">
+        <Link href="/" aria-label="ЧИ — на главную" className={`inline-flex min-h-11 items-center gap-3 text-xl font-black ${focus}`}><Image src="/icon.svg" alt="" width={40} height={40} />ЧИ</Link>
+        <div className="hidden lg:block">
+          <p className="mb-4 text-sm font-bold uppercase tracking-wider text-orange-300">Платформа челленджей</p>
+          <h1 className="mb-5 text-5xl font-black leading-[1.05] tracking-tight">Делайте то, что давно откладывали.</h1>
+          <p className="text-base leading-7 text-slate-300">Выбирайте челлендж, двигайтесь к цели вместе с другими и фиксируйте результат.</p>
+          <ul className="mt-8 flex flex-col gap-3 text-sm text-slate-200"><li className="flex gap-2"><ShieldCheck className="size-5 text-orange-300" />Данные защищены</li><li className="flex gap-2"><Trophy className="size-5 text-orange-300" />Условия участия видны заранее</li></ul>
         </div>
-
-        {/* Right form panel */}
-        <div className="auth-form-panel">
-          <div className="glass-card">
-            {/* Tab switcher */}
-            <div className="tab-bar">
-              <button
-                className={`tab-btn ${mode === 'login' ? 'active' : ''}`}
-                onClick={() => setMode('login')}
-              >
-                Вход
-              </button>
-              <button
-                className={`tab-btn ${mode === 'register' ? 'active' : ''}`}
-                onClick={() => setMode('register')}
-              >
-                Регистрация
-              </button>
-              <div className="tab-slider" style={{ transform: mode === 'register' ? 'translateX(100%)' : 'translateX(0)' }} />
-            </div>
-
-            {/* Forms — only one rendered at a time, no overlap */}
-            {mode === 'login' && <LoginForm action={loginAction} />}
-            {mode === 'register' && <RegisterWizard action={registerAction} />}
-          </div>
-        </div>
+        <Link href="/" className={`inline-flex min-h-11 items-center gap-2 text-sm font-bold ${focus}`}><ArrowLeft className="size-5" /><span className="hidden sm:inline">Вернуться к каталогу</span></Link>
+      </aside>
+      <div className="flex flex-col px-6 py-7 sm:px-12 lg:px-16">
+        <nav aria-label="Вход или регистрация" className="mb-10 grid grid-cols-2 border-b border-slate-200">
+          {([['login','Вход'],['register','Регистрация']] as const).map(([mode,label]) => <Link key={mode} href={`/${mode}`} aria-current={initialMode === mode ? 'page' : undefined} className={`grid min-h-12 place-items-center border-b-2 text-[15px] font-bold ${focus} ${initialMode === mode ? 'border-slate-950 text-slate-950' : 'border-transparent text-slate-600'}`}>{label}</Link>)}
+        </nav>
+        {initialMode === 'login' ? <Login action={loginAction} /> : <Register action={registerAction} />}
       </div>
-    </div>
-  );
+    </section>
+  </main>;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   LOGIN FORM
-   ═══════════════════════════════════════════════════════════════════ */
-
-function LoginForm({ action }: { action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState> }) {
-  const [state, formAction, isPending] = useActionState(action, {});
-  const [showPass, setShowPass] = useState(false);
-  const [show2fa, setShow2fa] = useState(false);
-
-  // When loginAction returns twoFactorToken, show 2FA verification
-  if (state.twoFactorToken === 'required' || show2fa) {
-    return (
-      <TwoFactorVerify
-        onBack={() => {
-          setShow2fa(false);
-          window.location.reload();
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="form-wrap">
-      <div className="form-header">
-        <h2>С возвращением!</h2>
-        <p>Войдите, чтобы продолжить свои челленджи</p>
-      </div>
-
-      <form action={formAction} className="auth-form">
-        <Field icon={<Mail size={18} />} name="identifier" placeholder="demo@chi.ru" label="Email или Телефон" />
-        <Field
-          icon={<Lock size={18} />} name="password" placeholder="••••••••" label="Пароль"
-          type={showPass ? 'text' : 'password'}
-          trailing={
-            <button type="button" className="eye-btn" onClick={() => setShowPass(v => !v)} aria-label={showPass ? 'Скрыть' : 'Показать'}>
-              {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          }
-        />
-        <input type="hidden" name="provider" value="email" />
-
-        {state.error && <div className="msg msg--error">{state.error}</div>}
-
-        <button type="submit" disabled={isPending} className="submit-btn">
-          {isPending ? 'Входим...' : 'Войти'} <ArrowRight size={18} />
-        </button>
-      </form>
-
-      <Link href="/forgot-password" className="forgot-link">Забыли пароль?</Link>
-
-      <p className="switch-text">
-        Нет аккаунта?{' '}
-        <Link href="/register" className="switch-link">Зарегистрироваться</Link>
-      </p>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   REGISTER WIZARD — sequential DOM, no absolute stacking
-   ═══════════════════════════════════════════════════════════════════ */
-
-function RegisterWizard({ action }: { action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState> }) {
-  const [state, formAction, isPending] = useActionState(action, {});
-  const [step, setStep] = useState(0);
-  const [userRole, setUserRole] = useState<'participant' | 'organizer'>('participant');
-  const [accountType, setAccountType] = useState('individual');
-
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const isOrganizer = userRole === 'organizer';
-  const isBusiness = isOrganizer && IS_BUSINESS(accountType);
-  const maxStep = isOrganizer ? (isBusiness ? 3 : 2) : 1;
-
-  // Visibility of conditional sub-steps
-  const showRole = step === 0;
-  const showAccountType = step === 1 || (isOrganizer && step === 2);
-  const showBusiness = isBusiness && step === 3;
-  const showPassword = isOrganizer && step === 2 && !isBusiness || (!isOrganizer && step >= 1);
-
-  const totalSteps = isOrganizer ? (isBusiness ? 4 : 3) : 2;
-  const isLastStep = step >= maxStep;
-
-  const goNext = useCallback(() => { setStep(s => s + 1); }, []);
-  const goBack = useCallback(() => { setStep(s => s - 1); }, []);
-
-  const progressPct = Math.round(((step + 1) / (maxStep + 1)) * 100);
-
-  return (
-    <div className="form-wrap">
-      <div className="form-header">
-        <h2>Создать аккаунт</h2>
-        <p>Зарегистрируйтесь, чтобы участвовать в челленджах</p>
-      </div>
-
-      {/* Progress */}
-      <div className="progress-track">
-        <div className="progress-fill" style={{ width: `${progressPct}%` }} />
-      </div>
-      <div className="step-dots">
-        {Array.from({ length: totalSteps }, (_, i) => (
-          <div key={i} className={`dot ${i <= step ? 'dot--active' : ''} ${i === step ? 'dot--current' : ''}`} />
-        ))}
-      </div>
-
-      <form ref={formRef} action={formAction} onSubmit={(e) => {
-        if (step < maxStep) { e.preventDefault(); goNext(); }
-      }}>
-        <input type="hidden" name="accountType" value={accountType} />
-        <input type="hidden" name="userRole" value={userRole} />
-
-        {/* ── Step: Role ── */}
-        {showRole && (
-          <div className="step-section">
-            <label className="field-label">Я хочу</label>
-            <div className="choice-grid">
-              {USER_ROLES.map(r => (
-                <button key={r.id} type="button" className={`choice-card ${userRole === r.id ? 'choice-card--active' : ''}`}
-                  onClick={() => setUserRole(r.id)}>
-                  <span className="choice-icon">{r.icon}</span>
-                  <span className="choice-label">{r.label}</span>
-                  <span className="choice-desc">{r.desc}</span>
-                  {userRole === r.id && <span className="choice-check"><Check size={14} /></span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Step: Account Type ── */}
-        {(showAccountType || step === (isOrganizer ? 2 : 1)) && (
-          <>
-            {showAccountType && (
-              <div className="step-section">
-                <label className="field-label">Тип аккаунта</label>
-                <div className="choice-grid choice-grid--wrap">
-                  {ACCOUNT_TYPES.map(t => (
-                    <button key={t.id} type="button" className={`choice-card choice-card--sm ${accountType === t.id ? 'choice-card--active' : ''}`}
-                      onClick={() => setAccountType(t.id)}>
-                      <span className="choice-icon">{t.icon}</span>
-                      <span className="choice-label">{t.label}</span>
-                      {accountType === t.id && <span className="choice-check"><Check size={14} /></span>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Personal info fields ── */}
-            {step >= 1 && (
-              <div className="reg-name-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <InputField icon={<User size={18} />} name="firstName" placeholder="Алексей" label="Имя" />
-                <InputField icon={<User size={18} />} name="lastName" placeholder="Иванов" label="Фамилия" />
-              </div>
-            )}
-            {step >= 1 && (
-              <InputField icon={<Mail size={18} />} name="email" placeholder="demo@chi.ru" label="Email" type="email" />
-            )}
-            {step >= 1 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="field-group">
-                  <label className="field-label">Пол</label>
-                  <div className="input-wrap">
-                    <select name="gender" style={{ cursor: 'pointer' }}>
-                      <option value="">Не указан</option>
-                      <option value="male">Мужской</option>
-                      <option value="female">Женский</option>
-                    </select>
-                  </div>
-                </div>
-                {step >= 1 && (
-                  <InputField icon={<Calendar size={18} />} name="birthDate" placeholder="дд.мм.гггг" label="Дата рождения" type="date" />
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ── Step: Business Info ── */}
-        {showBusiness && (
-          <div className="step-section">
-            <div className="step-badge">
-              <Building2 size={16} /> Данные {ACCOUNT_TYPES.find(t => t.id === accountType)?.label}
-            </div>
-            <Field icon={<Building2 size={18} />} name="companyName" placeholder="ООО «Рога и Копыта»" label="Наименование" />
-            <Field icon={<Landmark size={18} />} name="inn" placeholder="7701234567" label="ИНН" maxLength={12} />
-            <div className="field-row">
-              <div className="field-group">
-                <label className="field-label">Размер</label>
-                <div className="input-wrap">
-                  <select name="companySize" className="field-input" style={{ cursor: 'pointer' }}>
-                    <option value="">Не указан</option>
-                    {COMPANY_SIZES.map(sz => <option key={sz.id} value={sz.id}>{sz.label} сотр.</option>)}
-                  </select>
-                </div>
-              </div>
-              <Field icon={<Users size={18} />} name="employeeCount" placeholder="12" label="Число работников" type="number" />
-            </div>
-            <Field icon={<MapPin size={18} />} name="companyAddress" placeholder="г. Москва, ул. Примерная, д. 1" label="Адрес" />
-            <Field icon={<Store size={18} />} name="platformName" placeholder="Мой бренд" label="Название на платформе" />
-          </div>
-        )}
-
-        {/* ── Step: Password ── */}
-        {showPassword && (
-          <div className="step-section">
-            <PasswordField />
-            <Field icon={<Tag size={18} />} name="referralCode" placeholder="Например: IVANOV2026" label="Код приглашения (необязательно)" />
-          </div>
-        )}
-
-        {state.error && <div className="msg msg--error">{state.error}</div>}
-        {state.success && <div className="msg msg--success">{state.success}</div>}
+function Login({ action }: { action: (s: AuthActionState, d: FormData) => Promise<AuthActionState> }) {
+  const [state, formAction, pending] = useActionState(action, {});
+  const [shown, setShown] = useState(false);
+  if (state.twoFactorToken === 'required') return <TwoFactorVerify onBack={() => location.reload()} />;
+  return <div className="my-auto w-full max-w-xl">
+    <header className="mb-8"><h2 className="mb-2 text-3xl font-black tracking-tight">С возвращением</h2><p className="text-sm leading-6 text-slate-600">Введите данные, чтобы продолжить.</p></header>
+    <form action={formAction} className="flex flex-col gap-5" aria-describedby={state.error ? 'login-message' : undefined}>
+      <Field name="identifier" label="Email или телефон" placeholder="name@example.ru" icon={<Mail />} autoComplete="username" />
+      <Field name="password" label="Пароль" placeholder="Введите пароль" icon={<Lock />} type={shown ? 'text' : 'password'} autoComplete="current-password"><PasswordButton shown={shown} toggle={() => setShown(!shown)} /></Field>
+      <input type="hidden" name="provider" value="email" /><Notice state={state} prefix="login" />
+      <Link href="/forgot-password" className={`ml-auto inline-flex min-h-11 items-center text-sm font-bold text-slate-800 underline-offset-4 hover:underline ${focus}`}>Забыли пароль?</Link>
+      <button className={primary} disabled={pending}>{pending ? 'Входим…' : 'Войти'}<ArrowRight className="size-5" /></button>
     </form>
-
-      {/* Nav buttons — outside the form */}
-      <div className="nav-row">
-        {step > 0 && (
-          <button type="button" onClick={goBack} className="back-btn">
-            <ChevronLeft size={18} /> Назад
-          </button>
-        )}
-        <div style={{ flex: 1 }} />
-        {!isLastStep ? (
-          <button type="button" onClick={goNext} className="next-btn">
-            Далее <ArrowRight size={18} />
-          </button>
-        ) : (
-          <button type="submit" disabled={isPending} onClick={() => {
-            formRef.current?.requestSubmit();
-          }} className="submit-final">
-            {isPending ? 'Создаём...' : 'Зарегистрироваться'} <ArrowRight size={18} />
-          </button>
-        )}
-      </div>
-
-      <p className="switch-text">
-        Уже есть аккаунт?{' '}
-        <Link href="/login" className="switch-link">Войти</Link>
-      </p>
-    </div>
-  );
+    <p className="mt-6 text-center text-sm text-slate-600">Нет аккаунта? <Link className={`inline-flex min-h-11 items-center font-bold text-slate-950 underline ${focus}`} href="/register">Зарегистрироваться</Link></p>
+  </div>;
 }
 
-/* ─── Password sub-step ─── */
-
-function PasswordField() {
-  const [show, setShow] = useState(false);
-  return (
-    <>
-      <Field
-        icon={<Lock size={18} />} name="password" placeholder="Минимум 8 символов" label="Пароль"
-        type={show ? 'text' : 'password'}
-        trailing={
-          <button type="button" className="eye-btn" onClick={() => setShow(v => !v)} aria-label={show ? 'Скрыть' : 'Показать'}>
-            {show ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        }
-      />
-      <Field icon={<Lock size={18} />} name="confirm" placeholder="Повторите пароль" label="Повторите пароль" type="password" />
-    </>
-  );
+function Register({ action }: { action: (s: AuthActionState, d: FormData) => Promise<AuthActionState> }) {
+  const [state, formAction, pending] = useActionState(action, {});
+  const [role, setRole] = useState<'participant'|'organizer'>('participant');
+  const [account, setAccount] = useState('individual');
+  const [shown, setShown] = useState(false);
+  const business = role === 'organizer' && account !== 'individual';
+  return <div className="w-full max-w-xl">
+    <header className="mb-7"><h2 className="mb-2 text-3xl font-black tracking-tight">Создать аккаунт</h2><p className="text-sm leading-6 text-slate-600">Заполните данные. Обязательные поля отмечены звёздочкой.</p></header>
+    <form action={formAction} className="flex flex-col gap-5" aria-describedby={(state.error || state.success) ? 'register-message' : undefined}>
+      <Choice label="Я хочу" value={role} setValue={v => setRole(v as typeof role)} options={[['participant','Участвовать'],['organizer','Создавать ЧИ']]} />
+      <Choice label="Тип аккаунта" value={account} setValue={setAccount} options={[['individual','Физ. лицо'],['self_employed','Самозанятый'],['ip','ИП'],['ooo','ООО'],['ao','АО']]} />
+      <div className="grid gap-4 sm:grid-cols-2"><Field name="firstName" label="Имя" icon={<User />} autoComplete="given-name" /><Field name="lastName" label="Фамилия" icon={<User />} autoComplete="family-name" /></div>
+      <Field name="email" label="Email" type="email" icon={<Mail />} placeholder="name@example.ru" autoComplete="email" />
+      <div className="grid gap-4 sm:grid-cols-2"><Select name="gender" label="Пол" items={[['','Не указан'],['male','Мужской'],['female','Женский']]} /><Field name="birthDate" label="Дата рождения" type="date" required={false} /></div>
+      {business && <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm font-bold"><Building2 className="size-5" />Данные организации</p><Field name="companyName" label="Наименование" /><Field name="inn" label="ИНН" maxLength={12} /><div className="grid gap-4 sm:grid-cols-2"><Select name="companySize" label="Размер" items={[['','Не указан'],['1-5','1–5'],['6-20','6–20'],['21-50','21–50'],['51-200','51–200'],['201-1000','201–1 000'],['1000+','1 000+']]} /><Field name="employeeCount" label="Число работников" type="number" required={false} /></div><Field name="companyAddress" label="Адрес" /><Field name="platformName" label="Название на платформе" icon={<Store />} /></div>}
+      <Field name="password" label="Пароль" placeholder="Минимум 8 символов" icon={<Lock />} type={shown ? 'text' : 'password'} autoComplete="new-password"><PasswordButton shown={shown} toggle={() => setShown(!shown)} /></Field>
+      <Field name="confirm" label="Повторите пароль" icon={<Lock />} type={shown ? 'text' : 'password'} autoComplete="new-password" />
+      <Field name="referralCode" label="Код приглашения" placeholder="Если есть" required={false} />
+      <input type="hidden" name="userRole" value={role} /><input type="hidden" name="accountType" value={account} /><Notice state={state} prefix="register" />
+      <p className="text-sm leading-6 text-slate-600">Создавая аккаунт, вы соглашаетесь с условиями использования и политикой конфиденциальности.</p>
+      <button className={primary} disabled={pending}>{pending ? 'Создаём…' : 'Создать аккаунт'}<ArrowRight className="size-5" /></button>
+    </form>
+    <p className="mt-6 text-center text-sm text-slate-600">Уже есть аккаунт? <Link className={`inline-flex min-h-11 items-center font-bold text-slate-950 underline ${focus}`} href="/login">Войти</Link></p>
+  </div>;
 }
 
-/* ─── Shared Field ─── */
-
-function Field({ icon, name, placeholder, label, type = 'text', trailing, maxLength }: {
-  icon: React.ReactNode; name: string; placeholder: string; label: string;
-  type?: string; trailing?: React.ReactNode; maxLength?: number;
-}) {
-  const [focused, setFocused] = useState(false);
-  const id = `f-${name}`;
-  return (
-    <div className="field-group">
-      <label htmlFor={id} className="field-label">{label}</label>
-      <div className={`input-wrap ${focused ? 'input-wrap--focus' : ''}`}>
-        <span className="input-icon">{icon}</span>
-        <input
-          id={id} name={name} type={type} placeholder={placeholder}
-          className="field-input"
-          required={name !== 'confirm' && name !== 'referralCode'}
-          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          maxLength={maxLength}
-        />
-        {trailing}
-      </div>
-    </div>
-  );
+function Choice({ label, value, setValue, options }: { label: string; value: string; setValue: (v:string)=>void; options: string[][] }) {
+  return <fieldset><legend className="mb-2 text-sm font-bold text-slate-800">{label}</legend><div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">{options.map(([id,text]) => <label key={id} className={`relative flex min-h-12 cursor-pointer items-center justify-center rounded-lg border px-3 text-center text-sm font-bold ${value === id ? 'border-slate-950 bg-slate-100' : 'border-slate-300 bg-white'} focus-within:ring-4 focus-within:ring-orange-200`}><input className="sr-only" type="radio" name={`${label}-choice`} checked={value === id} onChange={() => setValue(id)} />{text}</label>)}</div></fieldset>;
 }
+function Select({ name, label, items }: { name:string; label:string; items:string[][] }) { const id=useId(); return <div className="flex flex-col gap-2"><label htmlFor={id} className="text-sm font-bold text-slate-800">{label}</label><select id={id} name={name} className={input}>{items.map(([v,t])=><option key={v} value={v}>{t}</option>)}</select></div>; }
+function PasswordButton({ shown, toggle }: { shown:boolean; toggle:()=>void }) { return <button type="button" onClick={toggle} aria-label={shown ? 'Скрыть пароль' : 'Показать пароль'} className={`absolute inset-y-0 right-0 grid min-h-12 w-12 place-items-center text-slate-600 ${focus}`}>{shown ? <EyeOff className="size-5" /> : <Eye className="size-5" />}</button>; }

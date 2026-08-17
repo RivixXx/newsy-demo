@@ -176,9 +176,9 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <div className="admin-tabs">
+        <div className="admin-tabs" role="tablist" aria-label="Разделы админ-панели">
           {(['overview', 'moderation', 'users', 'organizations', 'challenges', 'payments', 'ads'] as const).map(t => (
-            <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
+            <button type="button" key={t} role="tab" aria-selected={tab === t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
               {t === 'overview' ? 'Обзор' : t === 'moderation' ? `Модерация (${pendingChallenges.length})` : t === 'users' ? 'Пользователи' : t === 'organizations' ? 'Организации' : t === 'challenges' ? 'Челленджи' : t === 'payments' ? 'Платежи' : 'Реклама'}
             </button>
           ))}
@@ -218,11 +218,11 @@ export default function AdminPage() {
             </div>
 
             {pendingChallenges.length > 0 && (
-              <div className="pending-banner" onClick={() => setTab('moderation')}>
+              <button type="button" className="pending-banner" onClick={() => setTab('moderation')}>
                 <Clock size={20} />
                 <span><strong>{pendingChallenges.length}</strong> челлендж(ей) ожидают модерации</span>
                 <span className="pending-arrow">→</span>
-              </div>
+              </button>
             )}
 
             <div className="detail-grid">
@@ -878,16 +878,47 @@ export default function AdminPage() {
           }
 
           @media (max-width: 1100px) { .ads-layout { grid-template-columns: 1fr; } .ads-preview-card { position: static; } }
+
+          /* Strict admin workspace: restrained surfaces and accessible density. */
+          .admin-page { max-width: 1280px; padding-top: 40px; color: #18181b; }
+          .admin-header h1 { font-size: 30px; font-weight: 750; letter-spacing: -0.03em; }
+          .admin-tabs { gap: 2px; padding: 4px; width: fit-content; max-width: 100%; background: #f4f4f5; border-radius: 10px; }
+          .admin-tab { min-height: 40px; padding: 8px 14px; border: 0; border-radius: 7px; background: transparent; color: #52525b; font-weight: 650; }
+          .admin-tab.active { background: #fff; color: #18181b; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+          .stat-card, .detail-card, .list-card, .moderation-card, .ads-form-card, .ads-preview-card {
+            border-color: #e4e4e7; border-radius: 12px; box-shadow: none;
+          }
+          .stat-label, .list-meta, .status-badge, .add-org-btn, .org-badge, .org-already,
+          .mod-step-badge, .mod-step-type, .mod-step-desc, .ads-hint { font-size: 12px; }
+          .list-name, .detail-row, .mod-info p, .mod-btn { font-size: 14px; }
+          .pending-banner { width: 100%; text-align: left; font-family: inherit; }
+          .empty-state { background: #fff; border: 1px dashed #d4d4d8; border-radius: 12px; }
+          .mod-actions { border-color: #e4e4e7; }
+          .mod-btn { min-height: 42px; border-radius: 8px; }
+          .mod-btn.approve { background: #18181b; }
+          .mod-btn.approve:hover:not(:disabled) { background: #3f3f46; }
+          .mod-btn.reject { background: #fff; border: 1px solid #fca5a5; color: #b91c1c; }
+          .reject-modal { border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
+          .ads-save-btn { min-height: 44px; border-radius: 8px; background: #18181b; box-shadow: none; }
+          .ads-save-btn:hover { transform: none; box-shadow: none; background: #3f3f46; }
+          .admin-page :is(button, a, input, textarea, select):focus-visible {
+            outline: 3px solid rgba(225,29,72,.35); outline-offset: 2px;
+          }
+          .ads-input:focus-visible, .ads-textarea:focus-visible, .reject-modal textarea:focus-visible { border-color: #e11d48; }
+          @media (prefers-reduced-motion: reduce) {
+            .admin-page *, .reject-overlay *, .admin-page *::before, .admin-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+          }
         `}</style>
       </div>
 
       {rejectModal && (
         <div className="reject-overlay" onClick={() => { setRejectModal(null); setRejectReason(''); }}>
-          <div className="reject-modal" onClick={e => e.stopPropagation()}>
-            <h3>Отклонить челлендж</h3>
-            <p className="reject-subtitle">Укажите причину возврата на доработку</p>
+          <div className="reject-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" aria-describedby="reject-description" onClick={e => e.stopPropagation()}>
+            <h3 id="reject-title">Отклонить челлендж</h3>
+            <p id="reject-description" className="reject-subtitle">Укажите причину возврата на доработку</p>
             <div className="reject-challenge">«{rejectModal.title}»</div>
             <textarea
+              aria-label="Причина отклонения"
               placeholder="Что нужно исправить или улучшить..."
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}

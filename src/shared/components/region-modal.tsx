@@ -72,6 +72,15 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onSkip();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onSkip]);
+
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
@@ -107,8 +116,8 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
 
   return (
     <>
-      <div className="region-overlay" onClick={onSkip} />
-      <div className="region-wrap">
+      <div className="region-overlay" onClick={onSkip} aria-hidden="true" />
+      <div className="region-wrap" role="dialog" aria-modal="true" aria-labelledby="region-title" aria-describedby="region-description">
         <div className="region-card">
           <button className="region-close" onClick={onSkip} aria-label="Закрыть">
             <X size={20} />
@@ -118,8 +127,8 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
             <div className="region-icon">
               <MapPin size={28} />
             </div>
-            <h2 className="region-title">Где вы находитесь?</h2>
-            <p className="region-subtitle">
+            <h2 className="region-title" id="region-title">Выберите город</h2>
+            <p className="region-subtitle" id="region-description">
               Чтобы показывать челленджи рядом с вами
             </p>
           </div>
@@ -130,6 +139,7 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
             <input
               ref={inputRef}
               type="text"
+              aria-label="Город"
               placeholder="Тамбов"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

@@ -2,8 +2,7 @@
 
 import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, User, Search, UserCircle, Plus, Shield, LogOut, HelpCircle, Bell, CheckCircle2, X, MapPin, Heart, LayoutDashboard } from 'lucide-react';
+import { Menu, UserCircle, Plus, Shield, LogOut, Bell, CheckCircle2, MapPin, Heart, LayoutDashboard } from 'lucide-react';
 import { logoutAction } from '@/modules/identity/actions';
 import { useSession } from '@/shared/components/session-provider';
 import { useRegion } from '@/shared/components/region-provider';
@@ -25,9 +24,8 @@ interface NavNotification {
 }
 
 export function SiteNav({ variant = 'public' }: SiteNavProps) {
-  const pathname = usePathname();
   const session = useSession();
-  const { region, showModal, setRegion, changeRegion, closeRegionModal, skipRegion } = useRegion();
+  const { region, showModal, setRegion, changeRegion, skipRegion } = useRegion();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -107,6 +105,13 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                 <SearchPanel />
               </Suspense>
             )}
+            {!session && (
+              <div className="public-nav-links" aria-label="Разделы сайта">
+                <Link href="/" className="host-link">Каталог</Link>
+                <Link href="/#how-it-works" className="host-link">Как это работает</Link>
+                <Link href="/register" className="host-link">Организаторам</Link>
+              </div>
+            )}
           </div>
 
           <div className="nav-right">
@@ -164,7 +169,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
               </div>
             )}
 
-            <div ref={menuRef} className="capsule-wrap">
+            {session && <div ref={menuRef} className="capsule-wrap">
               <button
                 className={`capsule-btn ${isMenuOpen ? 'open' : ''}`}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -177,11 +182,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                   <div className="avatar avatar--active">
                     {session.user.email?.[0].toUpperCase()}
                   </div>
-                ) : (
-                  <div className="avatar avatar--default">
-                    <User size={18} color="white" />
-                  </div>
-                )}
+                ) : null}
               </button>
 
               {isMenuOpen && (
@@ -203,21 +204,10 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
                         </button>
                       </form>
                     </>
-                  ) : (
-                    <>
-                      <DDItem href="/login" icon={<UserCircle size={18} />} label="Профиль" bold onClick={close} />
-                      <DDItem href="/favorites" icon={<Heart size={18} />} label="Избранное" onClick={close} />
-                      <div className="dd-divider" />
-                      <DDItem href="/login" icon={<LogOut size={18} />} label="Войти" bold onClick={close} />
-                      <DDItem href="/register" icon={<Plus size={18} />} label="Зарегистрироваться" onClick={close} />
-                      <div className="dd-divider" />
-                      <DDItem href="/register" icon={<Plus size={18} />} label="Создать челлендж" onClick={close} />
-                      <DDItem href="/help" icon={<HelpCircle size={18} />} label="Помощь" onClick={close} />
-                    </>
-                  )}
+                  ) : null}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </nav>
       </header>

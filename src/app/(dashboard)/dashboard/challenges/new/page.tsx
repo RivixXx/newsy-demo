@@ -171,7 +171,7 @@ export default function NewChallengePage() {
         <Link href="/explore" className="cc-topbtn">
           <ChevronLeft size={16} /> Назад
         </Link>
-        <button className={`cc-topbtn ${showPreview ? 'cc-topbtn--active' : ''}`} onClick={() => setShowPreview(v => !v)}>
+        <button type="button" className={`cc-topbtn ${showPreview ? 'cc-topbtn--active' : ''}`} aria-pressed={showPreview} onClick={() => setShowPreview(v => !v)}>
           <Eye size={16} /> Превью
         </button>
       </header>
@@ -202,7 +202,7 @@ export default function NewChallengePage() {
                   <label>Категория *</label>
                   <div className="cc-cats">
                     {CATEGORIES.map(c => (
-                      <button key={c.key} className={`cc-cat ${data.category === c.key ? 'on' : ''}`} style={data.category === c.key ? { background: c.gradient, borderColor: 'transparent', color: 'white' } : {}} onClick={() => update({ category: c.key })}>
+                      <button type="button" key={c.key} className={`cc-cat ${data.category === c.key ? 'on' : ''}`} aria-pressed={data.category === c.key} onClick={() => update({ category: c.key })}>
                         <div className="cc-cat-icon" style={{ background: c.gradient }}>{c.icon}</div>
                         <span>{c.label}</span>
                         {data.category === c.key && <div className="cc-cat-check"><Check size={12} /></div>}
@@ -300,7 +300,7 @@ export default function NewChallengePage() {
                         <div className="cc-step-grip"><GripVertical size={14} /></div>
                         <div className="cc-step-num" style={{ background: st.gradient }}>{i + 1}</div>
                         <div className="cc-step-body">
-                          <div className="cc-step-top"><span className="cc-step-badge" style={{ color: st.color }}>{st.icon} {st.label}</span><button className="cc-step-del" onClick={() => removeStep(s.id)}><Trash2 size={13} /></button></div>
+                          <div className="cc-step-top"><span className="cc-step-badge" style={{ color: st.color }}>{st.icon} {st.label}</span><button type="button" className="cc-step-del" aria-label={`Удалить этап «${s.title || `Этап ${i + 1}`}»`} onClick={() => removeStep(s.id)}><Trash2 size={13} /></button></div>
                           <input className="cc-step-title" placeholder="Название этапа..." value={s.title} onChange={e => updateStep(s.id, { title: e.target.value })} />
                           <textarea className="cc-step-desc" rows={2} placeholder="Инструкция для участника..." value={s.description} onChange={e => updateStep(s.id, { description: e.target.value })} />
                           <input className="cc-step-criteria" placeholder="Критерии приёма при проверке..." value={s.criteria || ''} onChange={e => updateStep(s.id, { criteria: e.target.value })} />
@@ -532,7 +532,7 @@ export default function NewChallengePage() {
                     {data.rewardTitle && <div className="cc-rv-reward"><Award size={16} /><strong>{data.rewardTitle}</strong></div>}
                   </div>
                 </div>
-                {error && <div className="cc-error">{error}</div>}
+                {error && <div className="cc-error" role="alert" aria-live="polite">{error}</div>}
               </div>
             </>
           )}
@@ -961,5 +961,32 @@ const css = `
   }
   @media (max-width: 480px) {
     .cc-question-types { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Calm editorial surface: one accent, clear hierarchy and keyboard focus. */
+  .cc-root { background: #f6f7f9; color: #18181b; overflow: visible; }
+  .cc-bg { background: #f6f7f9; filter: none; transform: none; }
+  .cc-bg::after { display: none; }
+  .cc-topbar { background: rgba(246,247,249,.94); border-bottom: 1px solid #e4e4e7; }
+  .cc-topbtn, .cc-btn--ghost { background: #fff; backdrop-filter: none; border: 1px solid #d4d4d8; box-shadow: none; color: #3f3f46; }
+  .cc-form-card, .cc-preview-card { border: 1px solid #e4e4e7; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .cc-card-head, .cc-card-head[style] { background: #fff !important; color: #18181b; border-bottom: 1px solid #e4e4e7; padding: 22px 28px; }
+  .cc-card-head-icon { background: #fff1f2; color: #e11d48; border-radius: 10px; }
+  .cc-card-head p { color: #71717a; font-size: 14px; }
+  .cc-field > label { font-size: 14px; text-transform: none; letter-spacing: 0; color: #27272a; }
+  .cc-counter, .cc-field-hint, .cc-type-btn span, .cc-step-badge, .cc-step-criteria,
+  .cc-ach-name, .cc-rv-tag, .cc-rv-stat span, .cc-rv-step span, .cc-pv-stage-type { font-size: 12px; color: #71717a; }
+  .cc-step-desc, .cc-opt input, .cc-note span { font-size: 14px; color: #52525b; }
+  .cc-qt-btn { min-height: 48px; font-size: 12px; }
+  .cc-cat, .cc-pill, .cc-type-btn, .cc-ach, .cc-step { border-radius: 10px; box-shadow: none; transform: none !important; }
+  .cc-cat.on, .cc-pill.on { background: #18181b !important; border-color: #18181b !important; color: #fff !important; box-shadow: none; }
+  .cc-cat-icon, .cc-type-icon, .cc-step-num, .cc-rv-step-n, .cc-pv-stage-num { background: #3f3f46 !important; box-shadow: none; }
+  .cc-btn { min-height: 44px; border-radius: 10px; box-shadow: none; }
+  .cc-btn--publish { background: #e11d48; box-shadow: none; }
+  .cc-progress-fill { background: #e11d48; animation: none; }
+  .cc-bottombar { background: rgba(255,255,255,.96); backdrop-filter: none; border-color: #e4e4e7; }
+  .cc-root :is(button, a, input, textarea, select):focus-visible { outline: 3px solid rgba(225,29,72,.35); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    .cc-root *, .cc-root *::before, .cc-root *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   }
 `;
