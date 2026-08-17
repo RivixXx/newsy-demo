@@ -14,14 +14,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/explore', request.url));
   }
 
-  // Залогиненные пользователи на "/" или "/welcome" → каталог
-  if (isLoggedIn && (pathname === '/' || pathname === '/welcome')) {
-    return NextResponse.redirect(new URL('/explore', request.url));
-  }
-
-  // Незарегестрированные на "/" → лендинг
-  if (!isLoggedIn && pathname === '/') {
-    return NextResponse.redirect(new URL('/welcome', request.url));
+  // Главная страница — публичный каталог. URL остаётся корневым, чтобы
+  // посетитель из поиска сначала увидел продукт, а не экран регистрации.
+  if (pathname === '/') {
+    return NextResponse.rewrite(new URL('/explore', request.url));
   }
 
   if (!isLoggedIn && PROTECTED.some((p) => pathname.startsWith(p))) {
@@ -34,5 +30,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register', '/', '/welcome'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register', '/'],
 };

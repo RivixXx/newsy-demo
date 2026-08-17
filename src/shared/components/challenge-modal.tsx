@@ -170,6 +170,11 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
   };
 
   const handleJoin = async () => {
+    if (!session) {
+      window.location.assign(`/register?next=${encodeURIComponent('/explore')}`);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/challenges/${challenge.id}/join`, { method: 'POST' });
       const data = await res.json();
@@ -177,8 +182,12 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         setStatus('active');
         refetchStages();
         toast('success', 'Вы присоединились к челленджу!');
+      } else {
+        toast('warning', data.error || 'Не удалось присоединиться к челленджу');
       }
-    } catch {}
+    } catch {
+      toast('warning', 'Не удалось присоединиться. Попробуйте ещё раз.');
+    }
   };
 
   const handleCompleteStage = async (stageId: string) => {
