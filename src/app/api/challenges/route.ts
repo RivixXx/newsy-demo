@@ -122,7 +122,7 @@ async function handleGet(request: NextRequest, query: z.infer<typeof commonSchem
   let challenges: ChallengeListRow[];
   let total: number;
   try {
-    [challenges, total] = await prisma.$transaction([
+    [challenges, total] = await Promise.all([
     prisma.challenge.findMany({
       where,
       select: {
