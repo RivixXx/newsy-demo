@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
 import { buildAccessContext } from '@/modules/access-control/services';
+import { invalidateCache } from '@/lib/cache';
 
 const DEFAULT_REJECTION_REASON = 'Челлендж не соответствует требованиям платформы. Пожалуйста, проверьте описание, этапы и категорию, затем повторите попытку.';
 
@@ -54,6 +55,7 @@ export async function POST(
         where: { id },
         data: { status: 'PUBLISHED', rejectionReason: null },
       });
+      await invalidateCache('challenges:v2:list:*');
 
       if (memberIds.length > 0) {
         await prisma.notification.createMany({
@@ -80,6 +82,7 @@ export async function POST(
       where: { id },
       data: { status: 'DRAFT', rejectionReason: rejectionMessage },
     });
+    await invalidateCache('challenges:v2:list:*');
 
     if (memberIds.length > 0) {
       await prisma.notification.createMany({

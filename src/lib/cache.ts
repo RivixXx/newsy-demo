@@ -35,7 +35,9 @@ export async function setCache<T>(key: string, value: T, ttlSeconds: number): Pr
   if (!client) return;
   
   try {
-    await client.setex(key, ttlSeconds, JSON.stringify(value));
+    // The Upstash SDK serializes JSON values itself. Stringifying here stores
+    // a JSON string instead of the object and breaks consumers after a hit.
+    await client.setex(key, ttlSeconds, value);
   } catch (err) {
     console.error('[cache] Redis set error:', err);
   }
@@ -57,7 +59,7 @@ export async function invalidateCache(pattern: string): Promise<void> {
 
 export const cacheKeys = {
   challengesList: (page: number, limit: number, filters: string) => 
-    `challenges:list:${page}:${limit}:${filters}`,
+    `challenges:v2:list:${page}:${limit}:${filters}`,
   challengeDetail: (id: string) => `challenge:detail:${id}`,
   userSession: (sessionId: string) => `session:${sessionId}`,
 };

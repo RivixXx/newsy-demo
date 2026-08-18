@@ -909,8 +909,6 @@ export default function AdminPage() {
             .admin-page *, .reject-overlay *, .admin-page *::before, .admin-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
           }
         `}</style>
-      </div>
-
       {rejectModal && (
         <div className="reject-overlay" onClick={() => { setRejectModal(null); setRejectReason(''); }}>
           <div className="reject-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" aria-describedby="reject-description" onClick={e => e.stopPropagation()}>
@@ -935,6 +933,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+      </div>
     </PageShell>
   );
 }
