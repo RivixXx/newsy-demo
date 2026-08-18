@@ -1,7 +1,20 @@
 import { Redis } from '@upstash/redis';
 
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  let normalized = value.trim();
+  while (
+    normalized.length >= 2 &&
+    ((normalized.startsWith('"') && normalized.endsWith('"')) ||
+      (normalized.startsWith("'") && normalized.endsWith("'")))
+  ) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+  return normalized || undefined;
+}
+
+const redisUrl = normalizeEnvValue(process.env.UPSTASH_REDIS_REST_URL);
+const redisToken = normalizeEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
 
 let redisClient: Redis | null = null;
 
@@ -18,10 +31,9 @@ function getRedisClient(): Redis | null {
 }
 
 export async function getCached<T>(key: string): Promise<T | null> {
-  const client = getRedisClient();
-  if (!client) return null;
-  
   try {
+    const client = getRedisClient();
+    if (!client) return null;
     const data = await client.get(key);
     return data as T | null;
   } catch (err) {
@@ -31,10 +43,9 @@ export async function getCached<T>(key: string): Promise<T | null> {
 }
 
 export async function setCache<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
-  const client = getRedisClient();
-  if (!client) return;
-  
   try {
+    const client = getRedisClient();
+    if (!client) return;
     // The Upstash SDK serializes JSON values itself. Stringifying here stores
     // a JSON string instead of the object and breaks consumers after a hit.
     await client.setex(key, ttlSeconds, value);
@@ -44,10 +55,9 @@ export async function setCache<T>(key: string, value: T, ttlSeconds: number): Pr
 }
 
 export async function invalidateCache(pattern: string): Promise<void> {
-  const client = getRedisClient();
-  if (!client) return;
-  
   try {
+    const client = getRedisClient();
+    if (!client) return;
     const keys = await client.keys(pattern);
     if (keys.length > 0) {
       await client.del(...keys);

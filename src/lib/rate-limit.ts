@@ -32,6 +32,15 @@ interface RateLimitResult {
 // Cache limiters by window to avoid creating new instances
 const limiterCache = new Map<string, Ratelimit>();
 
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  let normalized = value.trim();
+  while (normalized.length >= 2 && ((normalized.startsWith('"') && normalized.endsWith('"')) || (normalized.startsWith("'") && normalized.endsWith("'")))) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+  return normalized || undefined;
+}
+
 function getLimiter(windowMs: number, max: number): Ratelimit {
   const cacheKey = `${windowMs}:${max}`;
   if (limiterCache.has(cacheKey)) return limiterCache.get(cacheKey)!;
@@ -55,12 +64,16 @@ export async function rateLimit(
   key: string,
   config: RateLimitConfig,
 ): Promise<RateLimitResult> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = normalizeEnvValue(process.env.UPSTASH_REDIS_REST_URL);
+  const token = normalizeEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (url && token) {
     try {
+      // Redis.fromEnv reads process.env directly, so normalize accidental
+      // dashboard quotes before constructing the SDK client.
+      process.env.UPSTASH_REDIS_REST_URL = url;
+      process.env.UPSTASH_REDIS_REST_TOKEN = token;
       const limiter = getLimiter(config.windowMs, config.max);
       const { success, remaining, reset } = await limiter.limit(key);
       return {

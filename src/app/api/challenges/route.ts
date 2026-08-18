@@ -71,7 +71,7 @@ function createCacheKey(query: z.infer<typeof commonSchemas.challengeQuery> & { 
   return cacheKeys.challengesList(page, limit, filters);
 }
 
-async function handleGetInner(request: NextRequest, query: z.infer<typeof commonSchemas.challengeQuery>) {
+async function handleGet(request: NextRequest, query: z.infer<typeof commonSchemas.challengeQuery>) {
   const page = query.page ?? 1;
   const limit = query.limit ?? 20;
   const { category, format, status, region, search, sort } = query;
@@ -183,17 +183,6 @@ async function handleGetInner(request: NextRequest, query: z.infer<typeof common
   await setCache(cacheKey, response, CACHE_TTL.medium);
 
   return successResponse(response);
-}
-
-async function handleGet(request: NextRequest, query: z.infer<typeof commonSchemas.challengeQuery>) {
-  try {
-    return await handleGetInner(request, query);
-  } catch (error) {
-    const kind = error instanceof Error ? error.constructor.name : typeof error;
-    const message = error instanceof Error ? error.message.slice(0, 300) : 'Unknown error';
-    console.error('[catalog] Unhandled error:', error);
-    return NextResponse.json({ success: false, error: 'Ошибка каталога', kind, message }, { status: 500 });
-  }
 }
 
 export const GET = withErrorHandler(
