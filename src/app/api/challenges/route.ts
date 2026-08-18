@@ -5,6 +5,8 @@ import { commonSchemas } from '@/lib/validation';
 import { combineDateAndTime, isNewEntity, isActivePeriod, formatDateRu, formatDateTimeISO } from '@/lib/date-utils';
 import { getCached, setCache, cacheKeys, CACHE_TTL } from '@/lib/cache';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -61,6 +63,8 @@ function mapChallenge(c: {
   };
 }
 
+type ChallengeListRow = Parameters<typeof mapChallenge>[0];
+
 function createCacheKey(query: z.infer<typeof commonSchemas.challengeQuery> & { page: number; limit: number }): string {
   const { page, limit, category, format, status, region, search, sort } = query;
   const filters = `${category || ''}|${format || ''}|${status || ''}|${region || ''}|${search || ''}|${sort || 'newest'}`;
@@ -115,7 +119,10 @@ async function handleGet(request: NextRequest, query: z.infer<typeof commonSchem
       break;
   }
 
-  const [challenges, total] = await prisma.$transaction([
+  let challenges: ChallengeListRow[];
+  let total: number;
+  try {
+    [challenges, total] = await prisma.$transaction([
     prisma.challenge.findMany({
       where,
       select: {
@@ -148,7 +155,18 @@ async function handleGet(request: NextRequest, query: z.infer<typeof commonSchem
       take: limit,
     }),
     prisma.challenge.count({ where }),
-  ]);
+    ]);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({
+        success: false,
+        error: 'Ошибка схемы каталога',
+        code: error.code,
+        field: typeof error.meta?.column === 'string' ? error.meta.column : undefined,
+      }, { status: 500 });
+    }
+    throw error;
+  }
 
   const result = challenges.map(mapChallenge);
 
