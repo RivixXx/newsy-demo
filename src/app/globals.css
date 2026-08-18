@@ -142,6 +142,63 @@ select {
   }
 }
 
+/* Route loading states mirror final layouts to prevent layout shifts. */
+.route-skeleton {
+  width: 100%;
+  max-width: 1240px;
+  min-height: 70dvh;
+  margin: 0 auto;
+  padding: 64px 32px 96px;
+  animation: route-skeleton-enter 180ms ease-out both;
+}
+
+.route-skeleton__heading,
+.route-skeleton__stack,
+.route-skeleton__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.route-skeleton__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 48px 0 32px;
+}
+
+.route-skeleton__cards,
+.route-skeleton__stats,
+.route-skeleton__dashboard-grid,
+.route-skeleton__detail-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.route-skeleton__cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.route-skeleton__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 36px 0 24px; }
+.route-skeleton__dashboard-grid { grid-template-columns: 1.35fr 1fr; }
+.route-skeleton__detail-grid { grid-template-columns: 1.2fr 1fr; align-items: start; margin-top: 32px; }
+.route-skeleton__card { overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: 14px; background: hsl(var(--card)); }
+.route-skeleton__card-body { padding: 22px; }
+
+@keyframes route-skeleton-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .route-skeleton__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .route-skeleton__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .route-skeleton__dashboard-grid,
+  .route-skeleton__detail-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .route-skeleton { padding: 44px 16px 64px; }
+  .route-skeleton__cards { grid-template-columns: 1fr; }
+}
+
 img,
 video {
   max-width: 100%;

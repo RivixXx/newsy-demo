@@ -4,6 +4,7 @@ import { getCurrentAuthSession } from '@/lib/session';
 import { SessionProvider } from '@/shared/components/session-provider';
 import { RegionProvider } from '@/shared/components/region-provider';
 import { ToastProvider } from '@/shared/components/toast';
+import { NavigationWarmup } from '@/shared/components/navigation-warmup';
 import './globals.css';
 import { Geist, Unbounded } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ export default async function RootLayout({
         <SessionProvider session={session}>
           <RegionProvider>
             <ToastProvider>
+              <NavigationWarmup />
               {children}
             </ToastProvider>
           </RegionProvider>

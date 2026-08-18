@@ -4,7 +4,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Heart, MapPin, Search, Sparkles, Users } from 'lucide-react';
 import { PageShell } from '@/shared/components/page-shell';
-import { PageSpinner } from '@/shared/components/spinner';
+import { PageSkeleton } from '@/shared/components/page-skeleton';
 import { AnnouncementPopup } from '@/shared/components/announcement-popup';
 import { useRegion } from '@/shared/components/region-provider';
 import { type ModalChallenge } from '@/shared/components/challenge-modal';
@@ -19,11 +19,11 @@ function toModalChallenge(challenge: CatalogChallenge): ModalChallenge {
   return { ...challenge, isJoined: false, stages: [] };
 }
 
-function ChallengeCard({ challenge, favorite, onFavorite, onOpen }: { challenge: CatalogChallenge; favorite: boolean; onFavorite: () => void; onOpen: () => void }) {
+function ChallengeCard({ challenge, favorite, eager, onFavorite, onOpen }: { challenge: CatalogChallenge; favorite: boolean; eager?: boolean; onFavorite: () => void; onOpen: () => void }) {
   const places = Math.max(0, challenge.maxParticipants - challenge.participantsCount);
   return <article className="challenge-card">
     <button className="card-open" type="button" onClick={onOpen} aria-label={`Подробнее: ${challenge.title}`}>
-      <span className="image-wrap"><img src={challenge.imageUrl} alt="" className="card-image" loading="lazy" /><span className="category-label">{CATEGORIES[challenge.category] ?? challenge.category}</span></span>
+      <span className="image-wrap"><img src={challenge.imageUrl} alt="" className="card-image" loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} /><span className="category-label">{CATEGORIES[challenge.category] ?? challenge.category}</span></span>
       <span className="card-content">
         <span className="card-eyebrow">{challenge.organizer}</span><span className="card-title">{challenge.title}</span>
         <span className="card-description">{challenge.description || 'Откройте подробности, программу и условия участия.'}</span>
@@ -47,7 +47,7 @@ export default function ExplorePage() {
     return (!region || !challenge.region || challenge.region === region) && (category === 'all' || challenge.category === category) && (!q || `${challenge.title} ${challenge.organizer} ${challenge.location}`.toLocaleLowerCase('ru').includes(q));
   }), [challenges, region, category, query]);
 
-  if (loading) return <PageShell variant="public"><PageSpinner text="Загружаем челленджи..." /></PageShell>;
+  if (loading) return <PageShell variant="public"><PageSkeleton /></PageShell>;
   return <PageShell variant="public">
     <AnnouncementPopup />
     {selected && <Suspense fallback={null}><ChallengeModal challenge={toModalChallenge(selected)} onClose={() => setSelected(null)} /></Suspense>}
@@ -62,7 +62,7 @@ export default function ExplorePage() {
       <section className="catalog" aria-labelledby="results-title">
         <div className="catalog-heading"><div><p className="section-label">Каталог</p><h2 id="results-title">Доступные челленджи</h2></div><p aria-live="polite">{filtered.length} результатов</p></div>
         <div className="filters" aria-label="Фильтр по категориям">{Object.entries(CATEGORIES).map(([key, label]) => <button key={key} type="button" aria-pressed={category === key} onClick={() => setCategory(key)}>{label}</button>)}</div>
-        {filtered.length ? <div className="cards-grid">{filtered.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} favorite={isFavorite(challenge.id)} onFavorite={() => toggleFavorite(challenge.id)} onOpen={() => setSelected(challenge)} />)}</div> :
+        {filtered.length ? <div className="cards-grid">{filtered.map((challenge, index) => <ChallengeCard key={challenge.id} challenge={challenge} eager={index < 3} favorite={isFavorite(challenge.id)} onFavorite={() => toggleFavorite(challenge.id)} onOpen={() => setSelected(challenge)} />)}</div> :
           <div className="empty-state"><span className="empty-icon"><Search aria-hidden="true" /></span><h3>{challenges.length ? 'По этому запросу ничего не найдено' : 'Первые челленджи уже готовятся'}</h3><p>{challenges.length ? 'Сбросьте фильтры или выберите другой регион.' : 'Здесь появятся проверенные активности. А пока можно стать одним из первых организаторов.'}</p>{challenges.length ? <button type="button" onClick={() => { setCategory('all'); setQuery(''); }}>Сбросить фильтры</button> : <Link href="/register">Создать свой челлендж <ArrowRight aria-hidden="true" /></Link>}</div>}
       </section>
       <section className="organizer-cta" id="how-it-works" aria-labelledby="organizer-title"><div><p className="section-label">Для организаторов</p><h2 id="organizer-title">Превратите идею в событие</h2><p>Соберите участников, опишите правила и отправьте челлендж на модерацию.</p></div><Link href="/register">Начать создание <ArrowRight aria-hidden="true" /></Link></section>
