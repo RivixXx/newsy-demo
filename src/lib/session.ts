@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import type { AuthSession, TwoFactorTempSession } from './auth';
 
 const SESSION_COOKIE_NAME = '__Host-chi_session';
+const LEGACY_SESSION_COOKIE_NAME = '__Host-newsy_session';
 const SESSION_LIFETIME_MS = 1000 * 60 * 60 * 24 * 7;
 const TEMP_TOKEN_LIFETIME_MS = 1000 * 60 * 5; // 5 minutes
 
@@ -131,7 +132,8 @@ export async function parseSessionCookieValue(value: string, currentFingerprint?
 
 export async function getCurrentAuthSession(): Promise<AuthSession | null> {
   const cookieStore = await cookies();
-  const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value
+    ?? cookieStore.get(LEGACY_SESSION_COOKIE_NAME)?.value;
 
   if (!raw) {
     return null;
@@ -153,13 +155,15 @@ export async function setAuthSession(session: AuthSession): Promise<void> {
 
 export async function clearAuthSession(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, '', {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: true,
-    path: '/',
-    expires: new Date(0)
-  });
+  for (const name of [SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAME]) {
+    cookieStore.set(name, '', {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: true,
+      path: '/',
+      expires: new Date(0)
+    });
+  }
 }
 
 const TEMP_COOKIE_NAME = '__Host-chi_2fa_temp';

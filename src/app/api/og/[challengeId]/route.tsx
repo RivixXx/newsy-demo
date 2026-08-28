@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { prisma } from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
+import { normalizeBrand } from '@/lib/brand';
 
 export const runtime = 'nodejs';
 
@@ -113,7 +114,7 @@ export async function GET(
               margin: 0,
               lineHeight: 1.4,
             }}>
-              от {challenge.organizer.name} · {participants} участников
+              от {normalizeBrand(challenge.organizer.name)} · {participants} участников
             </p>
           </div>
 

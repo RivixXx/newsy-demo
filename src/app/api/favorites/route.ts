@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { normalizeBrand } from '@/lib/brand';
 
 // GET /api/favorites — список избранных
 export async function GET() {
@@ -33,7 +34,7 @@ export async function GET() {
     id: f.challenge.id,
     title: f.challenge.title,
     category: f.challenge.category,
-    organizer: f.challenge.organizer.name,
+    organizer: normalizeBrand(f.challenge.organizer.name),
     imageUrl: f.challenge.media[0]?.url || null,
     participantsCount: f.challenge._count.participations,
     endDate: f.challenge.endDate ? new Date(f.challenge.endDate).toLocaleDateString('ru-RU') : null,

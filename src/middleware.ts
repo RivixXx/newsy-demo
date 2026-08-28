@@ -4,10 +4,12 @@ import { parseEdgeSessionCookie } from '@/lib/session-edge';
 const PROTECTED = ['/dashboard', '/admin'];
 const AUTH_ONLY = ['/login', '/register'];
 const SESSION_COOKIE = '__Host-chi_session';
+const LEGACY_SESSION_COOKIE = '__Host-newsy_session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value;
+  const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value
+    ?? request.cookies.get(LEGACY_SESSION_COOKIE)?.value;
   const isLoggedIn = Boolean(sessionCookie && (await parseEdgeSessionCookie(sessionCookie)) !== null);
 
   if (isLoggedIn && AUTH_ONLY.some((p) => pathname.startsWith(p))) {

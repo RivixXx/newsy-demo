@@ -37,8 +37,11 @@ export function AnnouncementPopup() {
 
   // Load config from API
   useEffect(() => {
-    fetch('/api/admin/ad-config')
-      .then(r => r.json())
+    fetch('/api/ad-config')
+      .then(r => {
+        if (!r.ok) throw new Error(`Ad config request failed: ${r.status}`);
+        return r.json();
+      })
       .then(d => setConfig(d))
       .catch(() => setConfig({
         enabled: true, badge: 'НОВИНКА', title: 'ЧИ', titleAccent: '',

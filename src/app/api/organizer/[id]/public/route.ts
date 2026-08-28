@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { normalizeBrand } from '@/lib/brand';
 
 export async function GET(
   _request: NextRequest,
@@ -33,7 +34,7 @@ export async function GET(
 
     return NextResponse.json({
       id: organizer.id,
-      name: organizer.name,
+      name: normalizeBrand(organizer.name),
       type: organizer.type,
       challengeCount: organizer._count.challenges,
       totalParticipants,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentAuthSession } from '@/lib/session';
+import { normalizeBrand } from '@/lib/brand';
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
         id: c.id,
         title: c.title,
         category: c.category,
-        organizer: c.organizer.name,
+        organizer: normalizeBrand(c.organizer.name),
         participantsCount: c._count.participations,
         imageUrl: c.media?.[0]?.url || '/images/challenge-placeholder.svg',
       })),

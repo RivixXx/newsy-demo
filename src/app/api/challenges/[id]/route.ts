@@ -6,6 +6,7 @@ import { commonSchemas } from '@/lib/validation';
 import { z } from 'zod';
 import { combineDateAndTime, formatDateRu, formatDateTimeISO, computeOverallStatus } from '@/lib/date-utils';
 import { getCached, setCache, cacheKeys, CACHE_TTL } from '@/lib/cache';
+import { normalizeBrand } from '@/lib/brand';
 
 const STEP_TYPES: Record<string, string> = {
   action: 'ДЕЙСТВИЕ',
@@ -131,7 +132,7 @@ function buildResponse(
   return {
     id: challenge.id,
     title: challenge.title,
-    organizer: challenge.organizer?.name ?? 'Неизвестный организатор',
+    organizer: normalizeBrand(challenge.organizer?.name ?? 'Неизвестный организатор'),
     category: challenge.category || 'Другое',
     imageUrl: challenge.media[0]?.url || '',
     participantsCount: challenge._count.participations,

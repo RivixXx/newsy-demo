@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
+import { normalizeBrand } from '@/lib/brand';
 
 import type { SearchFilters, SearchResultPage, SearchState } from '../types';
 
@@ -93,7 +94,7 @@ export function createSearchService(prisma: PrismaClient): SearchService {
         items: items.map((item) => ({
           id: item.id,
           title: item.title,
-          organizer: item.organizer.name,
+          organizer: normalizeBrand(item.organizer.name),
           category: item.category || 'Other',
           pointsReward: item.steps.reduce((acc, s) => acc + s.rewardPoints, 0),
           imageUrl: item.media[0]?.url ?? null,

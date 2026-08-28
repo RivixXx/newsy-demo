@@ -7,6 +7,7 @@ import { getCached, setCache, cacheKeys, CACHE_TTL } from '@/lib/cache';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
+import { normalizeBrand } from '@/lib/brand';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -43,7 +44,7 @@ function mapChallenge(c: {
   return {
     id: c.id,
     title: c.title,
-    organizer: c.organizer?.name ?? 'Неизвестный организатор',
+    organizer: normalizeBrand(c.organizer?.name ?? 'Неизвестный организатор'),
     category: c.category ?? 'Другое',
     imageUrl: c.media[0]?.url ?? null,
     participantsCount: c._count.participations,

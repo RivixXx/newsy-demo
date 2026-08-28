@@ -1,3 +1,5 @@
+import { normalizeBrand } from '@/lib/brand';
+
 function combineDateAndTime(date: Date, time?: string | null): Date {
   const d = new Date(date);
   if (time) {
@@ -101,7 +103,7 @@ export async function getChallengeFromDb(id: string): Promise<CatalogChallenge |
     return {
       id: challenge.id,
       title: challenge.title,
-      organizer: challenge.organizer.name,
+      organizer: normalizeBrand(challenge.organizer.name),
       category: challenge.category || 'Другое',
       imageUrl: challenge.media[0]?.url || '/images/challenge-placeholder.svg',
       participantsCount: challenge._count.participations,

@@ -36,6 +36,7 @@ export function SiteNav({ variant = 'public' }: SiteNavProps) {
 
   // Real-time notifications via SSE
   useSSE({
+    enabled: Boolean(session),
     onUnreadCount: (count) => setUnreadCount(count),
     onNotification: (data) => {
       setNotifications(prev => [{
