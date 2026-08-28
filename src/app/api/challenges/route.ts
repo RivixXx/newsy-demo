@@ -85,7 +85,13 @@ async function handleGet(request: NextRequest, query: z.infer<typeof commonSchem
   }>(cacheKey);
   
   if (cached) {
-    return successResponse(cached);
+    return successResponse({
+      ...cached,
+      data: cached.data.map((challenge) => ({
+        ...challenge,
+        organizer: normalizeBrand(challenge.organizer),
+      })),
+    });
   }
 
   const where: Record<string, unknown> = {
