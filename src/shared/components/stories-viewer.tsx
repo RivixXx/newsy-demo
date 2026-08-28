@@ -179,12 +179,13 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
           }
           .stories-container {
             position: relative;
             width: 100%;
             max-width: 420px;
-            height: 100%;
+            height: 100dvh;
             max-height: 750px;
             background: #000;
             border-radius: 20px;
@@ -214,7 +215,7 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
           }
           .stories-header {
             position: absolute;
-            top: 24px;
+            top: max(24px, calc(env(safe-area-inset-top) + 12px));
             left: 12px;
             right: 12px;
             display: flex;
@@ -228,8 +229,8 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
             gap: 10px;
           }
           .stories-avatar {
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: linear-gradient(135deg, #FF385C, #ff6b8a);
             display: flex;
@@ -259,8 +260,8 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
             color: rgba(255,255,255,0.7);
           }
           .stories-close {
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: rgba(0,0,0,0.5);
             border: none;
@@ -284,8 +285,8 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: rgba(0,0,0,0.5);
             border: none;
@@ -300,7 +301,7 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
           .stories-nav.next { right: 8px; }
           .stories-controls {
             position: absolute;
-            bottom: 60px;
+            bottom: max(60px, calc(env(safe-area-inset-bottom) + 52px));
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -321,7 +322,7 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
           }
           .stories-step-info {
             position: absolute;
-            bottom: 16px;
+            bottom: max(16px, calc(env(safe-area-inset-bottom) + 12px));
             left: 12px;
             right: 12px;
             display: flex;
@@ -339,11 +340,21 @@ export function StoriesViewer({ stories, initialIndex = 0, onClose }: StoriesVie
             color: rgba(255,255,255,0.7);
           }
           @media (max-width: 480px) {
+            .stories-overlay { padding: 0; }
             .stories-container {
               max-width: 100%;
               max-height: 100%;
               border-radius: 0;
             }
+            .stories-user-info { min-width: 0; }
+            .stories-username,
+            .stories-challenge,
+            .stories-step-title {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+            .stories-step-title { max-width: 68%; }
           }
         `}</style>
       </div>

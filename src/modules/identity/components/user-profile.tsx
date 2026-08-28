@@ -486,9 +486,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         .text-yellow { color: #f59e0b; }
 
         @media (max-width: 400px) {
-          .achievements-grid {
-            grid-template-columns: repeat(3, 1fr);
+          .stats-row {
+            grid-template-columns: 1fr;
           }
+          .achievements-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 14px;
+          }
+          .activity-item { align-items: flex-start; }
+          .activity-details { min-width: 0; }
+          .activity-title { overflow-wrap: anywhere; }
+          .activity-meta { flex-wrap: wrap; }
         }
       `}</style>
     </div>

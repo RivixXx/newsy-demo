@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 
-const STORAGE_KEY = 'newsy_region';
+const STORAGE_KEY = 'chi_region';
 
 interface RegionCtx {
   region: string | null;

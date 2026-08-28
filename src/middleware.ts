@@ -3,7 +3,7 @@ import { parseEdgeSessionCookie } from '@/lib/session-edge';
 
 const PROTECTED = ['/dashboard', '/admin'];
 const AUTH_ONLY = ['/login', '/register'];
-const SESSION_COOKIE = '__Host-newsy_session';
+const SESSION_COOKIE = '__Host-chi_session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

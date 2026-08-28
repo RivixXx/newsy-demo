@@ -298,7 +298,7 @@ export function SiteFooter() {
           .fn-btn { width: 100%; }
         }
         @media (max-width: 600px) {
-          .footer-inner { padding: 32px 16px 16px; }
+          .footer-inner { padding: 32px 16px calc(16px + env(safe-area-inset-bottom)); }
           .footer-cols { grid-template-columns: 1fr; gap: 24px; }
           .footer-newsletter { flex-direction: column; align-items: stretch; }
           .fn-form { flex-direction: column; }
@@ -313,12 +313,13 @@ export function SiteFooter() {
           .footer-top { gap: 32px; }
           .footer-logo-text { font-size: 18px; }
           .footer-tagline { font-size: 12px; }
-          .social-btn { width: 32px; height: 32px; }
+          .social-btn { width: 44px; height: 44px; }
           .footer-col-title { font-size: 11px; }
           .footer-link { font-size: 12px; }
           .fn-text h4 { font-size: 14px; }
           .fn-text p { font-size: 11px; }
-          .fn-input { padding: 10px 12px; font-size: 13px; }
+          .fn-input { min-height: 48px; padding: 12px 14px; font-size: 16px; }
+          .fn-btn { min-height: 48px; }
         }
       `}</style>
     </footer>

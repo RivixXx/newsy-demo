@@ -223,7 +223,7 @@ export default function SubscriptionPage() {
           .current-info { flex: 1; }
           .current-info h3 { font-size: 18px; font-weight: 800; margin: 0; color: #111; }
           .current-info p { font-size: 13px; color: #71717a; margin: 4px 0 0; }
-          .cancel-btn { width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; display: grid; place-items: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+          .cancel-btn { width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; display: grid; place-items: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
           .cancel-btn:hover:not(:disabled) { background: #fee2e2; }
           .cancel-btn:disabled { opacity: 0.5; }
           .sub-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 80px 20px; color: #71717a; }

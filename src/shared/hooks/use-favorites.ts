@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/shared/components/session-provider';
 
-const LS_KEY = 'newsy_favorites';
+const LS_KEY = 'chi_favorites';
 
 export function useFavorites() {
   const session = useSession();

@@ -18,7 +18,7 @@ const STEPS: TourStep[] = [
   { target: 'tabs-bar', title: 'Навигация', text: 'Здесь ты переключаешься между разделами: достижения, награды, история', position: 'bottom' },
 ];
 
-const STORAGE_KEY = 'newsy-profile-tour-done';
+const STORAGE_KEY = 'chi-profile-tour-done';
 
 export function ProfileTour() {
   const [active, setActive] = useState(false);

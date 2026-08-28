@@ -638,7 +638,7 @@ export default function NewChallengePage() {
 const css = `
   /* ── Root ── */
   .cc-root {
-    min-height: 100vh; display: flex; flex-direction: column;
+    min-height: 100dvh; display: flex; flex-direction: column;
     position: relative; overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
   }
@@ -659,7 +659,7 @@ const css = `
   .cc-topbar {
     position: sticky; top: 0; z-index: 50;
     display: flex; align-items: center; gap: 8px;
-    padding: 12px clamp(16px, 3vw, 40px);
+    padding: max(12px, env(safe-area-inset-top)) clamp(16px, 3vw, 40px) 12px;
   }
   .cc-topbtn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -950,6 +950,17 @@ const css = `
     .cc-preview-panel { flex: none; width: 100%; max-width: 480px; max-height: none; }
   }
   @media (max-width: 768px) {
+    .cc-stage {
+      padding: 12px 16px calc(112px + env(safe-area-inset-bottom));
+    }
+    .cc-topbar {
+      overflow-x: auto;
+      overscroll-behavior-inline: contain;
+      scrollbar-width: none;
+    }
+    .cc-topbar::-webkit-scrollbar { display: none; }
+    .cc-topbtn { flex: 0 0 auto; min-height: 44px; }
+    .cc-form-card { border-radius: 18px; }
     .cc-type-grid { grid-template-columns: 1fr; }
     .cc-grid-2, .cc-grid-3 { grid-template-columns: 1fr; }
     .cc-card-body { padding: 20px; }
@@ -958,9 +969,22 @@ const css = `
     .cc-question-types { grid-template-columns: repeat(3, 1fr); }
     .cc-preview-panel { display: none; }
     .cc-form-card--narrow { max-width: 100%; min-width: unset; }
+    .cc-bottom-inner {
+      padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+      flex-wrap: wrap;
+    }
+    .cc-bottom-inner .cc-btn { flex: 1 1 auto; }
   }
   @media (max-width: 480px) {
     .cc-question-types { grid-template-columns: repeat(2, 1fr); }
+    .cc-card-head { padding: 18px 16px; }
+    .cc-card-head h2 { font-size: 18px; }
+    .cc-card-body { padding: 16px; }
+    .cc-rv-stats { grid-template-columns: 1fr 1fr; }
+    .cc-cats, .cc-pills { display: grid; grid-template-columns: 1fr; }
+    .cc-cat, .cc-pill { width: 100%; }
+    .cc-step { padding: 12px 10px; }
+    .cc-step-grip { display: none; }
   }
 
   /* Calm editorial surface: one accent, clear hierarchy and keyboard focus. */

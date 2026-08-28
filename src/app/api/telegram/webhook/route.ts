@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'newsy-webhook';
+const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'chi-webhook';
 
 interface TelegramMessage {
   message_id: number;

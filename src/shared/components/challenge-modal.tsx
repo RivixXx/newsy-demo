@@ -1499,11 +1499,16 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
         }
 
         @media (max-width: 768px) {
-          .modal-shell { padding: 10px; }
+          .modal-shell {
+            align-items: flex-end;
+            padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+          }
           .modal-inner {
             grid-template-columns: 1fr;
-            max-height: 95vh;
-            border-radius: 20px;
+            width: 100%;
+            max-height: calc(100dvh - max(10px, env(safe-area-inset-top)));
+            border-radius: 20px 20px 0 0;
+            padding-bottom: env(safe-area-inset-bottom);
           }
           .modal-left { max-height: 35vh; }
           .modal-img-wrap { height: 160px; }
@@ -1512,16 +1517,16 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           .modal-tabs { padding: 12px 16px 0; }
           .stages-list { padding: 12px 16px; }
           .chat-history { padding: 12px 16px; }
-          .chat-input-row { padding: 10px 16px; }
+          .chat-input-row { padding: 10px 16px max(10px, env(safe-area-inset-bottom)); }
           .modal-action-bar { padding: 12px 16px; flex-direction: column; gap: 10px; }
           .join-btn { width: 100%; text-align: center; }
-          .sq-rating-btn { width: 40px; height: 40px; font-size: 14px; }
+          .sq-rating-btn { width: 44px; height: 44px; font-size: 14px; }
           .sq-yesno-btn { padding: 14px; font-size: 14px; }
         }
 
         @media (max-width: 480px) {
           .modal-shell { padding: 0; }
-          .modal-inner { border-radius: 16px; max-height: 100vh; }
+          .modal-inner { border-radius: 16px 16px 0 0; max-height: 100dvh; }
           .modal-left { max-height: 30vh; }
           .modal-img-wrap { height: 130px; }
           .modal-meta { padding: 12px 14px; }
@@ -1534,7 +1539,7 @@ export function ChallengeModal({ challenge, onClose }: ChallengeModalProps) {
           .stage-btn { width: 100%; justify-content: center; }
           .sq-yesno { flex-direction: column; gap: 8px; }
           .sq-yesno-btn { padding: 14px; font-size: 15px; justify-content: center; }
-          .sq-rating-btn { width: 38px; height: 38px; font-size: 13px; }
+          .sq-rating-btn { width: 44px; height: 44px; font-size: 13px; }
           .sq-option { padding: 12px 14px; font-size: 14px; min-height: 44px; }
         }
       `}</style>

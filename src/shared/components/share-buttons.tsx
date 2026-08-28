@@ -71,7 +71,7 @@ export function ShareButtons({ challengeId, title, compact }: ShareButtonsProps)
           .share-label { font-size: 13px; color: #888; font-weight: 600; }
           .share-btns { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
           .share-btn {
-            min-width: 32px; height: 32px; border-radius: 8px;
+            min-width: 44px; height: 44px; border-radius: 10px;
             border: 1px solid #e5e7eb; background: white;
             display: inline-flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.15s; color: #555;

@@ -230,10 +230,15 @@ export default function StoriesPage() {
         @media (max-width: 480px) {
           .stories-grid {
             grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
           }
           .story-thumbnail {
             height: 200px;
           }
+        }
+        @media (max-width: 360px) {
+          .stories-grid { grid-template-columns: 1fr; }
+          .story-thumbnail { height: min(72dvh, 420px); }
         }
       `}</style>
     </div>

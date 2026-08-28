@@ -450,7 +450,7 @@ export const ChallengeConstructor: React.FC = () => {
 
       <style jsx>{`
         .constructor-container {
-          min-height: 100vh;
+          min-height: 100dvh;
           background: var(--bg);
           display: flex;
           flex-direction: column;
@@ -780,14 +780,14 @@ export const ChallengeConstructor: React.FC = () => {
         }
 
         .preview-container.mobile {
-          width: 375px;
-          height: 667px;
+          width: min(375px, calc(100vw - 40px));
+          height: min(667px, calc(100dvh - 180px));
           overflow-y: auto;
         }
 
         .preview-container.desktop {
-          width: 1000px;
-          height: 600px;
+          width: min(1000px, calc(100vw - 40px));
+          height: min(600px, calc(100dvh - 180px));
           overflow-y: auto;
         }
 
@@ -920,7 +920,7 @@ export const ChallengeConstructor: React.FC = () => {
           align-items: center;
           justify-content: center;
           z-index: 1000;
-          padding: 20px;
+          padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         }
 
         .templates-modal {
@@ -928,7 +928,7 @@ export const ChallengeConstructor: React.FC = () => {
           border-radius: 24px;
           width: 100%;
           max-width: 700px;
-          max-height: 80vh;
+          max-height: min(80dvh, 760px);
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -953,7 +953,11 @@ export const ChallengeConstructor: React.FC = () => {
           border: none;
           cursor: pointer;
           color: var(--text-muted);
-          padding: 4px;
+          width: 44px;
+          height: 44px;
+          padding: 0;
+          display: grid;
+          place-items: center;
         }
 
         .templates-grid {
@@ -1004,7 +1008,7 @@ export const ChallengeConstructor: React.FC = () => {
             padding: 16px 20px;
           }
           .constructor-main {
-            padding: 20px;
+            padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
           }
           .input-row {
             flex-direction: column;
@@ -1020,6 +1024,18 @@ export const ChallengeConstructor: React.FC = () => {
           }
           .rewards-grid {
             grid-template-columns: 1fr;
+          }
+          .templates-overlay {
+            align-items: flex-end;
+            padding: 0;
+          }
+          .templates-modal {
+            max-height: calc(100dvh - env(safe-area-inset-top));
+            border-radius: 24px 24px 0 0;
+            padding-bottom: env(safe-area-inset-bottom);
+          }
+          .templates-grid {
+            grid-template-columns: minmax(0, 1fr);
           }
         }
       `}</style>

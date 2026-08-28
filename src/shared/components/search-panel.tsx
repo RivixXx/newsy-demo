@@ -177,7 +177,7 @@ export function SearchPanel() {
                   inline
                   monthsShown={2}
                   minDate={new Date()}
-                  calendarClassName="newsy-calendar"
+                  calendarClassName="chi-calendar"
                   dayClassName={() => 'cal-day'}
                 />
               </div>
@@ -297,7 +297,7 @@ export function SearchPanel() {
         .sb-value { font-size: 14px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sb-divider { width: 1px; height: 24px; background: #e5e7eb; flex-shrink: 0; }
         .sb-search {
-          width: 42px; height: 42px; border-radius: 50%;
+          width: 44px; height: 44px; border-radius: 50%;
           background: #FF385C; border: none; display: grid; place-items: center;
           flex-shrink: 0; margin-left: 4px; cursor: pointer;
           transition: background 0.15s, transform 0.15s;
@@ -365,7 +365,7 @@ export function SearchPanel() {
         .who-label { font-size: 14px; font-weight: 600; color: #333; }
         .who-cnt { display: flex; align-items: center; gap: 12px; }
         .wc-btn {
-          width: 32px; height: 32px; border-radius: 50%;
+          width: 44px; height: 44px; border-radius: 50%;
           border: 1px solid #e5e7eb; background: white;
           font-size: 16px; font-weight: 600; color: #555;
           cursor: pointer; display: grid; place-items: center;
@@ -374,12 +374,12 @@ export function SearchPanel() {
         .wc-btn:disabled { opacity: 0.3; }
         .wc-val { font-size: 14px; font-weight: 700; min-width: 36px; text-align: center; }
 
-        .tog { position: relative; width: 40px; height: 22px; cursor: pointer; }
+        .tog { position: relative; width: 48px; height: 44px; cursor: pointer; display: flex; align-items: center; }
         .tog input { display: none; }
-        .tog-s { position: absolute; inset: 0; background: #ddd; border-radius: 99px; transition: all 0.2s; }
-        .tog-s::before { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .tog-s { position: absolute; left: 0; right: 0; height: 26px; background: #ddd; border-radius: 99px; transition: all 0.2s; }
+        .tog-s::before { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
         .tog input:checked + .tog-s { background: #111; }
-        .tog input:checked + .tog-s::before { transform: translateX(18px); }
+        .tog input:checked + .tog-s::before { transform: translateX(22px); }
 
         /* Modal */
         .modal-overlay {
@@ -393,7 +393,7 @@ export function SearchPanel() {
 
         .modal-panel {
           background: white; border-radius: 24px;
-          width: 100%; max-width: 720px; max-height: calc(100vh - 120px);
+          width: 100%; max-width: 720px; max-height: calc(100dvh - 120px);
           display: flex; flex-direction: column;
           box-shadow: 0 24px 64px rgba(0,0,0,0.2);
           animation: slideUp 0.25s ease; overflow: hidden;
@@ -412,7 +412,7 @@ export function SearchPanel() {
           background: #f5f5f5; font-size: 12px; font-weight: 600; color: #666;
         }
         .mh-close {
-          width: 36px; height: 36px; border-radius: 50%;
+          width: 44px; height: 44px; border-radius: 50%;
           border: none; background: #f5f5f5;
           display: grid; place-items: center; cursor: pointer;
           transition: background 0.15s;
@@ -447,7 +447,15 @@ export function SearchPanel() {
           .search-bar { width: 100%; max-width: 100%; }
           .sb-when { display: none; }
           .sb-drop-calendar { width: calc(100vw - 40px); left: 50%; transform: translateX(-50%); }
-          .modal-overlay { padding: 12px; padding-top: 60px; }
+          .modal-overlay {
+            align-items: flex-end;
+            padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+          }
+          .modal-panel {
+            max-height: calc(100dvh - max(12px, env(safe-area-inset-top)));
+            border-radius: 22px 22px 0 0;
+            padding-bottom: env(safe-area-inset-bottom);
+          }
           .result-card { flex-direction: column; }
           .rc-img { width: 100%; height: 140px; }
         }
@@ -456,13 +464,13 @@ export function SearchPanel() {
           .search-bar { height: 48px; padding: 2px; }
           .sb-btn { padding: 0 12px; height: 40px; }
           .sb-value { font-size: 13px; }
-          .sb-search { width: 38px; height: 38px; }
+          .sb-search { width: 44px; height: 44px; }
           .sb-drop { min-width: 180px; }
           .sb-drop-calendar { width: calc(100vw - 24px); }
-          .modal-overlay { padding: 8px; padding-top: 50px; }
-          .modal-panel { border-radius: 16px; max-height: calc(100vh - 80px); }
+          .modal-overlay { padding: max(8px, env(safe-area-inset-top)) 0 0; }
+          .modal-panel { border-radius: 18px 18px 0 0; max-height: calc(100dvh - max(8px, env(safe-area-inset-top))); }
           .modal-body { padding: 16px; }
-          .result-card { padding: 12px; }
+          .result-card { padding: 0; }
           .rc-img { height: 120px; }
           .rc-title { font-size: 14px; }
           .rc-org { font-size: 11px; }

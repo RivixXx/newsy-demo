@@ -52,7 +52,7 @@ export function AnnouncementPopup() {
   // Show popup
   useEffect(() => {
     if (!config?.enabled) return;
-    const dismissed = sessionStorage.getItem('newsy_popup_dismissed');
+    const dismissed = sessionStorage.getItem('chi_popup_dismissed');
     if (!dismissed) {
       const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
@@ -61,7 +61,7 @@ export function AnnouncementPopup() {
 
   const handleClose = () => {
     setIsVisible(false);
-    sessionStorage.setItem('newsy_popup_dismissed', '1');
+    sessionStorage.setItem('chi_popup_dismissed', '1');
   };
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -181,7 +181,7 @@ export function AnnouncementPopup() {
         .ap-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); z-index: 9000; animation: apFadeIn 0.4s ease; }
         .ap-wrap { position: fixed; inset: 0; z-index: 9001; display: flex; align-items: center; justify-content: center; padding: 24px; animation: apSlideUp 0.5s cubic-bezier(0.16,1,0.3,1); }
         .ap-card { background: #fff; border-radius: 28px; width: 100%; max-width: 1080px; overflow: hidden; position: relative; display: grid; grid-template-columns: 1.1fr 1fr; box-shadow: 0 50px 120px rgba(0,0,0,0.35); transition: transform 0.15s ease-out; will-change: transform; }
-        .ap-close { position: absolute; top: 18px; right: 18px; z-index: 10; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; display: grid; place-items: center; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(8px); }
+        .ap-close { position: absolute; top: max(18px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); z-index: 10; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; display: grid; place-items: center; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(8px); }
         .ap-close:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
         .ap-hero { background: linear-gradient(160deg, #0a0a0f 0%, #111118 40%, #1a1025 100%); padding: 48px 40px; color: white; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 520px; }
         .ap-bg-layer { position: absolute; inset: 0; transition: transform 0.2s ease-out; will-change: transform; }
@@ -221,7 +221,7 @@ export function AnnouncementPopup() {
         @keyframes apFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes apSlideUp { from { opacity: 0; transform: translateY(50px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (max-width: 900px) { .ap-card { grid-template-columns: 1fr; max-width: 520px; } .ap-hero { min-height: auto; padding: 36px 28px; } .ap-bg-phone { display: none; } .ap-body { padding: 28px; } .ap-discount-value { font-size: 36px; } }
-        @media (max-width: 480px) { .ap-wrap { padding: 12px; } .ap-hero { padding: 28px 20px; } .ap-body { padding: 20px; } .ap-service-grid { grid-template-columns: 1fr; } .ap-actions { flex-direction: column; } }
+        @media (max-width: 480px) { .ap-wrap { align-items: flex-end; padding: max(12px, env(safe-area-inset-top)) 0 0; } .ap-card { max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); overflow-y: auto; border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); } .ap-hero { padding: 28px 20px; } .ap-body { padding: 20px; } .ap-service-grid { grid-template-columns: 1fr; } .ap-actions { flex-direction: column; } }
       `}</style>
     </>
   );

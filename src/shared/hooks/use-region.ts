@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-const STORAGE_KEY = 'newsy_region';
+const STORAGE_KEY = 'chi_region';
 
 export const RUSSIAN_REGIONS = [
   'Москва',

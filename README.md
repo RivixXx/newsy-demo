@@ -1,6 +1,6 @@
-# NEWSY - Interactive Challenge Platform
+# ЧИ - Interactive Challenge Platform
 
-NEWSY is an interactive digital marketing social platform designed to launch "challenges" (thematic events, business meetings, training, competitions, quests, and online activities). It transforms traditional marketing and daily routines into an engaging, gamified experience.
+ЧИ is an interactive digital marketing social platform designed to launch "challenges" (thematic events, business meetings, training, competitions, quests, and online activities). It transforms traditional marketing and daily routines into an engaging, gamified experience.
 
 ## Core Features
 

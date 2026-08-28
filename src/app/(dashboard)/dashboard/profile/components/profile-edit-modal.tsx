@@ -222,8 +222,8 @@ export function ProfileEditModal({ isOpen, onClose, initialData, onSave }: Profi
       </div>
 
       <style>{`
-        .edit-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000; display: grid; place-items: center; animation: fadeIn 0.2s; padding: 20px; }
-        .edit-modal { background: white; border-radius: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+        .edit-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000; display: grid; place-items: center; animation: fadeIn 0.2s; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+        .edit-modal { background: white; border-radius: 24px; width: 100%; max-width: 560px; max-height: min(90dvh, 820px); overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
         .edit-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px 0; }
         .edit-header h2 { font-size: 20px; font-weight: 900; margin: 0; color: #111; }
         .edit-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: #f5f5f5; cursor: pointer; display: grid; place-items: center; transition: background 0.15s; }
@@ -282,7 +282,7 @@ export function ProfileEditModal({ isOpen, onClose, initialData, onSave }: Profi
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 600px) { .edit-modal { max-height: 95vh; } .edit-row { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .edit-overlay { place-items: end center; padding: max(12px, env(safe-area-inset-top)) 0 0; } .edit-modal { max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); } .edit-row { grid-template-columns: 1fr; } }
       `}</style>
     </div>
   );

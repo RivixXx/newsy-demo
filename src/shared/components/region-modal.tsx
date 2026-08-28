@@ -14,7 +14,7 @@ async function reverseGeocode(lat: number, lon: number): Promise<string | null> 
   try {
     const resp = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ru&zoom=10`,
-      { headers: { 'User-Agent': 'NewsyApp/1.0' } }
+      { headers: { 'User-Agent': 'CHIApp/1.0' } }
     );
     const data = await resp.json();
     // Try city/town/village first, then fallback to state
@@ -195,7 +195,7 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
         .region-wrap {
           position: fixed; inset: 0; z-index: 9501;
           display: flex; align-items: center; justify-content: center;
-          padding: 20px; animation: regSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+          padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); animation: regSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
         }
         .region-card {
           background: white; border-radius: 24px;
@@ -203,10 +203,11 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
           overflow: hidden; display: flex; flex-direction: column;
           box-shadow: 0 40px 100px rgba(0,0,0,0.25);
           position: relative;
+          max-height: min(90dvh, 720px); overflow-y: auto; overscroll-behavior: contain;
         }
         .region-close {
           position: absolute; top: 16px; right: 16px; z-index: 10;
-          width: 36px; height: 36px; border-radius: 50%;
+          width: 44px; height: 44px; border-radius: 50%;
           background: #f5f5f5; border: none; color: #666;
           display: grid; place-items: center; cursor: pointer;
           transition: background 0.2s;
@@ -302,6 +303,8 @@ export function RegionModal({ isOpen, onSelect, onSkip }: RegionModalProps) {
         @keyframes regSpin { to { transform: rotate(360deg); } }
 
         @media (max-width: 480px) {
+          .region-wrap { align-items: flex-end; padding: max(12px, env(safe-area-inset-top)) 0 0; }
+          .region-card { max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); }
           .region-header { padding: 28px 20px 0; }
           .region-input-wrap, .region-detect-btn, .region-suggestion, .region-skip {
             margin-left: 20px; margin-right: 20px;

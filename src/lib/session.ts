@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 import type { AuthSession, TwoFactorTempSession } from './auth';
 
-const SESSION_COOKIE_NAME = '__Host-newsy_session';
+const SESSION_COOKIE_NAME = '__Host-chi_session';
 const SESSION_LIFETIME_MS = 1000 * 60 * 60 * 24 * 7;
 const TEMP_TOKEN_LIFETIME_MS = 1000 * 60 * 5; // 5 minutes
 
@@ -162,7 +162,7 @@ export async function clearAuthSession(): Promise<void> {
   });
 }
 
-const TEMP_COOKIE_NAME = '__Host-newsy_2fa_temp';
+const TEMP_COOKIE_NAME = '__Host-chi_2fa_temp';
 
 export function createTemp2faToken(userId: string): string {
   const payload = encode(
